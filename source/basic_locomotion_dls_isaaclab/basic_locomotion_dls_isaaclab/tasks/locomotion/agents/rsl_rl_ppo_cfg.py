@@ -139,7 +139,7 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         activation="elu",
     )
     algorithm = RslRlPpoAlgorithmCfg(
-        class_name="PPO", #PPO, PPOSymmDataAugmented #AMP_PPO
+        class_name="PPOSymmDataAugmented", #PPO, PPOSymmDataAugmented #AMP_PPO
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.2,
@@ -178,18 +178,22 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         ]*int(history_length)
 
     #obs_space_names_actor += ["heightmap:rows4xcols4"]
-    obs_space_names_actor += ["position_gains"]
-    obs_space_names_actor += ["velocity_gains"]
+    #obs_space_names_actor += ["position_gains"]
+    #obs_space_names_actor += ["velocity_gains"]
 
 
     # Symmetry Related Stuff -  Asymmetric Critic
-    obs_space_names_critic = obs_space_names_actor
-    """obs_space_names_critic += ["position_gains", 
-            "velocity_gains",
-            "friction_static",
-            "friction_dynamic",
-            "armature"
-        ]"""
+    obs_space_names_critic = [
+            "base_lin_vel:base",
+            "base_ang_vel:base",
+            "gravity:base",
+            "ctrl_commands",
+            "default_qpos_js_error",
+            "qvel_js",
+            "actions",
+            "clock_data",
+        ]*int(history_length)
+    obs_space_names_critic += ["base_pos_z", "base_pos_z"]
 
     morphologycal_symmetries_cfg = MorphologycalSymmetriesCfg(
         obs_space_names_actor = obs_space_names_actor,

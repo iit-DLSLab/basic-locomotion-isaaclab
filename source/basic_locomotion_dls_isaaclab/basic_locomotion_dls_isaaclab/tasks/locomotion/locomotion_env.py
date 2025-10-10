@@ -637,7 +637,7 @@ class LocomotionEnv(DirectRLEnv):
     def _get_new_random_commands(self):
         
         # Change direction while moving
-        resample_time = self.episode_length_buf == self.max_episode_length - 200
+        resample_time = self.episode_length_buf == self.max_episode_length - 400
         commands_resample = torch.zeros_like(self._commands).uniform_(-1.0, 1.0)
         commands_resample[:, 0] *= 0.5
         commands_resample[:, 1] *= 0.25 
@@ -646,13 +646,13 @@ class LocomotionEnv(DirectRLEnv):
 
         # Stop
         rest_time = torch.logical_and(
-            self.episode_length_buf >= self.max_episode_length - 100,
-            self.episode_length_buf < self.max_episode_length - 50
+            self.episode_length_buf >= self.max_episode_length - 250,
+            self.episode_length_buf < self.max_episode_length - 150
         )
         self._commands[:, :3] *= ~rest_time.unsqueeze(1).expand(-1, 3)
 
         # Move again
-        resample_time_2 = self.episode_length_buf == self.max_episode_length - 50
+        resample_time_2 = self.episode_length_buf == self.max_episode_length - 150
         commands_resample_2 = torch.zeros_like(self._commands).uniform_(-1.0, 1.0)
         commands_resample_2[:, 0] *= 0.5
         commands_resample_2[:, 1] *= 0.25 

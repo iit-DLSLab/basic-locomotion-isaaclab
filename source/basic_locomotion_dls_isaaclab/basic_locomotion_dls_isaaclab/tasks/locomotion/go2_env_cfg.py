@@ -283,7 +283,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
     # Desired tracking variables
     desired_base_height = 0.30
-    desired_feet_height = 0.05
+    desired_feet_height = 0.03
 
     # Desired clip actions
     desired_clip_actions = 3.0
