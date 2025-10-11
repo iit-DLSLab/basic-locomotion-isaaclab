@@ -331,12 +331,25 @@ class LocomotionEnv(DirectRLEnv):
         delta_s = torch.tensor(distance_between_front_and_back).to(self.device)
         terrain_pitch = -torch.atan2(delta_z, delta_s)
         #terrain_pitch = torch.atan2(torch.sin(terrain_pitch), torch.cos(terrain_pitch))
+
+        """cols_right = torch.arange(0, height_data_scanner.shape[1]//2, 1).unsqueeze(1) 
+        cols_right = cols_right.flatten().to(height_data_scanner.device)
+        selected_height_data_right = height_data_scanner[:, cols_right]
+
+        cols_left = torch.arange(0, height_data_scanner.shape[1]//2, 1).unsqueeze(1) + height_data_scanner.shape[1]//2
+        cols_left = cols_left.flatten().to(height_data_scanner.device)
+        selected_height_data_left = height_data_scanner[:, cols_left]
+
+        delta_z_roll = torch.mean(selected_height_data_right, dim=1) - torch.mean(selected_height_data_left, dim=1)
+        delta_s_roll = torch.tensor((height_map_y_points-1)* height_map_resolution).to(self.device)
+        terrain_roll = -torch.atan2(delta_z_roll, delta_s_roll)"""
+        
         
         root_roll_w, root_pitch_w, _ = math_utils.euler_xyz_from_quat(self._robot.data.root_quat_w)
         root_roll_w = torch.atan2(torch.sin(root_roll_w), torch.cos(root_roll_w))
         root_pitch_w = torch.atan2(torch.sin(root_pitch_w), torch.cos(root_pitch_w))
         
-        base_orientation =  torch.square(terrain_pitch - root_pitch_w)# + torch.square(0 - root_roll_w)
+        base_orientation =  torch.square(terrain_pitch - root_pitch_w)# + torch.square(terrain_roll - root_roll_w)
 
 
         # angular velocity x/y tracking
