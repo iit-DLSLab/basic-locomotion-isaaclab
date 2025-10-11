@@ -340,9 +340,9 @@ class LocomotionEnv(DirectRLEnv):
         cols_left = cols_left.flatten().to(height_data_scanner.device)
         selected_height_data_left = height_data_scanner[:, cols_left]
 
-        delta_z_roll = torch.mean(selected_height_data_right, dim=1) - torch.mean(selected_height_data_left, dim=1)
+        delta_z_roll = torch.mean(selected_height_data_left, dim=1) - torch.mean(selected_height_data_left, dim=1)
         delta_s_roll = torch.tensor((height_map_y_points-1)* height_map_resolution).to(self.device)
-        terrain_roll = -torch.atan2(delta_z_roll, delta_s_roll)"""
+        terrain_roll = torch.atan2(delta_z_roll, delta_s_roll)"""
         
         
         root_roll_w, root_pitch_w, _ = math_utils.euler_xyz_from_quat(self._robot.data.root_quat_w)
