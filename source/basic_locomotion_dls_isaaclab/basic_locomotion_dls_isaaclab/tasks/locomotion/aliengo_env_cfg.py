@@ -159,7 +159,7 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
 
     use_imu = False
 
-    use_cuncurrent_state_est = False
+    use_cuncurrent_state_est = True
     if(use_cuncurrent_state_est):
         cuncurrent_state_est_output_space = 3 #lin_vel_b
         single_cuncurrent_state_est_observation_space = single_observation_space
