@@ -149,7 +149,7 @@ Remember to set in the application above, "set as default prim" to the root of t
 
 1. install [miniforge](https://github.com/conda-forge/miniforge/releases) (x86_64 or arm64 depending on your platform)
 
-2. create an environment using the file in the folder [installation](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/tree/main/installation):
+2. create an environment using the file in the folder [installation](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/tree/main/deploy/installation):
 
 
 ```bash
@@ -169,11 +169,13 @@ python3 deploy/play_mujoco.py
 ## Sim-to-Real with ROS1
 cd deploy/ros1_ws
 catkin_make install -j4
+source install/setup.bash
 python3 deploy/play_ros1.py
 
 ## Sim-to-Real with ROS2
 cd deploy/ros2_ws
 colcon build
+source install/setup.bash
 python3 deploy/play_ros2.py 
 ros2 launch teleop_twist_joy teleop-launch.py joy_config:='xbox' (if want joystick)
 ```
