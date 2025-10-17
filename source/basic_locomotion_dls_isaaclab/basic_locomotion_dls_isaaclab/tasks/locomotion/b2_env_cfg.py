@@ -156,6 +156,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
         cuncurrent_state_est_train_epochs = 500
         cuncurrent_state_est_lr = 1e-3
         cuncurrent_state_est_ep_saving_interval = 1000
+        cuncurrent_state_est_ep_saving_start = 6000
 
     use_rma = False
     if(use_rma):
@@ -171,6 +172,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
         rma_train_epochs = 500
         rma_lr = 1e-3
         rma_ep_saving_interval = 1000
+        rma_ep_saving_start = 6000
         
 
     use_filter_actions = True

@@ -418,7 +418,6 @@ class LocomotionEnv(DirectRLEnv):
         contacts_foot = self._contact_sensor.data.net_forces_w_history[:, :, self._feet_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
         body_vel = self._robot.data.body_lin_vel_w[:, self._feet_ids_robot, :2]
         feet_slide = torch.sum(body_vel.norm(dim=-1) * contacts_foot, dim=1)
-        feet_slide = torch.exp(-feet_slide / 0.1)
 
 
         # feet periodical contacts suggestion
@@ -716,7 +715,7 @@ class LocomotionEnv(DirectRLEnv):
         # Prediction
         num_episode_from_start = self.common_step_counter / 24. #self.max_episode_length #HACK this should be taken from rsl rl
         num_final_episode_from_start = 8000.
-        if num_episode_from_start > self.cfg.cuncurrent_state_est_ep_saving_interval:
+        if num_episode_from_start > self.cfg.cuncurrent_state_est_ep_saving_start:
             with torch.no_grad(): 
                 prediction_cuncurrent_state_est = self._cuncurrent_state_est_network(obs_cuncurrent_state_est)
             linear_velocity_b = prediction_cuncurrent_state_est[:, :3]
@@ -725,7 +724,7 @@ class LocomotionEnv(DirectRLEnv):
 
         # Train at some interval
         if (num_episode_from_start % self.cfg.cuncurrent_state_est_ep_saving_interval == 0 and 
-            num_episode_from_start > self.cfg.cuncurrent_state_est_ep_saving_interval - 1 and 
+            num_episode_from_start > self.cfg.cuncurrent_state_est_ep_saving_start - 1 and 
                 num_episode_from_start < num_final_episode_from_start - 500):  # Adjust the interval as needed
             self._cuncurrent_state_est_network.train_network(batch_size=self.cfg.cuncurrent_state_est_batch_size, 
                                                             epochs=self.cfg.cuncurrent_state_est_train_epochs, 
@@ -771,7 +770,7 @@ class LocomotionEnv(DirectRLEnv):
         # Prediction
         num_episode_from_start = self.common_step_counter / 24. #self.max_episode_length #HACK this should be taken from rsl rl
         num_final_episode_from_start = 8000.
-        if num_episode_from_start > self.cfg.rma_ep_saving_interval:
+        if num_episode_from_start > self.cfg.rma_ep_saving_start:
             with torch.no_grad(): 
                 prediction_rma = self._rma_network(obs)
             obs_rma = prediction_rma
@@ -780,7 +779,7 @@ class LocomotionEnv(DirectRLEnv):
 
         # Train at some interval
         if (num_episode_from_start % self.cfg.rma_ep_saving_interval == 0 and 
-            num_episode_from_start > self.cfg.rma_ep_saving_interval - 1 and 
+            num_episode_from_start > self.cfg.rma_ep_saving_start - 1 and 
                 num_episode_from_start < num_final_episode_from_start - 500):  # Adjust the interval as needed
             self._rma_network.train_network(batch_size=self.cfg.rma_batch_size, 
                                             epochs=self.cfg.rma_train_epochs, 
