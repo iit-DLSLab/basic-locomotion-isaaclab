@@ -1,0 +1,42 @@
+--- git status ---
+HEAD detached from dc9bbf2
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+	modified:   source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	tested_policies/go2/go2_imu/
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+index cb55a8b..8fc520c 100644
+--- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
++++ b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+@@ -139,7 +139,7 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+         activation="elu",
+     )
+     algorithm = RslRlPpoAlgorithmCfg(
+-        class_name="PPO", #PPO, PPOSymmDataAugmented #AMP_PPO
++        class_name="PPOSymmDataAugmented", #PPO, PPOSymmDataAugmented #AMP_PPO
+         value_loss_coef=1.0,
+         use_clipped_value_loss=True,
+         clip_param=0.2,
+diff --git a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
+index 1ddd754..deeb177 100644
+--- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
++++ b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
+@@ -158,7 +158,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
+ 
+     use_imu = False
+ 
+-    use_cuncurrent_state_est = True
++    use_cuncurrent_state_est = False
+     if(use_cuncurrent_state_est):
+         cuncurrent_state_est_output_space = 3 #lin_vel_b
+         single_cuncurrent_state_est_observation_space = single_observation_space
