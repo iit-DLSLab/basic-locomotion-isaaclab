@@ -16,9 +16,9 @@ damping_mujoco = 2.0
 
 armature_mujoco = 0.01
 
-friction_static_mujoco = 0.2# * 0.0
-friction_dynamic_mujoco = 0.6# * 0.0
-activation_vel = 0.1# * 0.0
+friction_static_mujoco = 0.1# * 0.0
+friction_dynamic_mujoco = 0.01# * 0.0
+activation_vel = 0.01# * 0.0
 
 static_friction_hip = 0.5 * 0.0
 dynamic_friction_hip = 0.3 * 0.0

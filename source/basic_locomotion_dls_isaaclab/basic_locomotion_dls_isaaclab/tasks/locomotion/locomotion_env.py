@@ -345,13 +345,14 @@ class LocomotionEnv(DirectRLEnv):
         terrain_roll = torch.atan2(delta_z_roll, delta_s_roll)
         # TODO check if we need roll in base frame
         """
+        terrain_roll = torch.zeros_like(terrain_pitch)
 
 
         root_roll_w, root_pitch_w, _ = math_utils.euler_xyz_from_quat(self._robot.data.root_quat_w)
         root_roll_w = torch.atan2(torch.sin(root_roll_w), torch.cos(root_roll_w))
         root_pitch_w = torch.atan2(torch.sin(root_pitch_w), torch.cos(root_pitch_w))
         
-        base_orientation =  torch.square(terrain_pitch - root_pitch_w)# + torch.square(terrain_roll - root_roll_w)
+        base_orientation =  torch.square(terrain_pitch - root_pitch_w) + torch.square(terrain_roll - root_roll_w)
 
 
         # angular velocity x/y tracking
@@ -600,7 +601,7 @@ class LocomotionEnv(DirectRLEnv):
         self._commands[env_ids] = torch.zeros_like(self._commands[env_ids]).uniform_(-1.0, 1.0)
         self._commands[env_ids, 0] *= 0.5
         self._commands[env_ids, 1] *= 0.25 
-        self._commands[env_ids, 2] *= 0.3 
+        self._commands[env_ids, 2] *= 0.5 
 
         # Reset swing peak
         self._swing_peak[env_ids] = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device)
@@ -655,7 +656,7 @@ class LocomotionEnv(DirectRLEnv):
         commands_resample = torch.zeros_like(self._commands).uniform_(-1.0, 1.0)
         commands_resample[:, 0] *= 0.5
         commands_resample[:, 1] *= 0.25 
-        commands_resample[:, 2] *= 0.3 
+        commands_resample[:, 2] *= 0.5 
         self._commands[:, :3] = self._commands[:, :3] * ~resample_time.unsqueeze(1).expand(-1, 3) + commands_resample * resample_time.unsqueeze(1).expand(-1, 3)
 
         # Stop
@@ -670,7 +671,7 @@ class LocomotionEnv(DirectRLEnv):
         commands_resample_2 = torch.zeros_like(self._commands).uniform_(-1.0, 1.0)
         commands_resample_2[:, 0] *= 0.5
         commands_resample_2[:, 1] *= 0.25 
-        commands_resample_2[:, 2] *= 0.3 
+        commands_resample_2[:, 2] *= 0.5 
         self._commands[:, :3] = self._commands[:, :3] * ~resample_time_2.unsqueeze(1).expand(-1, 3) + commands_resample_2 * resample_time_2.unsqueeze(1).expand(-1, 3)        
 
         # Took some envs, and put to zero the vel
