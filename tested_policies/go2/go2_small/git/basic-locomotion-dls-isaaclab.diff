@@ -1,0 +1,77 @@
+--- git status ---
+HEAD detached from dc9bbf2
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   deploy/config.py
+	modified:   source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+	modified:   source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/aliengo_env_cfg.py
+	modified:   source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	tested_policies/aliengo/aliengo_small/
+	tested_policies/go2/go2_cuncurrent_se_with_delayed_start/
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/deploy/config.py b/deploy/config.py
+index f2e7540..9bb5350 100644
+--- a/deploy/config.py
++++ b/deploy/config.py
+@@ -38,7 +38,7 @@ else:
+ 
+ # ----------------------------------------------------------------------------------------------------------------
+ 
+-policy_folder_path = dir_path + "/../tested_policies/" + robot + "/aliengo_symmetricactor"
++policy_folder_path = dir_path + "/../tested_policies/" + robot + "/aliengo_small"
+ #policy_folder_path = dir_path + "/../tested_policies/" + robot + "/go2_5asymm"
+ 
+ cuncurrent_state_est_network = policy_folder_path + "/exported/cuncurrent_state_estimator.pth"
+diff --git a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+index cb55a8b..5b4fd7e 100644
+--- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
++++ b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+@@ -134,12 +134,12 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+         init_noise_std=1.0,
+         #actor_hidden_dims=[512, 256, 128],
+         #critic_hidden_dims=[512, 256, 128],
+-        actor_hidden_dims=[128, 128, 128],
++        actor_hidden_dims=[64, 64, 64],
+         critic_hidden_dims=[128, 128, 128],
+         activation="elu",
+     )
+     algorithm = RslRlPpoAlgorithmCfg(
+-        class_name="PPO", #PPO, PPOSymmDataAugmented #AMP_PPO
++        class_name="PPOSymmDataAugmented", #PPO, PPOSymmDataAugmented #AMP_PPO
+         value_loss_coef=1.0,
+         use_clipped_value_loss=True,
+         clip_param=0.2,
+diff --git a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/aliengo_env_cfg.py b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/aliengo_env_cfg.py
+index 59a9cba..59f196f 100644
+--- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/aliengo_env_cfg.py
++++ b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/aliengo_env_cfg.py
+@@ -159,7 +159,7 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
+ 
+     use_imu = False
+ 
+-    use_cuncurrent_state_est = True
++    use_cuncurrent_state_est = False
+     if(use_cuncurrent_state_est):
+         cuncurrent_state_est_output_space = 3 #lin_vel_b
+         single_cuncurrent_state_est_observation_space = single_observation_space
+diff --git a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
+index 906ac5e..4f5686e 100644
+--- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
++++ b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
+@@ -158,7 +158,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
+ 
+     use_imu = False
+ 
+-    use_cuncurrent_state_est = True
++    use_cuncurrent_state_est = False
+     if(use_cuncurrent_state_est):
+         cuncurrent_state_est_output_space = 3 #lin_vel_b
+         single_cuncurrent_state_est_observation_space = single_observation_space
