@@ -852,11 +852,15 @@ class LocomotionEnv(DirectRLEnv):
         delta_s = torch.tensor(distance_between_front_and_back).to(self.device)
         terrain_pitch = -torch.atan2(delta_z, delta_s)
 
+        contacts_foot = self._contact_sensor.data.net_forces_w_history[:, :, self._feet_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
+
         obs_privileged = torch.cat(( 
                             #hip_stiffness/default_stiffness, thigh_stiffness/default_stiffness, calf_stiffness/default_stiffness, #P gain
                             #hip_damping/default_damping, thigh_damping/default_damping, calf_damping/default_damping, #D gain
+                            self._robot.data.root_lin_vel_b,
                             height_error.unsqueeze(1),
                             terrain_pitch.unsqueeze(1),
+                            contacts_foot,
                             #masses, inertias,
                             #hip_static_friction, thigh_static_friction, calf_static_friction,  
                             #hip_dynamic_friction, thigh_dynamic_friction, calf_dynamic_friction, 
