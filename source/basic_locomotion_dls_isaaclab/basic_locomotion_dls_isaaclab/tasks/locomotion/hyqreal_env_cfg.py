@@ -211,15 +211,18 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
     use_asymmetric_ppo = False
     if(use_asymmetric_ppo):
         state_space = observation_space
-        state_space += 12 # P gain
-        state_space += 12 # D gain
+        #state_space += 12 # P gain
+        #state_space += 12 # D gain
         #state_space += 1*17 # mass*num_bodies
         #state_space += 1*17 # inertia*num_bodies
         #state_space += 1 # wrench
-        state_space += 12 # friction static
-        state_space += 12 # friction dynamic
-        state_space += 12 # armature
+        #state_space += 12 # friction static
+        #state_space += 12 # friction dynamic
+        #state_space += 12 # armature
         #state_space += 1 # restitution
+        state_space += 2 #base pitch and height
+        state_space += 3 #clean lin vel b
+        state_space += 4 #contacts foot
 
     use_amp = False
 

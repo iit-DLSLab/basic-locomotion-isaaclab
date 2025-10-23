@@ -1,0 +1,147 @@
+--- git status ---
+HEAD detached from dc9bbf2
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   deploy/config.py
+	modified:   source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+	modified:   source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
+	modified:   source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/locomotion_env.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	cuncurrent_state_estimator.pth
+	tested_policies/go2/flat_with_contact_asymm/
+	tested_policies/go2/go2_more_noise/
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/deploy/config.py b/deploy/config.py
+index f2e7540..1dfa9a6 100644
+--- a/deploy/config.py
++++ b/deploy/config.py
+@@ -4,12 +4,12 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
+ sys.path.append(dir_path+"/../")
+ sys.path.append(dir_path+"/../scripts/rsl_rl")
+ 
+-robot = 'aliengo'  # 'aliengo', 'go1', 'go2', 'b2', 'hyqreal1', 'hyqreal2', 'mini_cheetah' 
++robot = 'go2'  # 'aliengo', 'go1', 'go2', 'b2', 'hyqreal1', 'hyqreal2', 'mini_cheetah' 
+ scene = 'random_boxes'  # flat, random_boxes, random_pyramids, perlin
+ 
+ # ----------------------------------------------------------------------------------------------------------------
+ if(robot == "aliengo"):
+-    Kp_walking = 21.5
++    Kp_walking = 28.5
+     Kd_walking = 3.5
+ 
+     Kp_stand_up_and_down = 25.
+@@ -38,7 +38,7 @@ else:
+ 
+ # ----------------------------------------------------------------------------------------------------------------
+ 
+-policy_folder_path = dir_path + "/../tested_policies/" + robot + "/aliengo_symmetricactor"
++policy_folder_path = dir_path + "/../tested_policies/" + robot + "/flat_with_contact_asymm"
+ #policy_folder_path = dir_path + "/../tested_policies/" + robot + "/go2_5asymm"
+ 
+ cuncurrent_state_est_network = policy_folder_path + "/exported/cuncurrent_state_estimator.pth"
+diff --git a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+index 8fc520c..e212813 100644
+--- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
++++ b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+@@ -99,15 +99,24 @@ class FlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+             "actions",
+             "clock_data",
+         ]*int(history_length)
+-    obs_space_names_critic = obs_space_names_actor
+-    
++
++    #obs_space_names_actor += ["heightmap:rows4xcols4"]
++    #obs_space_names_actor += ["position_gains"]
++    #obs_space_names_actor += ["velocity_gains"]
++
++
+     # Symmetry Related Stuff -  Asymmetric Critic
+-    """obs_space_names_critic += ["position_gains", 
+-            "velocity_gains",
+-            "friction_static",
+-            "friction_dynamic",
+-            "armature"
+-        ]"""
++    obs_space_names_critic = [
++            "base_lin_vel:base",
++            "base_ang_vel:base",
++            "gravity:base",
++            "ctrl_commands",
++            "default_qpos_js_error",
++            "qvel_js",
++            "actions",
++            "clock_data",
++        ]*int(history_length)
++    obs_space_names_critic += ["base_lin_vel:base", "base_pos_z", "base_pos_z", "clock_data"]
+ 
+     morphologycal_symmetries_cfg = MorphologycalSymmetriesCfg(
+         obs_space_names_actor = obs_space_names_actor,
+@@ -193,7 +202,7 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+             "actions",
+             "clock_data",
+         ]*int(history_length)
+-    obs_space_names_critic += ["base_pos_z", "base_pos_z"]
++    obs_space_names_critic += ["base_lin_vel:base", "base_pos_z", "base_pos_z", "clock_data"]
+ 
+     morphologycal_symmetries_cfg = MorphologycalSymmetriesCfg(
+         obs_space_names_actor = obs_space_names_actor,
+diff --git a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
+index cd3994b..285fd7a 100644
+--- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
++++ b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
+@@ -167,7 +167,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
+         cuncurrent_state_est_train_epochs = 1000
+         cuncurrent_state_est_lr = 1e-3
+         cuncurrent_state_est_ep_saving_interval = 1000
+-        cuncurrent_state_est_ep_saving_start = 6000 
++        cuncurrent_state_est_ep_saving_start = 6000
+ 
+     use_rma = False
+     if(use_rma):
+@@ -203,6 +203,8 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
+         #state_space += 12 # armature
+         #state_space += 1 # restitution
+         state_space += 2 #base pitch and height
++        state_space += 3 #clean lin vel b
++        state_space += 4 #contacts foot
+ 
+     use_amp = False
+ 
+@@ -273,8 +275,8 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
+     )
+     # at every time-step add gaussian noise + bias. The bias is a gaussian sampled at reset
+     observation_noise_model: NoiseModelWithAdditiveBiasCfg = NoiseModelWithAdditiveBiasCfg(
+-        noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.002, operation="add"),
+-        bias_noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.0001, operation="abs"),
++        noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.02, operation="add"),
++        bias_noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.001, operation="abs"),
+     )
+ 
+     # robot
+diff --git a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/locomotion_env.py b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/locomotion_env.py
+index 76aa0c0..7903c9a 100644
+--- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/locomotion_env.py
++++ b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/locomotion_env.py
+@@ -852,11 +852,15 @@ class LocomotionEnv(DirectRLEnv):
+         delta_s = torch.tensor(distance_between_front_and_back).to(self.device)
+         terrain_pitch = -torch.atan2(delta_z, delta_s)
+ 
++        contacts_foot = self._contact_sensor.data.net_forces_w_history[:, :, self._feet_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
++
+         obs_privileged = torch.cat(( 
+                             #hip_stiffness/default_stiffness, thigh_stiffness/default_stiffness, calf_stiffness/default_stiffness, #P gain
+                             #hip_damping/default_damping, thigh_damping/default_damping, calf_damping/default_damping, #D gain
++                            self._robot.data.root_lin_vel_b,
+                             height_error.unsqueeze(1),
+                             terrain_pitch.unsqueeze(1),
++                            contacts_foot,
+                             #masses, inertias,
+                             #hip_static_friction, thigh_static_friction, calf_static_friction,  
+                             #hip_dynamic_friction, thigh_dynamic_friction, calf_dynamic_friction, 
