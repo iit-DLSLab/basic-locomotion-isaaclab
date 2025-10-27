@@ -1,0 +1,9 @@
+module dls2_interfaces {
+  	module msg {
+				struct Screw
+				{
+					double linear[3];
+					double angular[3];
+				};
+		};
+};
