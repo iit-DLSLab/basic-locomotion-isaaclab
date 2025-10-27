@@ -355,8 +355,7 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         trajectory_generator_msg = TrajectoryGenerator()
         trajectory_generator_msg.timestamp = float(self.get_clock().now().nanoseconds)
         trajectory_generator_msg.joints_position = np.array([desired_joint_pos.FL, desired_joint_pos.FR, desired_joint_pos.RL, desired_joint_pos.RR]).flatten().tolist()
-        desired_joint_vel = LegsAttr(*[np.zeros((1, int(env.mjModel.nu/4))) for _ in range(4)])
-        trajectory_generator_msg.joints_velocity = np.array([desired_joint_vel.FL, desired_joint_vel.FR, desired_joint_vel.RL, desired_joint_vel.RR]).flatten().tolist()
+        trajectory_generator_msg.joints_velocity = np.zeros(12).tolist()
         trajectory_generator_msg.kp = (np.ones(12) * Kp).tolist()
         trajectory_generator_msg.kd = (np.ones(12) * Kd).tolist()
 
