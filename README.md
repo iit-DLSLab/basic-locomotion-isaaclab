@@ -170,12 +170,12 @@ python3 deploy/play_mujoco.py
 cd deploy/ros1_ws
 catkin_make install -j4
 source install/setup.bash
-python3 deploy/play_ros1.py
+python3 deploy/run_controller_ros1.py
 
 ## Sim-to-Real with ROS2
 cd deploy/ros2_ws
 colcon build
 source install/setup.bash
-python3 deploy/play_ros2.py 
+python3 deploy/run_controller_ros2.py 
 ros2 launch teleop_twist_joy teleop-launch.py joy_config:='xbox' (if want joystick)
 ```
