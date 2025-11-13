@@ -13,7 +13,7 @@ class CustomDataset(Dataset):
         # There is a problem! we append (num_envs, features) as one element inside the list, not N!
 
         # Save only random 128 element from the input_data and label
-        random_idx = random.sample(range(input_data.size(0)), min(128, input_data.size(0)))
+        random_idx = random.sample(range(input_data.size(0)), min(512, input_data.size(0)))
         input_data_cpu = input_data[random_idx].clone().detach().cpu()
         label_cpu = label[random_idx].clone().detach().cpu()
 
@@ -82,50 +82,114 @@ class SimpleNN(torch.nn.Module):
         self.fc2 = torch.nn.Linear(128, 64)
         self.fc3 = torch.nn.Linear(64, out_features)
 
-        self.dataset = CustomDataset(max_size=20000)
+        self.dataset = CustomDataset(max_size=40000)
 
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = torch.tanh(self.fc3(x))*2.0
         return x
     
 
-    def train_network(self, batch_size=512, epochs=1000, learning_rate=1e-3, device='cpu'):
-        with torch.inference_mode(False):
-            with torch.enable_grad():
-                # Define optimizer and loss function
-                optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-                loss_fn = torch.nn.MSELoss()
-    
-                # Create a DataLoader for batching
-                dataloader = torch.utils.data.DataLoader(
-                    self.dataset,
-                    batch_size=batch_size,
-                    shuffle=True
-                )
-    
-                # Training loop
-                self.train()
-                for epoch in range(epochs):
-                    for inputs, targets in dataloader:
+    def train_network(self, batch_size=512, epochs=1000, learning_rate=1e-3, device='cpu', validation_split=0.2):
+        """Train the network with validation loss tracking.
+        
+        Args:
+            batch_size: Batch size for training
+            epochs: Number of training epochs
+            learning_rate: Learning rate for optimizer
+            device: Device to train on ('cpu' or 'cuda')
+            validation_split: Fraction of data to use for validation (0.0 to 1.0)
+        """
+        # Split dataset into training and validation
+        dataset_size = len(self.dataset)
+        if dataset_size == 0:
+            print("Warning: Dataset is empty. Cannot train.")
+            return
+        
+        val_size = int(dataset_size * validation_split)
+        train_size = dataset_size - val_size
+        
+        train_dataset, val_dataset = torch.utils.data.random_split(
+            self.dataset, 
+            [train_size, val_size]
+        )
+        
+        # Define optimizer and loss function
+        optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
+        loss_fn = torch.nn.MSELoss()
+
+        # Create DataLoaders for training and validation
+        train_loader = torch.utils.data.DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True
+        )
+        
+        val_loader = torch.utils.data.DataLoader(
+            val_dataset,
+            batch_size=batch_size,
+            shuffle=False
+        )
+
+        # Training loop
+        best_val_loss = float('inf')
+        
+        for epoch in range(epochs):
+            with torch.inference_mode(False):
+                with torch.enable_grad():
+                # Training phase
+                    self.train()
+                    train_loss = 0.0
+                    train_batches = 0
                     
+                    for inputs, targets in train_loader:
                         # Forward pass
-                        inputs = inputs.view(-1, inputs.size(-1)).to(device)
-                        targets = targets.view(-1, targets.size(-1)).to(device)
+                        inputs = inputs.view(-1, inputs.size(-1)).clone().to(device)
+                        targets = targets.view(-1, targets.size(-1)).clone().to(device)
                         predictions = self(inputs)
-    
+
                         loss = loss_fn(predictions, targets)
-    
+
                         # Backward pass and optimization
                         optimizer.zero_grad()
                         loss.backward()
                         optimizer.step()
-    
-                    print(f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item()}")
+                        
+                        train_loss += loss.item()
+                        train_batches += 1
+                    
+                    avg_train_loss = train_loss / train_batches if train_batches > 0 else 0.0
+            
+            # Validation phase
+            self.eval()
+            val_loss = 0.0
+            val_batches = 0
+            
+            with torch.no_grad():
+                for inputs, targets in val_loader:
+                    inputs = inputs.view(-1, inputs.size(-1)).clone().to(device)
+                    targets = targets.view(-1, targets.size(-1)).clone().to(device)
+                    predictions = self(inputs)
+                    
+                    loss = loss_fn(predictions, targets)
+                    val_loss += loss.item()
+                    val_batches += 1
+            
+            avg_val_loss = val_loss / val_batches if val_batches > 0 else 0.0
+            
+            # Track best validation loss
+            if avg_val_loss < best_val_loss:
+                best_val_loss = avg_val_loss
+            
+            # Print progress
+            if (epoch + 1) % 10 == 0 or epoch == 0:
+                print(f"Epoch {epoch + 1}/{epochs} - Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}")
+        
         self.eval()
-        print("Training complete. Model set to evaluation mode.")
+        print(f"Training complete. Best validation loss: {best_val_loss:.6f}")
+        print("Model set to evaluation mode.")
 
 
     def save_network(self, filepath, device='cpu'):

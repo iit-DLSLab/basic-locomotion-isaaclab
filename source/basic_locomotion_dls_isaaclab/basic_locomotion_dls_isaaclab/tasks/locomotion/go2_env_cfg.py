@@ -167,6 +167,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
         cuncurrent_state_est_train_epochs = 1000
         cuncurrent_state_est_lr = 1e-3
         cuncurrent_state_est_ep_saving_interval = 1000
+        cuncurrent_state_est_ep_saving_start = 6000
 
     use_rma = False
     if(use_rma):
@@ -182,6 +183,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
         rma_train_epochs = 1000
         rma_lr = 1e-3
         rma_ep_saving_interval = 1000
+        rma_ep_saving_start = 6000
         
     
     use_filter_actions = True
@@ -201,6 +203,8 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
         #state_space += 12 # armature
         #state_space += 1 # restitution
         state_space += 2 #base pitch and height
+        state_space += 3 #clean lin vel b
+        state_space += 4 #contacts foot
 
     use_amp = False
 
@@ -271,8 +275,8 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     )
     # at every time-step add gaussian noise + bias. The bias is a gaussian sampled at reset
     observation_noise_model: NoiseModelWithAdditiveBiasCfg = NoiseModelWithAdditiveBiasCfg(
-        noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.002, operation="add"),
-        bias_noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.0001, operation="abs"),
+        noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.02, operation="add"),
+        bias_noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.001, operation="abs"),
     )
 
     # robot
@@ -283,7 +287,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
     # Desired tracking variables
     desired_base_height = 0.30
-    desired_feet_height = 0.05
+    desired_feet_height = 0.04
 
     # Desired clip actions
     desired_clip_actions = 3.0

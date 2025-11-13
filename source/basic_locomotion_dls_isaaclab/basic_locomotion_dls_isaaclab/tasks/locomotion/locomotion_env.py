@@ -345,13 +345,14 @@ class LocomotionEnv(DirectRLEnv):
         terrain_roll = torch.atan2(delta_z_roll, delta_s_roll)
         # TODO check if we need roll in base frame
         """
+        terrain_roll = torch.zeros_like(terrain_pitch)
 
 
         root_roll_w, root_pitch_w, _ = math_utils.euler_xyz_from_quat(self._robot.data.root_quat_w)
         root_roll_w = torch.atan2(torch.sin(root_roll_w), torch.cos(root_roll_w))
         root_pitch_w = torch.atan2(torch.sin(root_pitch_w), torch.cos(root_pitch_w))
         
-        base_orientation =  torch.square(terrain_pitch - root_pitch_w)# + torch.square(terrain_roll - root_roll_w)
+        base_orientation =  torch.square(terrain_pitch - root_pitch_w) + torch.square(terrain_roll - root_roll_w)
 
 
         # angular velocity x/y tracking
@@ -418,7 +419,6 @@ class LocomotionEnv(DirectRLEnv):
         contacts_foot = self._contact_sensor.data.net_forces_w_history[:, :, self._feet_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
         body_vel = self._robot.data.body_lin_vel_w[:, self._feet_ids_robot, :2]
         feet_slide = torch.sum(body_vel.norm(dim=-1) * contacts_foot, dim=1)
-        feet_slide = torch.exp(-feet_slide / 0.1)
 
 
         # feet periodical contacts suggestion
@@ -601,7 +601,7 @@ class LocomotionEnv(DirectRLEnv):
         self._commands[env_ids] = torch.zeros_like(self._commands[env_ids]).uniform_(-1.0, 1.0)
         self._commands[env_ids, 0] *= 0.5
         self._commands[env_ids, 1] *= 0.25 
-        self._commands[env_ids, 2] *= 0.3 
+        self._commands[env_ids, 2] *= 0.5 
 
         # Reset swing peak
         self._swing_peak[env_ids] = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device)
@@ -656,7 +656,7 @@ class LocomotionEnv(DirectRLEnv):
         commands_resample = torch.zeros_like(self._commands).uniform_(-1.0, 1.0)
         commands_resample[:, 0] *= 0.5
         commands_resample[:, 1] *= 0.25 
-        commands_resample[:, 2] *= 0.3 
+        commands_resample[:, 2] *= 0.5 
         self._commands[:, :3] = self._commands[:, :3] * ~resample_time.unsqueeze(1).expand(-1, 3) + commands_resample * resample_time.unsqueeze(1).expand(-1, 3)
 
         # Stop
@@ -671,7 +671,7 @@ class LocomotionEnv(DirectRLEnv):
         commands_resample_2 = torch.zeros_like(self._commands).uniform_(-1.0, 1.0)
         commands_resample_2[:, 0] *= 0.5
         commands_resample_2[:, 1] *= 0.25 
-        commands_resample_2[:, 2] *= 0.3 
+        commands_resample_2[:, 2] *= 0.5 
         self._commands[:, :3] = self._commands[:, :3] * ~resample_time_2.unsqueeze(1).expand(-1, 3) + commands_resample_2 * resample_time_2.unsqueeze(1).expand(-1, 3)        
 
         # Took some envs, and put to zero the vel
@@ -716,7 +716,7 @@ class LocomotionEnv(DirectRLEnv):
         # Prediction
         num_episode_from_start = self.common_step_counter / 24. #self.max_episode_length #HACK this should be taken from rsl rl
         num_final_episode_from_start = 8000.
-        if num_episode_from_start > self.cfg.cuncurrent_state_est_ep_saving_interval:
+        if num_episode_from_start > self.cfg.cuncurrent_state_est_ep_saving_start:
             with torch.no_grad(): 
                 prediction_cuncurrent_state_est = self._cuncurrent_state_est_network(obs_cuncurrent_state_est)
             linear_velocity_b = prediction_cuncurrent_state_est[:, :3]
@@ -725,7 +725,7 @@ class LocomotionEnv(DirectRLEnv):
 
         # Train at some interval
         if (num_episode_from_start % self.cfg.cuncurrent_state_est_ep_saving_interval == 0 and 
-            num_episode_from_start > self.cfg.cuncurrent_state_est_ep_saving_interval - 1 and 
+            num_episode_from_start > self.cfg.cuncurrent_state_est_ep_saving_start - 1 and 
                 num_episode_from_start < num_final_episode_from_start - 500):  # Adjust the interval as needed
             self._cuncurrent_state_est_network.train_network(batch_size=self.cfg.cuncurrent_state_est_batch_size, 
                                                             epochs=self.cfg.cuncurrent_state_est_train_epochs, 
@@ -771,7 +771,7 @@ class LocomotionEnv(DirectRLEnv):
         # Prediction
         num_episode_from_start = self.common_step_counter / 24. #self.max_episode_length #HACK this should be taken from rsl rl
         num_final_episode_from_start = 8000.
-        if num_episode_from_start > self.cfg.rma_ep_saving_interval:
+        if num_episode_from_start > self.cfg.rma_ep_saving_start:
             with torch.no_grad(): 
                 prediction_rma = self._rma_network(obs)
             obs_rma = prediction_rma
@@ -780,7 +780,7 @@ class LocomotionEnv(DirectRLEnv):
 
         # Train at some interval
         if (num_episode_from_start % self.cfg.rma_ep_saving_interval == 0 and 
-            num_episode_from_start > self.cfg.rma_ep_saving_interval - 1 and 
+            num_episode_from_start > self.cfg.rma_ep_saving_start - 1 and 
                 num_episode_from_start < num_final_episode_from_start - 500):  # Adjust the interval as needed
             self._rma_network.train_network(batch_size=self.cfg.rma_batch_size, 
                                             epochs=self.cfg.rma_train_epochs, 
@@ -852,11 +852,15 @@ class LocomotionEnv(DirectRLEnv):
         delta_s = torch.tensor(distance_between_front_and_back).to(self.device)
         terrain_pitch = -torch.atan2(delta_z, delta_s)
 
+        contacts_foot = self._contact_sensor.data.net_forces_w_history[:, :, self._feet_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
+
         obs_privileged = torch.cat(( 
                             #hip_stiffness/default_stiffness, thigh_stiffness/default_stiffness, calf_stiffness/default_stiffness, #P gain
                             #hip_damping/default_damping, thigh_damping/default_damping, calf_damping/default_damping, #D gain
+                            self._robot.data.root_lin_vel_b,
                             height_error.unsqueeze(1),
                             terrain_pitch.unsqueeze(1),
+                            contacts_foot,
                             #masses, inertias,
                             #hip_static_friction, thigh_static_friction, calf_static_friction,  
                             #hip_dynamic_friction, thigh_dynamic_friction, calf_dynamic_friction, 

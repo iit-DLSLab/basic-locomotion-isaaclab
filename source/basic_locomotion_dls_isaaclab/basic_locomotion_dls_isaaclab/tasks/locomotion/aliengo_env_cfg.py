@@ -159,7 +159,7 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
 
     use_imu = False
 
-    use_cuncurrent_state_est = True
+    use_cuncurrent_state_est = False
     if(use_cuncurrent_state_est):
         cuncurrent_state_est_output_space = 3 #lin_vel_b
         single_cuncurrent_state_est_observation_space = single_observation_space
@@ -168,6 +168,7 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
         cuncurrent_state_est_train_epochs = 1000
         cuncurrent_state_est_lr = 1e-3
         cuncurrent_state_est_ep_saving_interval = 1000
+        cuncurrent_state_est_ep_saving_start = 6000
 
     use_rma = False
     if(use_rma):
@@ -183,6 +184,7 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
         rma_train_epochs = 1000
         rma_lr = 1e-3
         rma_ep_saving_interval = 1000
+        rma_ep_saving_start = 6000
         
 
     use_filter_actions = True
@@ -202,6 +204,8 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
         #state_space += 12 # armature
         #state_space += 1 # restitution
         state_space += 2 #base pitch and height
+        state_space += 3 #clean lin vel b
+        state_space += 4 #contacts foot
 
     use_amp = False
 
