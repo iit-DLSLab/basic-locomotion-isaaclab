@@ -4,8 +4,6 @@ file(REMOVE_RECURSE
   "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_base_state_s.c.o.d"
   "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_blind_state_s.c.o"
   "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_blind_state_s.c.o.d"
-  "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.o"
-  "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.o.d"
   "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_imu_s.c.o"
   "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_imu_s.c.o.d"
   "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_pose_s.c.o"

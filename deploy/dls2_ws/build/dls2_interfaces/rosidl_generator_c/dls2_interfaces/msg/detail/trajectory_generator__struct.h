@@ -40,6 +40,9 @@ extern "C"
 #include "rosidl_runtime_c/primitives_sequence.h"
 
 /// Struct defined in msg/TrajectoryGenerator in the package dls2_interfaces.
+/**
+  * Header
+ */
 typedef struct dls2_interfaces__msg__TrajectoryGenerator
 {
   rosidl_runtime_c__String frame_id;

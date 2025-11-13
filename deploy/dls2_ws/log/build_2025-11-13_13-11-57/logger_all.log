@@ -1,0 +1,153 @@
+[0.113s] [34mcolcon[0m [1;30mDEBUG[0m [32mCommand line arguments: ['/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/colcon', 'build'][0m
+[0.113s] [34mcolcon[0m [1;30mDEBUG[0m [32mParsed command line arguments: Namespace(log_base=None, log_level=None, verb_name='build', build_base='build', install_base='install', merge_install=False, symlink_install=False, test_result_base=None, continue_on_error=False, executor='parallel', parallel_workers=20, event_handlers=None, ignore_user_meta=False, metas=['./colcon.meta'], base_paths=['.'], packages_ignore=None, packages_ignore_regex=None, paths=None, packages_up_to=None, packages_up_to_regex=None, packages_above=None, packages_above_and_dependencies=None, packages_above_depth=None, packages_select_by_dep=None, packages_skip_by_dep=None, packages_skip_up_to=None, packages_select_build_failed=False, packages_skip_build_finished=False, packages_select_test_failures=False, packages_skip_test_passed=False, packages_select=None, packages_skip=None, packages_select_regex=None, packages_skip_regex=None, packages_start=None, packages_end=None, cmake_args=None, cmake_target=None, cmake_target_skip_unavailable=False, cmake_clean_cache=False, cmake_clean_first=False, cmake_force_configure=False, ament_cmake_args=None, catkin_cmake_args=None, catkin_skip_building_tests=False, verb_parser=<colcon_defaults.argument_parser.defaults.DefaultArgumentsDecorator object at 0x70f7b7e734d0>, verb_extension=<colcon_core.verb.build.BuildVerb object at 0x70f7b7c92650>, main=<bound method BuildVerb.main of <colcon_core.verb.build.BuildVerb object at 0x70f7b7c92650>>)[0m
+[0.148s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(colcon_meta) check parameters
+[0.148s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(recursive) check parameters
+[0.148s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(ignore) check parameters
+[0.148s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(path) check parameters
+[0.148s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(colcon_meta) discover
+[0.148s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(recursive) discover
+[0.148s] [34mcolcon.colcon_core.package_discovery[0m [1;30mINFO[0m Crawling recursively for packages in '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws'
+[0.148s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['ignore', 'ignore_ament_install']
+[0.148s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'ignore'
+[0.148s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'ignore_ament_install'
+[0.148s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['colcon_pkg']
+[0.148s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'colcon_pkg'
+[0.148s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['colcon_meta']
+[0.148s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'colcon_meta'
+[0.148s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['ros']
+[0.148s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'ros'
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['cmake', 'python']
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'cmake'
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'python'
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extensions ['python_setup_py']
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(.) by extension 'python_setup_py'
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(build) by extensions ['ignore', 'ignore_ament_install']
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(build) by extension 'ignore'
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(build) ignored
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(install) by extensions ['ignore', 'ignore_ament_install']
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(install) by extension 'ignore'
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(install) ignored
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(log) by extensions ['ignore', 'ignore_ament_install']
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(log) by extension 'ignore'
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(log) ignored
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['ignore', 'ignore_ament_install']
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'ignore'
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'ignore_ament_install'
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['colcon_pkg']
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'colcon_pkg'
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['colcon_meta']
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'colcon_meta'
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['ros']
+[0.168s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'ros'
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['cmake', 'python']
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'cmake'
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'python'
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extensions ['python_setup_py']
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src) by extension 'python_setup_py'
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/dls2_interfaces) by extensions ['ignore', 'ignore_ament_install']
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/dls2_interfaces) by extension 'ignore'
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/dls2_interfaces) by extension 'ignore_ament_install'
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/dls2_interfaces) by extensions ['colcon_pkg']
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/dls2_interfaces) by extension 'colcon_pkg'
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/dls2_interfaces) by extensions ['colcon_meta']
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/dls2_interfaces) by extension 'colcon_meta'
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/dls2_interfaces) by extensions ['ros']
+[0.169s] [34mcolcon.colcon_core.package_identification[0m [1;30mLevel 1[0m _identify(src/dls2_interfaces) by extension 'ros'
+[0.171s] [34mcolcon.colcon_core.package_identification[0m [1;30mDEBUG[0m [32mPackage 'src/dls2_interfaces' with type 'ros.ament_cmake' and name 'dls2_interfaces'[0m
+[0.171s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(recursive) using defaults
+[0.171s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(ignore) discover
+[0.171s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(ignore) using defaults
+[0.171s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(path) discover
+[0.171s] [34mcolcon.colcon_core.package_discovery[0m [1;30mLevel 1[0m discover_packages(path) using defaults
+[0.184s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'dls2_interfaces' build argument 'cmake_args' from command line to 'None'
+[0.184s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'dls2_interfaces' build argument 'cmake_target' from command line to 'None'
+[0.184s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'dls2_interfaces' build argument 'cmake_target_skip_unavailable' from command line to 'False'
+[0.184s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'dls2_interfaces' build argument 'cmake_clean_cache' from command line to 'False'
+[0.184s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'dls2_interfaces' build argument 'cmake_clean_first' from command line to 'False'
+[0.184s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'dls2_interfaces' build argument 'cmake_force_configure' from command line to 'False'
+[0.184s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'dls2_interfaces' build argument 'ament_cmake_args' from command line to 'None'
+[0.184s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'dls2_interfaces' build argument 'catkin_cmake_args' from command line to 'None'
+[0.184s] [34mcolcon.colcon_core.verb[0m [1;30mLevel 5[0m set package 'dls2_interfaces' build argument 'catkin_skip_building_tests' from command line to 'False'
+[0.184s] [34mcolcon.colcon_core.verb[0m [1;30mDEBUG[0m [32mBuilding package 'dls2_interfaces' with the following arguments: {'ament_cmake_args': None, 'build_base': '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces', 'catkin_cmake_args': None, 'catkin_skip_building_tests': False, 'cmake_args': None, 'cmake_clean_cache': False, 'cmake_clean_first': False, 'cmake_force_configure': False, 'cmake_target': None, 'cmake_target_skip_unavailable': False, 'install_base': '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces', 'merge_install': False, 'path': '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces', 'symlink_install': False, 'test_result_base': None}[0m
+[0.184s] [34mcolcon.colcon_core.executor[0m [1;30mINFO[0m Executing jobs using 'parallel' executor
+[0.185s] [34mcolcon.colcon_parallel_executor.executor.parallel[0m [1;30mDEBUG[0m [32mrun_until_complete[0m
+[0.185s] [34mcolcon.colcon_ros.task.ament_cmake.build[0m [1;30mINFO[0m Building ROS package in '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces' with build type 'ament_cmake'
+[0.185s] [34mcolcon.colcon_cmake.task.cmake.build[0m [1;30mINFO[0m Building CMake package in '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces'
+[0.187s] [34mcolcon.colcon_core.plugin_system[0m [1;30mINFO[0m Skipping extension 'colcon_core.shell.bat': Not used on non-Windows systems
+[0.187s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Skip shell extension 'powershell' for command environment: Not usable outside of PowerShell
+[0.187s] [34mcolcon.colcon_core.shell[0m [1;30mDEBUG[0m [32mSkip shell extension 'dsv' for command environment[0m
+[0.188s] [34mcolcon.colcon_ros.prefix_path.ament[0m [1;30mWARNING[0m [33mThe path '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces' in the environment variable AMENT_PREFIX_PATH doesn't exist[0m
+[0.188s] [34mcolcon.colcon_ros.prefix_path.catkin[0m [1;30mWARNING[0m [33mThe path '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces' in the environment variable CMAKE_PREFIX_PATH doesn't exist[0m
+[0.195s] [34mcolcon.colcon_core.event_handler.log_command[0m [1;30mDEBUG[0m [32mInvoking command in '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces': CONDA_PROMPT_MODIFIER=(basic_locomotion_dls_isaaclab_ros2_env) /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/cmake /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces -DCMAKE_INSTALL_PREFIX=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces[0m
+[3.795s] [34mcolcon.colcon_core.event_handler.log_command[0m [1;30mDEBUG[0m [32mInvoked command in '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces' returned '0': CONDA_PROMPT_MODIFIER=(basic_locomotion_dls_isaaclab_ros2_env) /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/cmake /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces -DCMAKE_INSTALL_PREFIX=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces[0m
+[3.796s] [34mcolcon.colcon_core.event_handler.log_command[0m [1;30mDEBUG[0m [32mInvoking command in '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces': CONDA_PROMPT_MODIFIER=(basic_locomotion_dls_isaaclab_ros2_env) /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/cmake --build /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces -- -j20 -l20[0m
+[6.590s] [34mcolcon.colcon_core.event_handler.log_command[0m [1;30mDEBUG[0m [32mInvoked command in '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces' returned '0': CONDA_PROMPT_MODIFIER=(basic_locomotion_dls_isaaclab_ros2_env) /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/cmake --build /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces -- -j20 -l20[0m
+[6.598s] [34mcolcon.colcon_core.event_handler.log_command[0m [1;30mDEBUG[0m [32mInvoking command in '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces': CONDA_PROMPT_MODIFIER=(basic_locomotion_dls_isaaclab_ros2_env) /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/cmake --install /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces[0m
+[6.651s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m create_environment_scripts_only(dls2_interfaces)
+[6.652s] [34mcolcon.colcon_core.event_handler.log_command[0m [1;30mDEBUG[0m [32mInvoked command in '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces' returned '0': CONDA_PROMPT_MODIFIER=(basic_locomotion_dls_isaaclab_ros2_env) /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/cmake --install /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces[0m
+[6.656s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces' for CMake module files
+[6.657s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces' for CMake config files
+[6.658s] [34mcolcon.colcon_core.shell[0m [1;30mLevel 1[0m create_environment_hook('dls2_interfaces', 'cmake_prefix_path')
+[6.658s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/cmake_prefix_path.ps1'
+[6.659s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment descriptor '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/cmake_prefix_path.dsv'
+[6.660s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/cmake_prefix_path.sh'
+[6.661s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/lib'
+[6.661s] [34mcolcon.colcon_core.shell[0m [1;30mLevel 1[0m create_environment_hook('dls2_interfaces', 'ld_library_path_lib')
+[6.661s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/ld_library_path_lib.ps1'
+[6.661s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment descriptor '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/ld_library_path_lib.dsv'
+[6.661s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/ld_library_path_lib.sh'
+[6.662s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/bin'
+[6.662s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/lib/pkgconfig/dls2_interfaces.pc'
+[6.663s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/lib/python3.11/site-packages'
+[6.663s] [34mcolcon.colcon_core.shell[0m [1;30mLevel 1[0m create_environment_hook('dls2_interfaces', 'pythonpath')
+[6.663s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/pythonpath.ps1'
+[6.663s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment descriptor '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/pythonpath.dsv'
+[6.663s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/pythonpath.sh'
+[6.664s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/bin'
+[6.664s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/package.ps1'
+[6.665s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package descriptor '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/package.dsv'
+[6.666s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/package.sh'
+[6.666s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/package.bash'
+[6.667s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/package.zsh'
+[6.667s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m create_file_with_runtime_dependencies(/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/colcon-core/packages/dls2_interfaces)
+[6.668s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m create_environment_scripts_only(dls2_interfaces)
+[6.668s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces' for CMake module files
+[6.668s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces' for CMake config files
+[6.668s] [34mcolcon.colcon_core.shell[0m [1;30mLevel 1[0m create_environment_hook('dls2_interfaces', 'cmake_prefix_path')
+[6.669s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/cmake_prefix_path.ps1'
+[6.669s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment descriptor '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/cmake_prefix_path.dsv'
+[6.669s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/cmake_prefix_path.sh'
+[6.669s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/lib'
+[6.669s] [34mcolcon.colcon_core.shell[0m [1;30mLevel 1[0m create_environment_hook('dls2_interfaces', 'ld_library_path_lib')
+[6.669s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/ld_library_path_lib.ps1'
+[6.670s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment descriptor '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/ld_library_path_lib.dsv'
+[6.670s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/ld_library_path_lib.sh'
+[6.670s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/bin'
+[6.670s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/lib/pkgconfig/dls2_interfaces.pc'
+[6.670s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/lib/python3.11/site-packages'
+[6.670s] [34mcolcon.colcon_core.shell[0m [1;30mLevel 1[0m create_environment_hook('dls2_interfaces', 'pythonpath')
+[6.670s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/pythonpath.ps1'
+[6.671s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment descriptor '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/pythonpath.dsv'
+[6.671s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating environment hook '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/hook/pythonpath.sh'
+[6.671s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m checking '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/bin'
+[6.671s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/package.ps1'
+[6.671s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package descriptor '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/package.dsv'
+[6.672s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/package.sh'
+[6.672s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/package.bash'
+[6.672s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating package script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/dls2_interfaces/package.zsh'
+[6.672s] [34mcolcon.colcon_core.environment[0m [1;30mLevel 1[0m create_file_with_runtime_dependencies(/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/dls2_interfaces/share/colcon-core/packages/dls2_interfaces)
+[6.672s] [34mcolcon.colcon_parallel_executor.executor.parallel[0m [1;30mDEBUG[0m [32mclosing loop[0m
+[6.673s] [34mcolcon.colcon_parallel_executor.executor.parallel[0m [1;30mDEBUG[0m [32mloop closed[0m
+[6.673s] [34mcolcon.colcon_parallel_executor.executor.parallel[0m [1;30mDEBUG[0m [32mrun_until_complete finished with '0'[0m
+[6.673s] [34mcolcon.colcon_core.event_reactor[0m [1;30mDEBUG[0m [32mjoining thread[0m
+[6.673s] [34mcolcon.colcon_core.event_reactor[0m [1;30mDEBUG[0m [32mjoined thread[0m
+[6.673s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/local_setup.ps1'
+[6.674s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix util module '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/_local_setup_util_ps1.py'
+[6.674s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix chain script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/setup.ps1'
+[6.675s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/local_setup.sh'
+[6.675s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix util module '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/_local_setup_util_sh.py'
+[6.675s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix chain script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/setup.sh'
+[6.676s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/local_setup.bash'
+[6.676s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix chain script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/setup.bash'
+[6.677s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/local_setup.zsh'
+[6.677s] [34mcolcon.colcon_core.shell[0m [1;30mINFO[0m Creating prefix chain script '/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/install/setup.zsh'

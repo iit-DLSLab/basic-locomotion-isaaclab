@@ -96,11 +96,6 @@ CMakeFiles/dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail
 CMakeFiles/dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/trajectory_generator__struct.hpp
 CMakeFiles/dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/trajectory_generator__traits.hpp
 CMakeFiles/dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/trajectory_generator__type_support.hpp
-CMakeFiles/dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/desired_torques.hpp
-CMakeFiles/dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__builder.hpp
-CMakeFiles/dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__struct.hpp
-CMakeFiles/dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__traits.hpp
-CMakeFiles/dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__type_support.hpp
 CMakeFiles/dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/rosidl_generator_cpp__visibility_control.hpp
 
 rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/rosidl_generator_cpp/rosidl_generator_cpp
@@ -118,13 +113,12 @@ rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/mini
 rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_cpp/resource/srv__builder.hpp.em
 rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_cpp/resource/srv__struct.hpp.em
 rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_cpp/resource/srv__traits.hpp.em
-rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Pose.idl
-rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Screw.idl
-rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/BlindState.idl
-rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/BaseState.idl
-rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Imu.idl
-rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/TrajectoryGenerator.idl
-rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/DesiredTorques.idl
+rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: rosidl_adapter/dls2_interfaces/msg/Pose.idl
+rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: rosidl_adapter/dls2_interfaces/msg/Screw.idl
+rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: rosidl_adapter/dls2_interfaces/msg/BlindState.idl
+rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: rosidl_adapter/dls2_interfaces/msg/BaseState.idl
+rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: rosidl_adapter/dls2_interfaces/msg/Imu.idl
+rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp: rosidl_adapter/dls2_interfaces/msg/TrajectoryGenerator.idl
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating C++ code for ROS interfaces"
 	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/python3 /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_cpp/cmake/../../../lib/rosidl_generator_cpp/rosidl_generator_cpp --generator-arguments-file /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_cpp__arguments.json
 
@@ -215,28 +209,12 @@ rosidl_generator_cpp/dls2_interfaces/msg/detail/trajectory_generator__traits.hpp
 rosidl_generator_cpp/dls2_interfaces/msg/detail/trajectory_generator__type_support.hpp: rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/dls2_interfaces/msg/detail/trajectory_generator__type_support.hpp
 
-rosidl_generator_cpp/dls2_interfaces/msg/desired_torques.hpp: rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/dls2_interfaces/msg/desired_torques.hpp
-
-rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__builder.hpp: rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__builder.hpp
-
-rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__struct.hpp: rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__struct.hpp
-
-rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__traits.hpp: rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__traits.hpp
-
-rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__type_support.hpp: rosidl_generator_cpp/dls2_interfaces/msg/pose.hpp
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__type_support.hpp
-
 CMakeFiles/dls2_interfaces__cpp.dir/codegen:
 .PHONY : CMakeFiles/dls2_interfaces__cpp.dir/codegen
 
 dls2_interfaces__cpp: CMakeFiles/dls2_interfaces__cpp
 dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/base_state.hpp
 dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/blind_state.hpp
-dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/desired_torques.hpp
 dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/base_state__builder.hpp
 dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/base_state__struct.hpp
 dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/base_state__traits.hpp
@@ -245,10 +223,6 @@ dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/blind_stat
 dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/blind_state__struct.hpp
 dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/blind_state__traits.hpp
 dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/blind_state__type_support.hpp
-dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__builder.hpp
-dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__struct.hpp
-dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__traits.hpp
-dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/desired_torques__type_support.hpp
 dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/imu__builder.hpp
 dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/imu__struct.hpp
 dls2_interfaces__cpp: rosidl_generator_cpp/dls2_interfaces/msg/detail/imu__traits.hpp

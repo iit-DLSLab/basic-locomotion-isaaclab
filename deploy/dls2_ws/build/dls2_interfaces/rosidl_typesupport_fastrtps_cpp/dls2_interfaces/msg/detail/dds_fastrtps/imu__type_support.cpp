@@ -42,10 +42,6 @@ cdr_serialize(
   {
     cdr << ros_message.orientation;
   }
-  // Member: orientation_rpy
-  {
-    cdr << ros_message.orientation_rpy;
-  }
   // Member: orientation_covariance
   {
     cdr << ros_message.orientation_covariance;
@@ -87,11 +83,6 @@ cdr_deserialize(
   // Member: orientation
   {
     cdr >> ros_message.orientation;
-  }
-
-  // Member: orientation_rpy
-  {
-    cdr >> ros_message.orientation_rpy;
   }
 
   // Member: orientation_covariance
@@ -155,13 +146,6 @@ get_serialized_size(
   {
     size_t array_size = 4;
     size_t item_size = sizeof(ros_message.orientation[0]);
-    current_alignment += array_size * item_size +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, item_size);
-  }
-  // Member: orientation_rpy
-  {
-    size_t array_size = 3;
-    size_t item_size = sizeof(ros_message.orientation_rpy[0]);
     current_alignment += array_size * item_size +
       eprosima::fastcdr::Cdr::alignment(current_alignment, item_size);
   }
@@ -258,15 +242,6 @@ max_serialized_size_Imu(
   // Member: orientation
   {
     size_t array_size = 4;
-
-    last_member_size = array_size * sizeof(uint64_t);
-    current_alignment += array_size * sizeof(uint64_t) +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, sizeof(uint64_t));
-  }
-
-  // Member: orientation_rpy
-  {
-    size_t array_size = 3;
 
     last_member_size = array_size * sizeof(uint64_t);
     current_alignment += array_size * sizeof(uint64_t) +

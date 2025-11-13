@@ -82,13 +82,12 @@ rosidl_generator_c/dls2_interfaces/msg/pose.h: /home/iit.local/gturrisi/miniforg
 rosidl_generator_c/dls2_interfaces/msg/pose.h: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_c/resource/msg__struct.h.em
 rosidl_generator_c/dls2_interfaces/msg/pose.h: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_c/resource/msg__type_support.h.em
 rosidl_generator_c/dls2_interfaces/msg/pose.h: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_c/resource/srv__type_support.h.em
-rosidl_generator_c/dls2_interfaces/msg/pose.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Pose.idl
-rosidl_generator_c/dls2_interfaces/msg/pose.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Screw.idl
-rosidl_generator_c/dls2_interfaces/msg/pose.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/BlindState.idl
-rosidl_generator_c/dls2_interfaces/msg/pose.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/BaseState.idl
-rosidl_generator_c/dls2_interfaces/msg/pose.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Imu.idl
-rosidl_generator_c/dls2_interfaces/msg/pose.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/TrajectoryGenerator.idl
-rosidl_generator_c/dls2_interfaces/msg/pose.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/DesiredTorques.idl
+rosidl_generator_c/dls2_interfaces/msg/pose.h: rosidl_adapter/dls2_interfaces/msg/Pose.idl
+rosidl_generator_c/dls2_interfaces/msg/pose.h: rosidl_adapter/dls2_interfaces/msg/Screw.idl
+rosidl_generator_c/dls2_interfaces/msg/pose.h: rosidl_adapter/dls2_interfaces/msg/BlindState.idl
+rosidl_generator_c/dls2_interfaces/msg/pose.h: rosidl_adapter/dls2_interfaces/msg/BaseState.idl
+rosidl_generator_c/dls2_interfaces/msg/pose.h: rosidl_adapter/dls2_interfaces/msg/Imu.idl
+rosidl_generator_c/dls2_interfaces/msg/pose.h: rosidl_adapter/dls2_interfaces/msg/TrajectoryGenerator.idl
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating C code for ROS interfaces"
 	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/python3 /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_c/cmake/../../../lib/rosidl_generator_c/rosidl_generator_c --generator-arguments-file /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_c__arguments.json
 
@@ -161,18 +160,6 @@ rosidl_generator_c/dls2_interfaces/msg/detail/trajectory_generator__struct.h: ro
 rosidl_generator_c/dls2_interfaces/msg/detail/trajectory_generator__type_support.h: rosidl_generator_c/dls2_interfaces/msg/pose.h
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/dls2_interfaces/msg/detail/trajectory_generator__type_support.h
 
-rosidl_generator_c/dls2_interfaces/msg/desired_torques.h: rosidl_generator_c/dls2_interfaces/msg/pose.h
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/dls2_interfaces/msg/desired_torques.h
-
-rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.h: rosidl_generator_c/dls2_interfaces/msg/pose.h
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.h
-
-rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__struct.h: rosidl_generator_c/dls2_interfaces/msg/pose.h
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__struct.h
-
-rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__type_support.h: rosidl_generator_c/dls2_interfaces/msg/pose.h
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__type_support.h
-
 rosidl_generator_c/dls2_interfaces/msg/detail/pose__functions.c: rosidl_generator_c/dls2_interfaces/msg/pose.h
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/dls2_interfaces/msg/detail/pose__functions.c
 
@@ -190,9 +177,6 @@ rosidl_generator_c/dls2_interfaces/msg/detail/imu__functions.c: rosidl_generator
 
 rosidl_generator_c/dls2_interfaces/msg/detail/trajectory_generator__functions.c: rosidl_generator_c/dls2_interfaces/msg/pose.h
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/dls2_interfaces/msg/detail/trajectory_generator__functions.c
-
-rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c: rosidl_generator_c/dls2_interfaces/msg/pose.h
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c
 
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/codegen:
 .PHONY : CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/codegen
@@ -281,20 +265,6 @@ CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_inter
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/trajectory_generator__functions.c.s"
 	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_c/dls2_interfaces/msg/detail/trajectory_generator__functions.c -o CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/trajectory_generator__functions.c.s
 
-CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.o: CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/flags.make
-CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.o: rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c
-CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.o: CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.o"
-	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.o -MF CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.o.d -o CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.o -c /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c
-
-CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.i"
-	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c > CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.i
-
-CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.s"
-	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c -o CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.s
-
 # Object files for target dls2_interfaces__rosidl_generator_c
 dls2_interfaces__rosidl_generator_c_OBJECTS = \
 "CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/pose__functions.c.o" \
@@ -302,8 +272,7 @@ dls2_interfaces__rosidl_generator_c_OBJECTS = \
 "CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/blind_state__functions.c.o" \
 "CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/base_state__functions.c.o" \
 "CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/imu__functions.c.o" \
-"CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/trajectory_generator__functions.c.o" \
-"CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.o"
+"CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/trajectory_generator__functions.c.o"
 
 # External object files for target dls2_interfaces__rosidl_generator_c
 dls2_interfaces__rosidl_generator_c_EXTERNAL_OBJECTS =
@@ -314,13 +283,12 @@ libdls2_interfaces__rosidl_generator_c.so: CMakeFiles/dls2_interfaces__rosidl_ge
 libdls2_interfaces__rosidl_generator_c.so: CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/base_state__functions.c.o
 libdls2_interfaces__rosidl_generator_c.so: CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/imu__functions.c.o
 libdls2_interfaces__rosidl_generator_c.so: CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/trajectory_generator__functions.c.o
-libdls2_interfaces__rosidl_generator_c.so: CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c.o
 libdls2_interfaces__rosidl_generator_c.so: CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/build.make
 libdls2_interfaces__rosidl_generator_c.so: CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/compiler_depend.ts
 libdls2_interfaces__rosidl_generator_c.so: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/librosidl_runtime_c.so
 libdls2_interfaces__rosidl_generator_c.so: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/librcutils.so
 libdls2_interfaces__rosidl_generator_c.so: CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking C shared library libdls2_interfaces__rosidl_generator_c.so"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking C shared library libdls2_interfaces__rosidl_generator_c.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -333,7 +301,6 @@ CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/clean:
 
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/base_state.h
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/blind_state.h
-CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/desired_torques.h
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/base_state__functions.c
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/base_state__functions.h
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/base_state__struct.h
@@ -342,10 +309,6 @@ CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dl
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/blind_state__functions.h
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/blind_state__struct.h
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/blind_state__type_support.h
-CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.c
-CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__functions.h
-CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__struct.h
-CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/desired_torques__type_support.h
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/imu__functions.c
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/imu__functions.h
 CMakeFiles/dls2_interfaces__rosidl_generator_c.dir/depend: rosidl_generator_c/dls2_interfaces/msg/detail/imu__struct.h

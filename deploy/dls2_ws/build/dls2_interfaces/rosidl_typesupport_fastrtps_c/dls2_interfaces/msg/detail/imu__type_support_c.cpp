@@ -82,13 +82,6 @@ static bool _Imu__cdr_serialize(
     cdr.serializeArray(array_ptr, size);
   }
 
-  // Field name: orientation_rpy
-  {
-    size_t size = 3;
-    auto array_ptr = ros_message->orientation_rpy;
-    cdr.serializeArray(array_ptr, size);
-  }
-
   // Field name: orientation_covariance
   {
     size_t size = 9;
@@ -169,13 +162,6 @@ static bool _Imu__cdr_deserialize(
     cdr.deserializeArray(array_ptr, size);
   }
 
-  // Field name: orientation_rpy
-  {
-    size_t size = 3;
-    auto array_ptr = ros_message->orientation_rpy;
-    cdr.deserializeArray(array_ptr, size);
-  }
-
   // Field name: orientation_covariance
   {
     size_t size = 9;
@@ -248,15 +234,6 @@ size_t get_serialized_size_dls2_interfaces__msg__Imu(
   {
     size_t array_size = 4;
     auto array_ptr = ros_message->orientation;
-    (void)array_ptr;
-    size_t item_size = sizeof(array_ptr[0]);
-    current_alignment += array_size * item_size +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, item_size);
-  }
-  // field.name orientation_rpy
-  {
-    size_t array_size = 3;
-    auto array_ptr = ros_message->orientation_rpy;
     (void)array_ptr;
     size_t item_size = sizeof(array_ptr[0]);
     current_alignment += array_size * item_size +
@@ -367,14 +344,6 @@ size_t max_serialized_size_dls2_interfaces__msg__Imu(
   // member: orientation
   {
     size_t array_size = 4;
-
-    last_member_size = array_size * sizeof(uint64_t);
-    current_alignment += array_size * sizeof(uint64_t) +
-      eprosima::fastcdr::Cdr::alignment(current_alignment, sizeof(uint64_t));
-  }
-  // member: orientation_rpy
-  {
-    size_t array_size = 3;
 
     last_member_size = array_size * sizeof(uint64_t);
     current_alignment += array_size * sizeof(uint64_t) +

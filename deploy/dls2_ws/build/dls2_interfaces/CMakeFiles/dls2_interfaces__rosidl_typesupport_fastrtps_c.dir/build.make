@@ -77,13 +77,12 @@ rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesuppor
 rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_typesupport_fastrtps_c/resource/msg__type_support_c.cpp.em
 rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_typesupport_fastrtps_c/resource/srv__rosidl_typesupport_fastrtps_c.h.em
 rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_typesupport_fastrtps_c/resource/srv__type_support_c.cpp.em
-rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Pose.idl
-rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Screw.idl
-rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/BlindState.idl
-rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/BaseState.idl
-rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Imu.idl
-rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/TrajectoryGenerator.idl
-rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/DesiredTorques.idl
+rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: rosidl_adapter/dls2_interfaces/msg/Pose.idl
+rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: rosidl_adapter/dls2_interfaces/msg/Screw.idl
+rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: rosidl_adapter/dls2_interfaces/msg/BlindState.idl
+rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: rosidl_adapter/dls2_interfaces/msg/BaseState.idl
+rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: rosidl_adapter/dls2_interfaces/msg/Imu.idl
+rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h: rosidl_adapter/dls2_interfaces/msg/TrajectoryGenerator.idl
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating C type support for eProsima Fast-RTPS"
 	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/python3 /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/rosidl_typesupport_fastrtps_c/rosidl_typesupport_fastrtps_c --generator-arguments-file /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_typesupport_fastrtps_c__arguments.json
 
@@ -119,12 +118,6 @@ rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/trajectory_generator__r
 
 rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/trajectory_generator__type_support_c.cpp: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/trajectory_generator__type_support_c.cpp
-
-rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__rosidl_typesupport_fastrtps_c.h: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__rosidl_typesupport_fastrtps_c.h
-
-rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp
 
 CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/codegen:
 .PHONY : CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/codegen
@@ -213,20 +206,6 @@ CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/trajectory_generator__type_support_c.cpp.s"
 	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/trajectory_generator__type_support_c.cpp -o CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/trajectory_generator__type_support_c.cpp.s
 
-CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.o: CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/flags.make
-CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.o: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp
-CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.o: CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.o"
-	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.o -MF CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.o.d -o CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.o -c /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp
-
-CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.i"
-	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp > CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.i
-
-CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.s"
-	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp -o CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.s
-
 # Object files for target dls2_interfaces__rosidl_typesupport_fastrtps_c
 dls2_interfaces__rosidl_typesupport_fastrtps_c_OBJECTS = \
 "CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__type_support_c.cpp.o" \
@@ -234,8 +213,7 @@ dls2_interfaces__rosidl_typesupport_fastrtps_c_OBJECTS = \
 "CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/blind_state__type_support_c.cpp.o" \
 "CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/base_state__type_support_c.cpp.o" \
 "CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/imu__type_support_c.cpp.o" \
-"CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/trajectory_generator__type_support_c.cpp.o" \
-"CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.o"
+"CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/trajectory_generator__type_support_c.cpp.o"
 
 # External object files for target dls2_interfaces__rosidl_typesupport_fastrtps_c
 dls2_interfaces__rosidl_typesupport_fastrtps_c_EXTERNAL_OBJECTS =
@@ -246,7 +224,6 @@ libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: CMakeFiles/dls2_interfaces
 libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/base_state__type_support_c.cpp.o
 libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/imu__type_support_c.cpp.o
 libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/trajectory_generator__type_support_c.cpp.o
-libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp.o
 libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/build.make
 libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/compiler_depend.ts
 libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/librosidl_typesupport_fastrtps_cpp.so
@@ -257,7 +234,7 @@ libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: /home/iit.local/gturrisi/m
 libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/librosidl_runtime_c.so
 libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/librcutils.so
 libdls2_interfaces__rosidl_typesupport_fastrtps_c.so: CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX shared library libdls2_interfaces__rosidl_typesupport_fastrtps_c.so"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX shared library libdls2_interfaces__rosidl_typesupport_fastrtps_c.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -272,8 +249,6 @@ CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/depend: rosidl_typ
 CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/depend: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/base_state__type_support_c.cpp
 CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/depend: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/blind_state__rosidl_typesupport_fastrtps_c.h
 CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/depend: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/blind_state__type_support_c.cpp
-CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/depend: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__rosidl_typesupport_fastrtps_c.h
-CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/depend: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/desired_torques__type_support_c.cpp
 CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/depend: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/imu__rosidl_typesupport_fastrtps_c.h
 CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/depend: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/imu__type_support_c.cpp
 CMakeFiles/dls2_interfaces__rosidl_typesupport_fastrtps_c.dir/depend: rosidl_typesupport_fastrtps_c/dls2_interfaces/msg/detail/pose__rosidl_typesupport_fastrtps_c.h

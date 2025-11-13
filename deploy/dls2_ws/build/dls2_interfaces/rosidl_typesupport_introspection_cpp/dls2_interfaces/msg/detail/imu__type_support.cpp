@@ -75,44 +75,6 @@ void assign_function__Imu__orientation(
   item = value;
 }
 
-size_t size_function__Imu__orientation_rpy(const void * untyped_member)
-{
-  (void)untyped_member;
-  return 3;
-}
-
-const void * get_const_function__Imu__orientation_rpy(const void * untyped_member, size_t index)
-{
-  const auto & member =
-    *reinterpret_cast<const std::array<double, 3> *>(untyped_member);
-  return &member[index];
-}
-
-void * get_function__Imu__orientation_rpy(void * untyped_member, size_t index)
-{
-  auto & member =
-    *reinterpret_cast<std::array<double, 3> *>(untyped_member);
-  return &member[index];
-}
-
-void fetch_function__Imu__orientation_rpy(
-  const void * untyped_member, size_t index, void * untyped_value)
-{
-  const auto & item = *reinterpret_cast<const double *>(
-    get_const_function__Imu__orientation_rpy(untyped_member, index));
-  auto & value = *reinterpret_cast<double *>(untyped_value);
-  value = item;
-}
-
-void assign_function__Imu__orientation_rpy(
-  void * untyped_member, size_t index, const void * untyped_value)
-{
-  auto & item = *reinterpret_cast<double *>(
-    get_function__Imu__orientation_rpy(untyped_member, index));
-  const auto & value = *reinterpret_cast<const double *>(untyped_value);
-  item = value;
-}
-
 size_t size_function__Imu__orientation_covariance(const void * untyped_member)
 {
   (void)untyped_member;
@@ -303,7 +265,7 @@ void assign_function__Imu__linear_acceleration_covariance(
   item = value;
 }
 
-static const ::rosidl_typesupport_introspection_cpp::MessageMember Imu_message_member_array[10] = {
+static const ::rosidl_typesupport_introspection_cpp::MessageMember Imu_message_member_array[9] = {
   {
     "frame_id",  // name
     ::rosidl_typesupport_introspection_cpp::ROS_TYPE_STRING,  // type
@@ -370,23 +332,6 @@ static const ::rosidl_typesupport_introspection_cpp::MessageMember Imu_message_m
     get_function__Imu__orientation,  // get(index) function pointer
     fetch_function__Imu__orientation,  // fetch(index, &value) function pointer
     assign_function__Imu__orientation,  // assign(index, value) function pointer
-    nullptr  // resize(index) function pointer
-  },
-  {
-    "orientation_rpy",  // name
-    ::rosidl_typesupport_introspection_cpp::ROS_TYPE_DOUBLE,  // type
-    0,  // upper bound of string
-    nullptr,  // members of sub message
-    true,  // is array
-    3,  // array size
-    false,  // is upper bound
-    offsetof(dls2_interfaces::msg::Imu, orientation_rpy),  // bytes offset in struct
-    nullptr,  // default value
-    size_function__Imu__orientation_rpy,  // size() function pointer
-    get_const_function__Imu__orientation_rpy,  // get_const(index) function pointer
-    get_function__Imu__orientation_rpy,  // get(index) function pointer
-    fetch_function__Imu__orientation_rpy,  // fetch(index, &value) function pointer
-    assign_function__Imu__orientation_rpy,  // assign(index, value) function pointer
     nullptr  // resize(index) function pointer
   },
   {
@@ -479,7 +424,7 @@ static const ::rosidl_typesupport_introspection_cpp::MessageMember Imu_message_m
 static const ::rosidl_typesupport_introspection_cpp::MessageMembers Imu_message_members = {
   "dls2_interfaces::msg",  // message namespace
   "Imu",  // message name
-  10,  // number of fields
+  9,  // number of fields
   sizeof(dls2_interfaces::msg::Imu),
   Imu_message_member_array,  // message members
   Imu_init_function,  // function to initialize message memory (memory has to be allocated)

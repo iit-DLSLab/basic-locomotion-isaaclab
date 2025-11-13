@@ -75,7 +75,6 @@ include /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/
 /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_base_state.py
 /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_imu.py
 /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator.py
-/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_desired_torques.py
 /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/__init__.py
 /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_pose_s.c
 /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_screw_s.c
@@ -83,7 +82,6 @@ include /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/
 /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_base_state_s.c
 /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_imu_s.c
 /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator_s.c
-/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c
 
 rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/rosidl_generator_py/rosidl_generator_py
 rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/python3.11/site-packages/rosidl_generator_py/__init__.py
@@ -98,13 +96,12 @@ rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fas
 rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_py/resource/_msg.py.em
 rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_py/resource/_srv_pkg_typesupport_entry_point.c.em
 rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_py/resource/_srv.py.em
-rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Pose.idl
-rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Screw.idl
-rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/BlindState.idl
-rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/BaseState.idl
-rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/Imu.idl
-rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/TrajectoryGenerator.idl
-rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/src/dls2_interfaces/msg/DesiredTorques.idl
+rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/dls2_interfaces/msg/Pose.idl
+rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/dls2_interfaces/msg/Screw.idl
+rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/dls2_interfaces/msg/BlindState.idl
+rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/dls2_interfaces/msg/BaseState.idl
+rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/dls2_interfaces/msg/Imu.idl
+rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c: rosidl_adapter/dls2_interfaces/msg/TrajectoryGenerator.idl
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --blue --bold --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Generating Python code for ROS interfaces"
 	cd /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py && /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/python3 /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/share/rosidl_generator_py/cmake/../../../lib/rosidl_generator_py/rosidl_generator_py --generator-arguments-file /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py__arguments.json --typesupport-impls "rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c;rosidl_typesupport_c"
 
@@ -132,9 +129,6 @@ rosidl_generator_py/dls2_interfaces/msg/_imu.py: rosidl_generator_py/dls2_interf
 rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator.py: rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator.py
 
-rosidl_generator_py/dls2_interfaces/msg/_desired_torques.py: rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/dls2_interfaces/msg/_desired_torques.py
-
 rosidl_generator_py/dls2_interfaces/msg/__init__.py: rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/dls2_interfaces/msg/__init__.py
 
@@ -156,9 +150,6 @@ rosidl_generator_py/dls2_interfaces/msg/_imu_s.c: rosidl_generator_py/dls2_inter
 rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator_s.c: rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
 	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator_s.c
 
-rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c: rosidl_generator_py/dls2_interfaces/_dls2_interfaces_s.ep.rosidl_typesupport_fastrtps_c.c
-	@$(CMAKE_COMMAND) -E touch_nocreate rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c
-
 /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py.dir/codegen:
 .PHONY : /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/dls2_interfaces__py/CMakeFiles/dls2_interfaces__py.dir/codegen
 
@@ -171,8 +162,6 @@ dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_base_state.py
 dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_base_state_s.c
 dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_blind_state.py
 dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_blind_state_s.c
-dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_desired_torques.py
-dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c
 dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_imu.py
 dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_imu_s.c
 dls2_interfaces__py: rosidl_generator_py/dls2_interfaces/msg/_pose.py

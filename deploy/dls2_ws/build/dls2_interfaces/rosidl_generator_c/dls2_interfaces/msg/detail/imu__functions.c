@@ -29,7 +29,6 @@ dls2_interfaces__msg__Imu__init(dls2_interfaces__msg__Imu * msg)
   // sequence_id
   // timestamp
   // orientation
-  // orientation_rpy
   // orientation_covariance
   // angular_velocity
   // angular_velocity_covariance
@@ -49,7 +48,6 @@ dls2_interfaces__msg__Imu__fini(dls2_interfaces__msg__Imu * msg)
   // sequence_id
   // timestamp
   // orientation
-  // orientation_rpy
   // orientation_covariance
   // angular_velocity
   // angular_velocity_covariance
@@ -80,12 +78,6 @@ dls2_interfaces__msg__Imu__are_equal(const dls2_interfaces__msg__Imu * lhs, cons
   // orientation
   for (size_t i = 0; i < 4; ++i) {
     if (lhs->orientation[i] != rhs->orientation[i]) {
-      return false;
-    }
-  }
-  // orientation_rpy
-  for (size_t i = 0; i < 3; ++i) {
-    if (lhs->orientation_rpy[i] != rhs->orientation_rpy[i]) {
       return false;
     }
   }
@@ -143,10 +135,6 @@ dls2_interfaces__msg__Imu__copy(
   // orientation
   for (size_t i = 0; i < 4; ++i) {
     output->orientation[i] = input->orientation[i];
-  }
-  // orientation_rpy
-  for (size_t i = 0; i < 3; ++i) {
-    output->orientation_rpy[i] = input->orientation_rpy[i];
   }
   // orientation_covariance
   for (size_t i = 0; i < 9; ++i) {

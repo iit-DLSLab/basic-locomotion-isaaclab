@@ -101,32 +101,16 @@ private:
   ::dls2_interfaces::msg::Imu msg_;
 };
 
-class Init_Imu_orientation_rpy
-{
-public:
-  explicit Init_Imu_orientation_rpy(::dls2_interfaces::msg::Imu & msg)
-  : msg_(msg)
-  {}
-  Init_Imu_orientation_covariance orientation_rpy(::dls2_interfaces::msg::Imu::_orientation_rpy_type arg)
-  {
-    msg_.orientation_rpy = std::move(arg);
-    return Init_Imu_orientation_covariance(msg_);
-  }
-
-private:
-  ::dls2_interfaces::msg::Imu msg_;
-};
-
 class Init_Imu_orientation
 {
 public:
   explicit Init_Imu_orientation(::dls2_interfaces::msg::Imu & msg)
   : msg_(msg)
   {}
-  Init_Imu_orientation_rpy orientation(::dls2_interfaces::msg::Imu::_orientation_type arg)
+  Init_Imu_orientation_covariance orientation(::dls2_interfaces::msg::Imu::_orientation_type arg)
   {
     msg_.orientation = std::move(arg);
-    return Init_Imu_orientation_rpy(msg_);
+    return Init_Imu_orientation_covariance(msg_);
   }
 
 private:

@@ -43,7 +43,6 @@ struct Imu_
       this->sequence_id = 0ul;
       this->timestamp = 0.0;
       std::fill<typename std::array<double, 4>::iterator, double>(this->orientation.begin(), this->orientation.end(), 0.0);
-      std::fill<typename std::array<double, 3>::iterator, double>(this->orientation_rpy.begin(), this->orientation_rpy.end(), 0.0);
       std::fill<typename std::array<double, 9>::iterator, double>(this->orientation_covariance.begin(), this->orientation_covariance.end(), 0.0);
       std::fill<typename std::array<double, 3>::iterator, double>(this->angular_velocity.begin(), this->angular_velocity.end(), 0.0);
       std::fill<typename std::array<double, 9>::iterator, double>(this->angular_velocity_covariance.begin(), this->angular_velocity_covariance.end(), 0.0);
@@ -55,7 +54,6 @@ struct Imu_
   explicit Imu_(const ContainerAllocator & _alloc, rosidl_runtime_cpp::MessageInitialization _init = rosidl_runtime_cpp::MessageInitialization::ALL)
   : frame_id(_alloc),
     orientation(_alloc),
-    orientation_rpy(_alloc),
     orientation_covariance(_alloc),
     angular_velocity(_alloc),
     angular_velocity_covariance(_alloc),
@@ -69,7 +67,6 @@ struct Imu_
       this->sequence_id = 0ul;
       this->timestamp = 0.0;
       std::fill<typename std::array<double, 4>::iterator, double>(this->orientation.begin(), this->orientation.end(), 0.0);
-      std::fill<typename std::array<double, 3>::iterator, double>(this->orientation_rpy.begin(), this->orientation_rpy.end(), 0.0);
       std::fill<typename std::array<double, 9>::iterator, double>(this->orientation_covariance.begin(), this->orientation_covariance.end(), 0.0);
       std::fill<typename std::array<double, 3>::iterator, double>(this->angular_velocity.begin(), this->angular_velocity.end(), 0.0);
       std::fill<typename std::array<double, 9>::iterator, double>(this->angular_velocity_covariance.begin(), this->angular_velocity_covariance.end(), 0.0);
@@ -91,9 +88,6 @@ struct Imu_
   using _orientation_type =
     std::array<double, 4>;
   _orientation_type orientation;
-  using _orientation_rpy_type =
-    std::array<double, 3>;
-  _orientation_rpy_type orientation_rpy;
   using _orientation_covariance_type =
     std::array<double, 9>;
   _orientation_covariance_type orientation_covariance;
@@ -133,12 +127,6 @@ struct Imu_
     const std::array<double, 4> & _arg)
   {
     this->orientation = _arg;
-    return *this;
-  }
-  Type & set__orientation_rpy(
-    const std::array<double, 3> & _arg)
-  {
-    this->orientation_rpy = _arg;
     return *this;
   }
   Type & set__orientation_covariance(
@@ -224,9 +212,6 @@ struct Imu_
       return false;
     }
     if (this->orientation != other.orientation) {
-      return false;
-    }
-    if (this->orientation_rpy != other.orientation_rpy) {
       return false;
     }
     if (this->orientation_covariance != other.orientation_covariance) {

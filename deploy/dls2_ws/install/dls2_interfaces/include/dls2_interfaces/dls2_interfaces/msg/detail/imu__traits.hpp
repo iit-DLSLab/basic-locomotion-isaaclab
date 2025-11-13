@@ -64,24 +64,6 @@ inline void to_flow_style_yaml(
     out << ", ";
   }
 
-  // member: orientation_rpy
-  {
-    if (msg.orientation_rpy.size() == 0) {
-      out << "orientation_rpy: []";
-    } else {
-      out << "orientation_rpy: [";
-      size_t pending_items = msg.orientation_rpy.size();
-      for (auto item : msg.orientation_rpy) {
-        rosidl_generator_traits::value_to_yaml(item, out);
-        if (--pending_items > 0) {
-          out << ", ";
-        }
-      }
-      out << "]";
-    }
-    out << ", ";
-  }
-
   // member: orientation_covariance
   {
     if (msg.orientation_covariance.size() == 0) {
@@ -217,26 +199,6 @@ inline void to_block_style_yaml(
     } else {
       out << "orientation:\n";
       for (auto item : msg.orientation) {
-        if (indentation > 0) {
-          out << std::string(indentation, ' ');
-        }
-        out << "- ";
-        rosidl_generator_traits::value_to_yaml(item, out);
-        out << "\n";
-      }
-    }
-  }
-
-  // member: orientation_rpy
-  {
-    if (indentation > 0) {
-      out << std::string(indentation, ' ');
-    }
-    if (msg.orientation_rpy.size() == 0) {
-      out << "orientation_rpy: []\n";
-    } else {
-      out << "orientation_rpy:\n";
-      for (auto item : msg.orientation_rpy) {
         if (indentation > 0) {
           out << std::string(indentation, ' ');
         }

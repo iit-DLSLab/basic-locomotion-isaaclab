@@ -22,13 +22,15 @@ extern "C"
 #include "rosidl_runtime_c/string.h"
 
 /// Struct defined in msg/Imu in the package dls2_interfaces.
+/**
+  * Header
+ */
 typedef struct dls2_interfaces__msg__Imu
 {
   rosidl_runtime_c__String frame_id;
   uint32_t sequence_id;
   double timestamp;
   double orientation[4];
-  double orientation_rpy[3];
   double orientation_covariance[9];
   double angular_velocity[3];
   double angular_velocity_covariance[9];

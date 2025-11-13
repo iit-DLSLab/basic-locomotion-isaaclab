@@ -1,3 +1,6 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/dls2_interfaces"
+)
 
 # Per-language clean rules from dependency scanning.
 foreach(lang )

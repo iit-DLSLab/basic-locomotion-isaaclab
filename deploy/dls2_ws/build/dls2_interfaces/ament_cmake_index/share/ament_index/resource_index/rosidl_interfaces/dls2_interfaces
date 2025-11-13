@@ -1,7 +1,12 @@
 msg/BaseState.idl
+msg/BaseState.msg
 msg/BlindState.idl
-msg/DesiredTorques.idl
+msg/BlindState.msg
 msg/Imu.idl
+msg/Imu.msg
 msg/Pose.idl
+msg/Pose.msg
 msg/Screw.idl
+msg/Screw.msg
 msg/TrajectoryGenerator.idl
+msg/TrajectoryGenerator.msg

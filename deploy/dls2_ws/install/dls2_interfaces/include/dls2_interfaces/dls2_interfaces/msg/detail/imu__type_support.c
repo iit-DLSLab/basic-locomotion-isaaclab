@@ -80,51 +80,6 @@ void dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__assign_funct
   *item = *value;
 }
 
-size_t dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__size_function__Imu__orientation_rpy(
-  const void * untyped_member)
-{
-  (void)untyped_member;
-  return 3;
-}
-
-const void * dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__get_const_function__Imu__orientation_rpy(
-  const void * untyped_member, size_t index)
-{
-  const double * member =
-    (const double *)(untyped_member);
-  return &member[index];
-}
-
-void * dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__get_function__Imu__orientation_rpy(
-  void * untyped_member, size_t index)
-{
-  double * member =
-    (double *)(untyped_member);
-  return &member[index];
-}
-
-void dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__fetch_function__Imu__orientation_rpy(
-  const void * untyped_member, size_t index, void * untyped_value)
-{
-  const double * item =
-    ((const double *)
-    dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__get_const_function__Imu__orientation_rpy(untyped_member, index));
-  double * value =
-    (double *)(untyped_value);
-  *value = *item;
-}
-
-void dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__assign_function__Imu__orientation_rpy(
-  void * untyped_member, size_t index, const void * untyped_value)
-{
-  double * item =
-    ((double *)
-    dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__get_function__Imu__orientation_rpy(untyped_member, index));
-  const double * value =
-    (const double *)(untyped_value);
-  *item = *value;
-}
-
 size_t dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__size_function__Imu__orientation_covariance(
   const void * untyped_member)
 {
@@ -350,7 +305,7 @@ void dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__assign_funct
   *item = *value;
 }
 
-static rosidl_typesupport_introspection_c__MessageMember dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__Imu_message_member_array[10] = {
+static rosidl_typesupport_introspection_c__MessageMember dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__Imu_message_member_array[9] = {
   {
     "frame_id",  // name
     rosidl_typesupport_introspection_c__ROS_TYPE_STRING,  // type
@@ -417,23 +372,6 @@ static rosidl_typesupport_introspection_c__MessageMember dls2_interfaces__msg__I
     dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__get_function__Imu__orientation,  // get(index) function pointer
     dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__fetch_function__Imu__orientation,  // fetch(index, &value) function pointer
     dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__assign_function__Imu__orientation,  // assign(index, value) function pointer
-    NULL  // resize(index) function pointer
-  },
-  {
-    "orientation_rpy",  // name
-    rosidl_typesupport_introspection_c__ROS_TYPE_DOUBLE,  // type
-    0,  // upper bound of string
-    NULL,  // members of sub message
-    true,  // is array
-    3,  // array size
-    false,  // is upper bound
-    offsetof(dls2_interfaces__msg__Imu, orientation_rpy),  // bytes offset in struct
-    NULL,  // default value
-    dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__size_function__Imu__orientation_rpy,  // size() function pointer
-    dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__get_const_function__Imu__orientation_rpy,  // get_const(index) function pointer
-    dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__get_function__Imu__orientation_rpy,  // get(index) function pointer
-    dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__fetch_function__Imu__orientation_rpy,  // fetch(index, &value) function pointer
-    dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__assign_function__Imu__orientation_rpy,  // assign(index, value) function pointer
     NULL  // resize(index) function pointer
   },
   {
@@ -526,7 +464,7 @@ static rosidl_typesupport_introspection_c__MessageMember dls2_interfaces__msg__I
 static const rosidl_typesupport_introspection_c__MessageMembers dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__Imu_message_members = {
   "dls2_interfaces__msg",  // message namespace
   "Imu",  // message name
-  10,  // number of fields
+  9,  // number of fields
   sizeof(dls2_interfaces__msg__Imu),
   dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__Imu_message_member_array,  // message members
   dls2_interfaces__msg__Imu__rosidl_typesupport_introspection_c__Imu_init_function,  // function to initialize message memory (memory has to be allocated)

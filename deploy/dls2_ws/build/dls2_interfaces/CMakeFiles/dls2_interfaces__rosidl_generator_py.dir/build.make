@@ -156,20 +156,6 @@ CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_int
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator_s.c.s"
 	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator_s.c -o CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator_s.c.s
 
-CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.o: CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/flags.make
-CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.o: rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c
-CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.o: CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building C object CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.o"
-	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.o -MF CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.o.d -o CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.o -c /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c
-
-CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.i"
-	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c > CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.i
-
-CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.s"
-	/home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/bin/x86_64-conda-linux-gnu-cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c -o CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.s
-
 # Object files for target dls2_interfaces__rosidl_generator_py
 dls2_interfaces__rosidl_generator_py_OBJECTS = \
 "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_pose_s.c.o" \
@@ -177,8 +163,7 @@ dls2_interfaces__rosidl_generator_py_OBJECTS = \
 "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_blind_state_s.c.o" \
 "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_base_state_s.c.o" \
 "CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_imu_s.c.o" \
-"CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator_s.c.o" \
-"CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.o"
+"CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator_s.c.o"
 
 # External object files for target dls2_interfaces__rosidl_generator_py
 dls2_interfaces__rosidl_generator_py_EXTERNAL_OBJECTS =
@@ -189,7 +174,6 @@ rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: 
 rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_base_state_s.c.o
 rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_imu_s.c.o
 rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_trajectory_generator_s.c.o
-rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c.o
 rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/build.make
 rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/compiler_depend.ts
 rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/libpython3.11.so
@@ -198,7 +182,7 @@ rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: 
 rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/librosidl_runtime_c.so
 rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: /home/iit.local/gturrisi/miniforge3/envs/basic_locomotion_dls_isaaclab_ros2_env/lib/librcutils.so
 rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so: CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking C shared library rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking C shared library rosidl_generator_py/dls2_interfaces/libdls2_interfaces__rosidl_generator_py.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/dls2_interfaces__rosidl_generator_py.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

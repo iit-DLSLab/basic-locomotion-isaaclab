@@ -30,15 +30,22 @@ extern "C"
 #include "rosidl_runtime_c/primitives_sequence.h"
 
 /// Struct defined in msg/BaseState in the package dls2_interfaces.
+/**
+  * Header
+ */
 typedef struct dls2_interfaces__msg__BaseState
 {
   rosidl_runtime_c__String frame_id;
   uint32_t sequence_id;
   double timestamp;
   rosidl_runtime_c__String robot_name;
+  /// Base pose
   dls2_interfaces__msg__Pose pose;
+  /// Base velocity
   dls2_interfaces__msg__Screw velocity;
+  /// Base acceleration
   dls2_interfaces__msg__Screw acceleration;
+  /// Stance status
   rosidl_runtime_c__boolean__Sequence stance_status;
 } dls2_interfaces__msg__BaseState;
 

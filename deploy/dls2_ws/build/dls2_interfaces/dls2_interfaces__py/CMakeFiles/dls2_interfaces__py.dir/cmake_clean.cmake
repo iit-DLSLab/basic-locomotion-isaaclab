@@ -7,8 +7,6 @@ file(REMOVE_RECURSE
   "/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_base_state_s.c"
   "/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_blind_state.py"
   "/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_blind_state_s.c"
-  "/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_desired_torques.py"
-  "/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_desired_torques_s.c"
   "/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_imu.py"
   "/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_imu_s.c"
   "/home/iit.local/gturrisi/isaaclab_ws_home/basic-locomotion-dls-isaaclab/deploy/dls2_ws/build/dls2_interfaces/rosidl_generator_py/dls2_interfaces/msg/_pose.py"
