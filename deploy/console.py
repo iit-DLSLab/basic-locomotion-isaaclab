@@ -219,4 +219,9 @@ class Console():
     def print_all_commands(self):
         print("\nAvailable Commands")
         print("help: Display all available messages")
-        print("ictp: Interactive Keyboard Control\n")
+        print("ictp: Interactive Keyboard Control")
+        print("goUp: Make the robot stand up")
+        print("goDown: Make the robot lie down")
+        print("activate: Activate/Deactivate the RL policy during walking")
+        print("setKp: Set the Kp gains for the PD controller")
+        print("setKd: Set the Kd gains for the PD controller\n")

@@ -6,24 +6,13 @@ import time
 import numpy as np
 np.set_printoptions(precision=3, suppress=True)
 
-import threading
-import multiprocessing
-
-
-import copy
-
 # Gym and Simulation related imports
-import mujoco
 from gym_quadruped.quadruped_env import QuadrupedEnv
 from gym_quadruped.utils.quadruped_utils import LegsAttr
-
-
 
 # Config imports
 import config as cfg
 
-
-import sys
 import os 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 # Set the priority of the process
