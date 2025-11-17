@@ -1,3 +1,5 @@
+![Static Badge](https://img.shields.io/badge/IsaacLab%202.3.0-blue)
+
 <div style="display: flex; justify-content: space-around;">
   <img src="./gifs/train.gif" alt="Train" width="30%">
   <img src="./gifs/sim-to-sim.gif" alt="Sim-to-Sim" width="30%">
