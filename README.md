@@ -21,12 +21,9 @@ Features:
 
 A list of robots and environments available are described below:
 
-| Robot Model         | Environment Name (ID)                                      |
+| Robot Model         | Environment Name Pattern                                   |
 |---------------------|------------------------------------------------------------|
-| [Aliengo](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/aliengo) | Locomotion-Aliengo-Flat, Locomotion-Aliengo-Rough-Blind, Locomotion-Aliengo-Rough-Vision
-| [Go2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/go2) | Locomotion-Go2-Flat, Locomotion-Go2-Rough-Blind, Locomotion-Go2-Rough-Vision |
-| [B2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/b2) | Locomotion-B2-Flat, Locomotion-B2-Rough-Blind, Locomotion-B2-Rough-Vision |
-| [HyQReal2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/hyqreal2) | Locomotion-HyQReal-Flat, Locomotion-HyQReal-Rough-Blind, Locomotion-HyQReal-Rough-Vision |
+| [Aliengo](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/aliengo), [Go2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/go2), [B2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/b2), [HyQReal2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/hyqreal2) | Locomotion-**RobotModel**-Flat-Blind <br> Locomotion-**RobotModel**-Rough-Blind <br> Locomotion-**RobotModel**-Rough-Vision |
 
 
 ## Citing this work
