@@ -1,6 +1,6 @@
 
 
-### Installation Deploy
+## Installation Deploy using Conda
 
 1. install [miniforge](https://github.com/conda-forge/miniforge/releases) (x86_64 or arm64 depending on your platform)
 
@@ -15,13 +15,15 @@ conda env create -f mamba_environment_ros2.yaml
 conda activate basic_locomotion_dls_isaaclab_ros2_env
 ```
 
+## Installation Deploy using Docker
 
-or using docker
+1. install docker and run
+
 ```bash
 docker build -t basic_locomotion_dls_isaaclab_image .
 ```
 
-putting in your .bashrc the following alias
+2. put in your .bashrc the following alias
 ```bash
 alias basic_locomotion_dls_isaaclab_docker='
 if [ ! "$(docker ps -a -q -f name=basic_locomotion_dls_isaaclab_container)" ]; then
@@ -32,23 +34,30 @@ fi'
 ```
 
 
-### Run Sim-to-Sim and Sim-to-Real
+## Run Sim-to-Sim 
 
 
 ```bash
 ## Sim-to-Sim
 python3 deploy/play_mujoco.py
 
-## Sim-to-Real with ROS1
-cd deploy/ros1_ws
-catkin_make install -j4
-source install/setup.bash
-python3 deploy/run_controller_ros1.py
 
+## Sim-to-Sim with ROS2
+cd deploy/ros2_ws
+colcon build
+source install/setup.bash
+python3 deploy/run_controller_ros2.py  
+ros2 launch teleop_twist_joy teleop-launch.py joy_config:='xbox' (if want joystick)
+python3 deploy/run_simulator_ros2.py
+```
+
+## Run Sim-to-Real
+
+```bash
 ## Sim-to-Real with ROS2
 cd deploy/ros2_ws
 colcon build
 source install/setup.bash
-python3 deploy/run_controller_ros2.py 
+python3 deploy/run_controller_ros2.py  
 ros2 launch teleop_twist_joy teleop-launch.py joy_config:='xbox' (if want joystick)
 ```
