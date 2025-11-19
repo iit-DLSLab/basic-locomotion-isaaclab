@@ -7,7 +7,7 @@
   </div>
 </div>
 
-# Overview
+## Overview
 
 This repository provides basic reinforcement learning implementations for quadruped locomotion in IsaacLab. It includes support for different robots available at DLS, along with scripts for both sim-to-sim and sim-to-real transfer.
 
@@ -24,6 +24,12 @@ A list of robots and environments available are described below:
 | Robot Model         | Environment Name Pattern                                   |
 |---------------------|------------------------------------------------------------|
 | [Aliengo](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/aliengo), [Go2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/go2), [B2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/b2), [HyQReal2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/hyqreal2) | Locomotion-**RobotModel**-Flat-Blind <br> Locomotion-**RobotModel**-Rough-Blind <br> Locomotion-**RobotModel**-Rough-Vision |
+
+
+## Installation and Runs
+
+If you want only to deploy a trained policy on your robot, continue on [README_DEPLOY](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_deploy.md) otherwise [README_TRAIN](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_train.md).
+
 
 
 ## Citing this work
@@ -56,142 +62,4 @@ If you find the work useful and you adopt [Morphological Symmetries](https://arx
   pages = {1743-1766},
   doi = {10.1177/02783649241282422},
 }
-```
-
-
-## Installation
-
-If you want only to deploy a trained policy on your robot, go directly [at the bottom of the readme](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/tree/main?tab=readme-ov-file#run-sim-to-sim-and-sim-to-real).
-
-1. Install Isaac Lab by following the [installation guide](https://github.com/isaac-sim/IsaacLab). We recommend using the conda installation as it simplifies calling Python scripts from the terminal.
-
-2. Install git for very large file
-```bash
-sudo apt install git-lfs
-```
-
-3. Clone the repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory)
-
-
-4. Using a python interpreter that has Isaac Lab installed, install the library
-
-```bash
-python -m pip install -e source/basic_locomotion_dls_isaaclab
-```
-
-5. If you want to play with [Morphological Symmetries](https://arxiv.org/pdf/2403.17320), install the repo [morphosymm-rl](https://github.com/iit-DLSLab/morphosymm-rl)
-
-6. If you want to play with [Adversarial Motion Priors](https://arxiv.org/pdf/2104.02180), install the repo [amp-rsl-rl](https://github.com/ami-iit/amp-rsl-rl) from the [AMI](https://github.com/ami-iit) research lab.
-
-### Run a train/play in IsaacLab
-
-- To train:
-
-```bash
-python scripts/rsl_rl/train.py --task=Locomotion-Aliengo-Flat --num_envs=4096 --headless
-python scripts/rsl_rl/train.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=4096 --headless
-```
-
-- To train with Symmetries, modify the related [rsl_rl_ppo_cfg.py](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/devel/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py) setting *class_name = PPOSymmDataAugmented*
-```bash
-python scripts/rsl_rl/train_symm.py --task=Locomotion-Aliengo-Flat --num_envs=4096 --headless
-python scripts/rsl_rl/train_symm.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=4096 --headless
-```
-
-- To train with AMP, modify the related [rsl_rl_ppo_cfg.py](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/devel/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py) setting *class_name = AMP_PPO*
-```bash
-python scripts/rsl_rl/train_amp.py --task=Locomotion-Aliengo-Flat --num_envs=4096 --headless
-python scripts/rsl_rl/train_amp.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=4096 --headless
-```
-
-- To test the policy, you can press:
-```bash
-python scripts/rsl_rl/play.py --task=Locomotion-Aliengo-Flat --num_envs=16
-python scripts/rsl_rl/play.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=16
-```
-
-
-- If you have speed problem in training, may be due to cylinder collision. Then add
-
-```bash
---kit_args="--/physics/collisionApproximateCylinders=true"
-```
-
-### Run Hyperparameter Search
-
-```bash
-echo "import ray; ray.init(); import time; [time.sleep(10) for _ in iter(int, 1)]" | python3 (TERMINAL 1)
-```
-
-```bash
-python3 ../basic_locomotion_dls_isaaclab/exts/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/hyperparameter_tuning/tuner.py --run_mode local --cfg_file ../basic_locomotion_dls_isaaclab/exts/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/hyperparameter_tuning/locomotion_aliengo_cfg.py --cfg_class LocomotionAliengoFlatTuner (TERMINAL 2)
-```
-
-
-### Convert XML to USD
-We use model from [gym-quadruped](https://github.com/iit-DLSLab/gym-quadruped).
-
-```bash
-./isaaclab.sh -p scripts/tools/convert_mjcf.py   ../basic_locomotion_dls_isaaclab/scripts/sim_to_sim_mujoco/gym-quadruped/gym_quadruped/robot_model/aliengo/aliengo.xml   ../aliengo.usd   --import-sites   --make-instanceable
-```
-
-Remember to set in the application above, "set as default prim" to the root of the robot. Furthermore, for now, add the following lines in the xml of your robots to make the feet seen as body
-
-```bash
-<body name="FL_foot" pos="0 0 -0.25">
-    <!-- FL_foot only collision -->
-    <geom name="FL" class="collision" size="0.0265" pos="0 0 0" />
-</body>
-```
-
-
-### Run Sim-to-Sim and Sim-to-Real
-
-1. install [miniforge](https://github.com/conda-forge/miniforge/releases) (x86_64 or arm64 depending on your platform)
-
-2. create an environment using the file in the folder [deploy/installation](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/tree/main/deploy/installation):
-
-
-```bash
-conda env create -f mamba_environment_ros1.yaml
-conda activate basic_locomotion_dls_isaaclab_ros1_env
-
-conda env create -f mamba_environment_ros2.yaml
-conda activate basic_locomotion_dls_isaaclab_ros2_env
-```
-
-
-or using docker
-```bash
-docker build -t basic_locomotion_dls_isaaclab_image .
-```
-
-putting in your .bashrc the following alias
-```bash
-alias basic_locomotion_dls_isaaclab_docker='
-if [ ! "$(docker ps -a -q -f name=basic_locomotion_dls_isaaclab_container)" ]; then
-   xhost + && docker run -it --rm -v absolute_path_to_this_repo:/home/ -v /tmp/.X11-unix:/tmp/.X11-unix --device=/dev/input/ -e DISPLAY=$DISPLAY -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY -e QT_X11_NO_MITSHM=1 --gpus all --net host --cap-add=sys_nice --name basic_locomotion_dls_isaaclab_container basic_locomotion_dls_isaaclab_image; \
-else
-   docker exec -it basic_locomotion_dls_isaaclab_container bash; \
-fi'
-```
-
-3. Then you can 
-
-```bash
-## Sim-to-Sim
-python3 deploy/play_mujoco.py
-
-## Sim-to-Real with ROS1
-cd deploy/ros1_ws
-catkin_make install -j4
-source install/setup.bash
-python3 deploy/run_controller_ros1.py
-
-## Sim-to-Real with ROS2
-cd deploy/ros2_ws
-colcon build
-source install/setup.bash
-python3 deploy/run_controller_ros2.py 
-ros2 launch teleop_twist_joy teleop-launch.py joy_config:='xbox' (if want joystick)
 ```
