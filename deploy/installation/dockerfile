@@ -8,8 +8,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
     
 # Install tkinter, pip, and gedit
-RUN apt-get update && apt-get install -y python3-tk
-RUN apt-get update && apt-get install -y python3-pip
+#RUN apt-get update && apt-get install -y python3-tk
+#RUN apt-get update && apt-get install -y python3-pip
 RUN apt-get update && apt-get install -y gedit
 
 
@@ -26,30 +26,22 @@ RUN apt-get update && \
     conda init bash && \
     conda clean -afy
 
+# Create and activate the conda environment
+# Copy the environment file
+COPY mamba_environment_ros2.yaml /tmp/mamba_environment_ros2.yaml
+RUN conda env create -f /tmp/mamba_environment_ros2.yaml
 
+#SHELL COLOR
+SHELL ["/bin/bash", "-c"]
+RUN echo 'export PS1="\[\e]0;\u@\h: \w\a\]${debian_chroot:+($debian_chroot)}\[\033[01;37m\]\u\[\033[00m\]@\[\033[01;32m\]\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\] "'  >> /root/.bashrc
 
-RUN conda create -n isaaclab_env python=3.11
-
-SHELL ["conda", "run", "-n", "isaaclab_env", "/bin/bash", "-c"]
-
-RUN pip install --upgrade pip 
-RUN pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
-RUN pip install "isaacsim[all,extscache]==5.0.0" --extra-index-url https://pypi.nvidia.com
-
-# Install acados
-RUN cd Quadruped-PyMPC/quadruped_pympc/acados && mkdir -p build
-RUN cd Quadruped-PyMPC/quadruped_pympc/acados/build && cmake -DACADOS_WITH_SYSTEM_BLASFEO:BOOL=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ..
-RUN cd Quadruped-PyMPC/quadruped_pympc/acados/build && make install -j4
-RUN pip install -e ./Quadruped-PyMPC/quadruped_pympc/acados/interfaces/acados_template
-RUN echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"/Quadruped-PyMPC/quadruped_pympc/acados/lib"' >> /root/.bashrc
-RUN echo 'export ACADOS_SOURCE_DIR="/Quadruped-PyMPC/quadruped_pympc/acados"' >> /root/.bashrc
-# Install Quadruped-PyMPC
-RUN cd Quadruped-PyMPC && pip install -e .
+# Set the shell to use the conda environment
+SHELL ["conda", "run", "-n", "basic_locomotion_dls_isaaclab_ros2_env", "/bin/bash", "-c"]
 
 
 # Set the shell to bash and configure the shell prompt and aliases
-RUN echo 'conda activate isaaclab_env' >> /root/.bashrc
+RUN echo 'conda activate basic_locomotion_dls_isaaclab_ros2_env' >> /root/.bashrc
 
 # Set the working directory and source the bashrc file
-WORKDIR /work/gturrisi
+WORKDIR /home
 RUN source /root/.bashrc
