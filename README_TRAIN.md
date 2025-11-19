@@ -1,6 +1,4 @@
-### Installation Train
-
-If you want only to deploy a trained policy on your robot, go directly [at the bottom of the readme](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/tree/main?tab=readme-ov-file#run-sim-to-sim-and-sim-to-real).
+## Installation Train
 
 1. Install Isaac Lab by following the [installation guide](https://github.com/isaac-sim/IsaacLab). We recommend using the conda installation as it simplifies calling Python scripts from the terminal.
 
@@ -22,7 +20,7 @@ python -m pip install -e source/basic_locomotion_dls_isaaclab
 
 6. If you want to play with [Adversarial Motion Priors](https://arxiv.org/pdf/2104.02180), install the repo [amp-rsl-rl](https://github.com/ami-iit/amp-rsl-rl) from the [AMI](https://github.com/ami-iit) research lab.
 
-### Run a train/play in IsaacLab
+## Run a train/play in IsaacLab
 
 - To train:
 
@@ -56,7 +54,7 @@ python scripts/rsl_rl/play.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=1
 --kit_args="--/physics/collisionApproximateCylinders=true"
 ```
 
-### Run Hyperparameter Search
+## Run Hyperparameter Search
 
 ```bash
 echo "import ray; ray.init(); import time; [time.sleep(10) for _ in iter(int, 1)]" | python3 (TERMINAL 1)
@@ -67,7 +65,7 @@ python3 ../basic_locomotion_dls_isaaclab/exts/basic_locomotion_dls_isaaclab/basi
 ```
 
 
-### Convert XML to USD
+## Convert XML to USD
 We use model from [gym-quadruped](https://github.com/iit-DLSLab/gym-quadruped).
 
 ```bash
