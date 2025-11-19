@@ -7,7 +7,7 @@
   </div>
 </div>
 
-# Overview
+## Overview
 
 This repository is about basic RL quadruped locomotion tasks within the robots available at DLS on IsaacLab, with sim-to-sim and sim-to-real scripts. 
 
@@ -29,13 +29,13 @@ A list of robots available and envs are described below:
 | [HyQReal2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/hyqreal2) | Locomotion-HyQReal-Flat, Locomotion-HyQReal-Rough-Blind, Locomotion-HyQReal-Rough-Vision |
 
 
-# Installation and Runs
+## Installation and Runs
 
 If you want only to deploy a trained policy on your robot, continue on [README_DEPLOY](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_deploy.md) otherwise [README_TRAIN](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_train.md).
 
 
 
-# Citing this work
+## Citing this work
 
 If you find the work useful and you adopt [Morphologycal Symmetries](https://arxiv.org/pdf/2403.17320), please consider citing one of our works:
 
