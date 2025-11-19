@@ -35,6 +35,7 @@ class Simulator_Node(Node):
         # Subscribers and Publishers
         self.publisher_base_state = self.create_publisher(BaseState,"base_state", 1)
         self.publisher_blind_state = self.create_publisher(BlindState,"blind_state", 1)
+        self.publisher_imu = self.create_publisher(Imu,"imu", 1)
         self.subscriber_trajectory_generator = self.create_subscription(TrajectoryGenerator,"trajectory_generator", self.get_trajectory_generator_callback, 1)
 
         self.timer = self.create_timer(1.0/SCHEDULER_FREQ, self.compute_simulator_step_callback)
@@ -98,6 +99,12 @@ class Simulator_Node(Node):
         blind_state_msg.joints_position = self.env.mjData.qpos[7:].tolist()
         blind_state_msg.joints_velocity = self.env.mjData.qvel[6:].tolist()
         self.publisher_blind_state.publish(blind_state_msg)
+
+        imu_msg = Imu()
+        imu_msg.linear_acceleration = self.env.mjData.sensordata[0:3]
+        imu_msg.angular_velocity = self.env.mjData.sensordata[3:6]
+        imu_msg.orientation = self.env.mjData.sensordata[9:13]
+        self.publisher_imu.publish(imu_msg)
 
         joints_pos = LegsAttr(*[np.zeros((1, int(self.env.mjModel.nu/4))) for _ in range(4)])
         joints_pos.FL = qpos[self.env.legs_qpos_idx.FL]
