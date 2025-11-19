@@ -1,6 +1,6 @@
 import rclpy 
 from rclpy.node import Node 
-from dls2_interfaces.msg import BaseState, BlindState, Imu, TrajectoryGenerator
+from dls2_interfaces.msg import BaseState, BlindState, Imu, TrajectoryGenerator, FeetContactState
 
 import time
 import numpy as np
@@ -36,6 +36,8 @@ class Simulator_Node(Node):
         self.publisher_base_state = self.create_publisher(BaseState,"base_state", 1)
         self.publisher_blind_state = self.create_publisher(BlindState,"blind_state", 1)
         self.publisher_imu = self.create_publisher(Imu,"imu", 1)
+        self.publisher_feet_contact_state = self.create_publisher(FeetContactState,"feet_contact_state", 1)
+
         self.subscriber_trajectory_generator = self.create_subscription(TrajectoryGenerator,"trajectory_generator", self.get_trajectory_generator_callback, 1)
 
         self.timer = self.create_timer(1.0/SCHEDULER_FREQ, self.compute_simulator_step_callback)
@@ -88,6 +90,7 @@ class Simulator_Node(Node):
         base_ang_vel = self.env.base_ang_vel(frame='base')
         base_pos = self.env.base_pos
 
+        # Publish Base State ------------------------------------------------
         base_state_msg = BaseState()
         base_state_msg.pose.position = base_pos
         base_state_msg.pose.orientation = np.roll(self.env.mjData.qpos[3:7],-1)
@@ -95,17 +98,32 @@ class Simulator_Node(Node):
         base_state_msg.velocity.angular = base_ang_vel
         self.publisher_base_state.publish(base_state_msg)
 
+
+        # Publish Blind State ------------------------------------------------
         blind_state_msg = BlindState()
         blind_state_msg.joints_position = self.env.mjData.qpos[7:].tolist()
         blind_state_msg.joints_velocity = self.env.mjData.qvel[6:].tolist()
         self.publisher_blind_state.publish(blind_state_msg)
 
+
+        # Publish IMU ------------------------------------------------
         imu_msg = Imu()
         imu_msg.linear_acceleration = self.env.mjData.sensordata[0:3]
         imu_msg.angular_velocity = self.env.mjData.sensordata[3:6]
         imu_msg.orientation = self.env.mjData.sensordata[9:13]
         self.publisher_imu.publish(imu_msg)
 
+
+        # Publish Feet Contact State ------------------------------------------------
+        _, _, feet_GRF = self.env.feet_contact_state(ground_reaction_forces=True)
+        feet_contact_state_msg = FeetContactState()
+        feet_contact_state_msg.feet_name = ["FL", "FR", "RL", "RR"]
+        feet_contact_state_msg.linear_grf_feet = np.concatenate([feet_GRF["FL"], feet_GRF["FR"], feet_GRF["RL"], feet_GRF["RR"]]).tolist()
+        feet_contact_state_msg.angular_grf_feet = np.concatenate([feet_GRF["FL"]*0.0, feet_GRF["FR"]*0.0, feet_GRF["RL"]*0.0, feet_GRF["RR"]*0.0]).tolist()
+        self.publisher_feet_contact_state.publish(feet_contact_state_msg)
+
+
+        # Step the environment --------------------------------------------------------------------------------
         joints_pos = LegsAttr(*[np.zeros((1, int(self.env.mjModel.nu/4))) for _ in range(4)])
         joints_pos.FL = qpos[self.env.legs_qpos_idx.FL]
         joints_pos.FR = qpos[self.env.legs_qpos_idx.FR]

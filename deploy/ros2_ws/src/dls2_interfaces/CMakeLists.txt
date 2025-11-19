@@ -23,6 +23,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/BlindState.msg"
   "msg/BaseState.msg"
   "msg/Imu.msg"
+  "msg/FeetContactState.msg"
   "msg/TrajectoryGenerator.msg"
 )
 
