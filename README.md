@@ -31,7 +31,7 @@ A list of robots available and envs are described below:
 
 ## Installation and Runs
 
-If you want only to deploy a trained policy on your robot, continue on [README_DEPLOY](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_deploy.md) otherwise [README_TRAIN](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_train.md).
+If you want only to deploy a trained policy on your robot, continue on [README_DEPLOY](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_DEPLOY.md) otherwise on [README_TRAIN](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_TRAIN.md).
 
 
 
