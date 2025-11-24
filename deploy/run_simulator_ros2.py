@@ -1,6 +1,6 @@
 import rclpy 
 from rclpy.node import Node 
-from dls2_interfaces.msg import BaseState, BlindState, Imu, TrajectoryGenerator, FeetContactState
+from dls2_interface.msg import BaseState, BlindState, Imu, TrajectoryGenerator, FeetContactState
 
 import time
 import numpy as np

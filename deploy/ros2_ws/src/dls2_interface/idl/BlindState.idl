@@ -1,6 +1,6 @@
 #include "DlsAnnotation.idl"
 
-module dls2_interfaces {
+module dls2_interface {
   	module msg {
 				@Robot @Eigen
 				struct BlindState

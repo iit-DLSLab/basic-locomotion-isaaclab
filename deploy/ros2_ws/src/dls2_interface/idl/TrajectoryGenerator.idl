@@ -2,7 +2,7 @@
 #include "Pose.idl"
 #include "Screw.idl"
 
-module dls2_interfaces {
+module dls2_interface {
   					module msg {
 								@Robot @Eigen
 								struct TrajectoryGenerator
@@ -12,11 +12,11 @@ module dls2_interfaces {
 									unsigned long sequence_id;
 									double timestamp;
 
-									dls2_interfaces::msg::Pose com_pose;
+									dls2_interface::msg::Pose com_pose;
 
-									dls2_interfaces::msg::Screw com_vel;
+									dls2_interface::msg::Screw com_vel;
 
-									dls2_interfaces::msg::Screw com_acc;
+									dls2_interface::msg::Screw com_acc;
 
 									@JointState sequence<double> joints_position;
 								    @JointState sequence<double> joints_velocity;
