@@ -7,6 +7,7 @@ import numpy as np
 np.set_printoptions(precision=3, suppress=True)
 
 # Gym and Simulation related imports
+import mujoco
 from gym_quadruped.quadruped_env import QuadrupedEnv
 from gym_quadruped.utils.quadruped_utils import LegsAttr
 
@@ -60,6 +61,8 @@ class Simulator_Node(Node):
 
         self.last_render_time = time.time()
         self.env.render()  
+        self.env.viewer.user_scn.flags[mujoco.mjtRndFlag.mjRND_SHADOW] = False
+        self.env.viewer.user_scn.flags[mujoco.mjtRndFlag.mjRND_REFLECTION] = False
 
         # Desired PD 
         self.desired_joints_position = LegsAttr(*[np.zeros((int(self.env.mjModel.nu/4), 1)) for _ in range(4)])

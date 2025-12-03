@@ -13,6 +13,7 @@ sys.path.append(dir_path+"/../")
 sys.path.append(dir_path+"/../scripts/rsl_rl")
 
 # Gym and Simulation related imports
+import mujoco
 from gym_quadruped.quadruped_env import QuadrupedEnv
 from gym_quadruped.utils.quadruped_utils import LegsAttr
 
@@ -44,6 +45,8 @@ if __name__ == '__main__':
 
     env.reset(random=False)
     env.render()  # Pass in the first render call any mujoco.viewer.KeyCallbackType
+    env.viewer.user_scn.flags[mujoco.mjtRndFlag.mjRND_SHADOW] = False
+    env.viewer.user_scn.flags[mujoco.mjtRndFlag.mjRND_REFLECTION] = False
 
 
 
