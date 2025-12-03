@@ -1,4 +1,4 @@
-module dls2_interfaces {
+module dls2_interface {
   					module msg {
 						struct Imu
 						{

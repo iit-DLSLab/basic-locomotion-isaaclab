@@ -2,7 +2,7 @@
 #include "Pose.idl"
 #include "Screw.idl"
 
-module dls2_interfaces {
+module dls2_interface {
   	module msg {
 				@Robot
 				struct BaseState
@@ -15,13 +15,13 @@ module dls2_interfaces {
 					string robot_name;
 
 					// Base Pose
-					dls2_interfaces::msg::Pose pose;
+					dls2_interface::msg::Pose pose;
 
 					// Base velocity
-					dls2_interfaces::msg::Screw velocity;
+					dls2_interface::msg::Screw velocity;
 
 					// Base acceleration
-					dls2_interfaces::msg::Screw acceleration;
+					dls2_interface::msg::Screw acceleration;
 
 					// Stance status
 					@LimbDataMap sequence<boolean> stance_status;
