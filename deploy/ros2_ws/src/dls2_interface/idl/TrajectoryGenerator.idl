@@ -1,40 +1,39 @@
-#include "DlsAnnotation.idl"
 #include "Pose.idl"
 #include "Screw.idl"
 
-module dls2_interface {
-  					module msg {
-								@Robot @Eigen
-								struct TrajectoryGenerator
-								{
-									// Header
-									string frame_id;
-									unsigned long sequence_id;
-									double timestamp;
+module dls2_interface
+{
+  module msg
+  {
+    struct TrajectoryGenerator
+    {
+      // header
+      string frame_id;
+      unsigned long sequence_id;
+      double timestamp;
 
-									dls2_interface::msg::Pose com_pose;
+      // data
+      dls2_interface::msg::Pose com_pose;
+      dls2_interface::msg::Screw com_vel;
+      dls2_interface::msg::Screw com_acc;
 
-									dls2_interface::msg::Screw com_vel;
+      sequence<double> joints_position;
+      sequence<double> joints_velocity;
+      sequence<double> joints_acceleration;
+      sequence<double> joints_effort;
+      sequence<double> kp;
+      sequence<double> kd;
 
-									dls2_interface::msg::Screw com_acc;
+      double wrench[6];
 
-									@JointState sequence<double> joints_position;
-								    @JointState sequence<double> joints_velocity;
-								    @JointState sequence<double> joints_acceleration;
-								    @JointState sequence<double> joints_effort;
-									@JointState sequence<double> kp;
-									@JointState sequence<double> kd;
+      sequence<boolean> stance_legs;
 
-									double wrench[6];
+      sequence<double> nominal_touch_down;
+      sequence<double> touch_down;
+      sequence<double> swing_period;
 
-									@LimbDataMap sequence<boolean> stance_legs;
-
-									@LimbDataMap_EigenVector3 sequence<double> nominal_touch_down;
-								    @LimbDataMap_EigenVector3 sequence<double> touch_down;
-								    @LimbDataMap sequence<double> swing_period;
-
-									@LimbDataMap sequence<double> normal_force_max;
-									@LimbDataMap sequence<double> normal_force_min;
-								};
-					};
+      sequence<double> normal_force_max;
+      sequence<double> normal_force_min;
+    };
+  };
 };

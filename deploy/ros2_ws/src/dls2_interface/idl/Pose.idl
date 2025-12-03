@@ -1,9 +1,11 @@
-module dls2_interface {
-  	module msg {
-struct Pose
+module dls2_interface
 {
-    double position[3];
-	double orientation[4]; //x, y, z, w
-};
+  module msg
+  {
+    struct Pose
+    {
+      double position[3];
+      double orientation[4]; // x, y, z, w
     };
+  };
 };
