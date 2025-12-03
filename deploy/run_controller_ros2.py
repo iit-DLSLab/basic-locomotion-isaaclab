@@ -12,7 +12,7 @@ sys.path.append(os.path.join(dir_path, ".."))
 import rclpy 
 from rclpy.node import Node 
 from sensor_msgs.msg import Joy
-from dls2_interfaces.msg import BaseState, BlindState, Imu, TrajectoryGenerator
+from dls2_interface.msg import BaseState, BlindState, Imu, TrajectoryGenerator
 
 import time
 import numpy as np
