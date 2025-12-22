@@ -141,6 +141,11 @@ class LocomotionEnv(DirectRLEnv):
         self._height_scanner = RayCaster(self.cfg.height_scanner)
         self.scene.sensors["height_scanner"] = self._height_scanner
 
+        # if we came from depth-based env, we create the depth camera scanner
+        if isinstance(self.cfg, AliengoRoughCameraEnvCfg):
+            self._depth_camera = RayCaster(self.cfg.depth_camera)
+            self.scene.sensor["depth_camera"] = self.depth_camera
+
         # we add an imu
         self._imu = Imu(self.cfg.imu)
         self.scene.sensors["imu"] = self._imu
@@ -244,7 +249,14 @@ class LocomotionEnv(DirectRLEnv):
             )
             height_data = torch.nan_to_num(height_data, nan=0.0, posinf=1.0, neginf=-1.0)
             height_data = height_data.clip(-1.0, 1.0)
-            obs = torch.cat((obs, height_data), dim=-1)      
+            obs = torch.cat((obs, height_data), dim=-1)   
+
+
+        if isinstance(self.cfg, AliengoRoughCameraEnvCfg):
+            depth_data = self._depth_camera.data.output["distance_to_camera"]
+            depth_data = torch.nan_to_num(depth_data, nan=0.0, posinf=1.0, neginf=-1.0)
+            depth_data = depth_data.clip(-2.0, 2.0)
+            obs = torch.cat((obs, depth_data), dim=-1)   
 
 
         # If RMA, we add some other predicted obs

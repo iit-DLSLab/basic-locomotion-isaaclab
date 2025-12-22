@@ -18,7 +18,7 @@ from .locomotion_env import LocomotionEnv
 
 
 # Aliengo environments
-from .locomotion_env import AliengoFlatEnvCfg, AliengoRoughVisionEnvCfg, AliengoRoughBlindEnvCfg
+from .locomotion_env import AliengoFlatEnvCfg, AliengoRoughVisionEnvCfg, AliengoRoughBlindEnvCfg, AliengoRoughCameraEnvCfg
 
 gym.register(
     id="Locomotion-Aliengo-Flat",
@@ -46,6 +46,16 @@ gym.register(
     disable_env_checker=True,
     kwargs={
         "env_cfg_entry_point": AliengoRoughVisionEnvCfg,
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:RoughPPORunnerCfg",
+    },
+)
+
+gym.register(
+    id="Locomotion-Aliengo-Rough-Camera",
+    entry_point=LocomotionEnv,
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": AliengoRoughCameraEnvCfg,
         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:RoughPPORunnerCfg",
     },
 )

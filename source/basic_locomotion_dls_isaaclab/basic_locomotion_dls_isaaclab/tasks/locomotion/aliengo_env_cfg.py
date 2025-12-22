@@ -6,7 +6,7 @@ from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import CurriculumTermCfg as CurrTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.scene import InteractiveSceneCfg
-from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, patterns
+from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, RayCasterCameraCfg, patterns
 from isaaclab.sim import SimulationCfg, PhysxCfg
 from isaaclab.envs import ViewerCfg
 from isaaclab.terrains import TerrainImporterCfg
@@ -421,4 +421,32 @@ class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
         pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.2, 1.2]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
+    )
+
+
+@configclass
+class AliengoRoughCameraEnvCfg(AliengoRoughVisionEnvCfg):
+    # env
+    #observation_space = 276
+    observation_space = 429
+    breakpoint()
+
+    depth_camera = RayCasterCameraCfg(
+        prim_path= '{ENV_REGEX_NS}/Robot/base',
+        data_types=["distance_to_camera"],
+        offset=RayCasterCameraCfg.OffsetCfg(
+            pos=(0.33, 0.0, 0.08), 
+            rot=quat_from_euler_xyz_tuple(*tuple(torch.deg2rad(torch.tensor([180,70,-90])))), 
+            convention="ros"
+            ),
+        depth_clipping_behavior = 'max',
+        pattern_cfg = PinholeCameraPatternCfg(
+            focal_length=11.041, 
+            horizontal_aperture=20.955,
+            vertical_aperture = 12.240,
+            height=60,
+            width=106,
+        ),
+        mesh_prim_paths=["/World/ground"],
+        max_distance = 2.,
     )
