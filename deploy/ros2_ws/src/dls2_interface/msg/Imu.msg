@@ -4,6 +4,7 @@ uint32 sequence_id
 float64 timestamp
 
 float64[4] orientation
+float64[3] orientation_rpy
 float64[9] orientation_covariance
 
 float64[3] angular_velocity
