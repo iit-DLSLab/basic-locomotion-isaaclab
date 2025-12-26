@@ -6,13 +6,15 @@ from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import CurriculumTermCfg as CurrTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.scene import InteractiveSceneCfg
-from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, RayCasterCameraCfg, patterns
+from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, MultiMeshRayCasterCameraCfg, TiledCameraCfg, patterns
+from isaaclab.sensors.ray_caster.patterns import PinholeCameraPatternCfg
 from isaaclab.sim import SimulationCfg, PhysxCfg
 from isaaclab.envs import ViewerCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.sensors import ImuCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.noise import GaussianNoiseCfg, NoiseModelWithAdditiveBiasCfg
+from isaaclab.markers.config import VisualizationMarkersCfg
 
 from basic_locomotion_dls_isaaclab.assets.aliengo_asset import ALIENGO_CFG
 from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG
@@ -405,48 +407,50 @@ class AliengoRoughBlindEnvCfg(AliengoFlatEnvCfg):
 
 
 
-
 @configclass
 class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
     # env
-    #observation_space = 276
-    observation_space = 429
+    observation_space = 276
 
     # we add a height scanner for perceptive locomotion
-    height_scanner = RayCasterCfg(
+    height_scanner2 = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/base",
-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.0)),
-        attach_yaw_only=True,
-        #ray_alignment='yaw',
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.2, 1.2]),
+        offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 0.0)),
+        ray_alignment='yaw',
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[0.6, 0.8]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
     )
 
-
-@configclass
-class AliengoRoughCameraEnvCfg(AliengoRoughVisionEnvCfg):
-    # env
-    #observation_space = 276
-    observation_space = 429
-    breakpoint()
-
-    depth_camera = RayCasterCameraCfg(
-        prim_path= '{ENV_REGEX_NS}/Robot/base',
-        data_types=["distance_to_camera"],
-        offset=RayCasterCameraCfg.OffsetCfg(
-            pos=(0.33, 0.0, 0.08), 
-            rot=quat_from_euler_xyz_tuple(*tuple(torch.deg2rad(torch.tensor([180,70,-90])))), 
-            convention="ros"
-            ),
-        depth_clipping_behavior = 'max',
-        pattern_cfg = PinholeCameraPatternCfg(
-            focal_length=11.041, 
+    depth_camera = MultiMeshRayCasterCameraCfg(
+        prim_path="/World/envs/env_.*/Robot/base",
+        update_period=1 / 60,
+        offset=MultiMeshRayCasterCameraCfg.OffsetCfg(pos=(0, -0.1, 1.5), rot=(0.0, 1.0, 0.0, 0.0)),
+        mesh_prim_paths=[
+            "/World/ground",
+            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="{ENV_REGEX_NS}/Robot/LF_.*/visuals"),
+            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="{ENV_REGEX_NS}/Robot/RF_.*/visuals"),
+            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="{ENV_REGEX_NS}/Robot/LH_.*/visuals"),
+            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="{ENV_REGEX_NS}/Robot/RH_.*/visuals"),
+            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="{ENV_REGEX_NS}/Robot/base/visuals"),
+        ],
+        pattern_cfg=patterns.PinholeCameraPatternCfg(
+            focal_length=24.0,
             horizontal_aperture=20.955,
-            vertical_aperture = 12.240,
-            height=60,
-            width=106,
+            height=120,
+            width=240,
         ),
-        mesh_prim_paths=["/World/ground"],
-        max_distance = 2.,
+        debug_vis=True,
     )
+
+    """depth_camera = TiledCameraCfg(
+        prim_path="/World/envs/env_.*/Camera",
+        offset=TiledCameraCfg.OffsetCfg(pos=(-5.0, 0.0, 2.0), rot=(1.0, 0.0, 0.0, 0.0), convention="world"),
+        data_types=["depth"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+        ),
+        width=120,
+        height=240,
+    )"""
+

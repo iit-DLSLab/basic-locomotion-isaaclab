@@ -18,7 +18,7 @@ from .locomotion_env import LocomotionEnv
 
 
 # Aliengo environments
-from .locomotion_env import AliengoFlatEnvCfg, AliengoRoughVisionEnvCfg, AliengoRoughBlindEnvCfg, AliengoRoughCameraEnvCfg
+from .locomotion_env import AliengoFlatEnvCfg, AliengoRoughVisionEnvCfg, AliengoRoughBlindEnvCfg
 
 gym.register(
     id="Locomotion-Aliengo-Flat",
@@ -50,15 +50,6 @@ gym.register(
     },
 )
 
-gym.register(
-    id="Locomotion-Aliengo-Rough-Camera",
-    entry_point=LocomotionEnv,
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": AliengoRoughCameraEnvCfg,
-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:RoughPPORunnerCfg",
-    },
-)
 
 # Go2 environments
 from .locomotion_env import Go2FlatEnvCfg, Go2RoughVisionEnvCfg, Go2RoughBlindEnvCfg
