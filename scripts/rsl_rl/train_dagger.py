@@ -82,114 +82,7 @@ from isaaclab_tasks.utils.hydra import hydra_task_config
 
 # PLACEHOLDER: Extension template (do not remove this comment)
 
-
-import torch.nn as nn
-import torch.nn.functional as F
-
-class CNNEncoder(nn.Module):
-    """
-    Encodes an image (B, 1, H, W) -> (B, cnn_dim)
-    """
-    def __init__(self, cnn_dim: int = 256):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=8, stride=4),
-            nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1),
-            nn.ReLU(),
-        )
-        self.fc = nn.LazyLinear(cnn_dim)
-
-    def forward(self, x):
-        x = self.net(x)
-        x = x.flatten(1)
-        x = self.fc(x)
-        return x
-
-
-class MLPEncoder(nn.Module):
-    """
-    Encodes numeric features (B, mlp_in) -> (B, mlp_dim)
-    """
-    def __init__(self, mlp_in: int, mlp_dim: int = 128):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(mlp_in, 128),
-            nn.ReLU(),
-            nn.Linear(128, mlp_dim),
-            nn.ReLU(),
-        )
-
-    def forward(self, x):
-        return self.net(x)
-
-
-class DaggerNet(nn.Module):
-    """
-    Inputs:
-      img_seq:  (B, T, C, H, W)
-      vec_seq:  (B, T, F)
-
-    Output:
-      logits (or actions): (B, T, output_size) if return_sequences=True
-                           (B, output_size)   if return_sequences=False (last step)
-    """
-    def __init__(
-        self,
-        vec_size: int,
-        output_size: int,
-        cnn_dim: int = 256,
-        mlp_dim: int = 128,
-        lstm_hidden: int = 256,
-        lstm_layers: int = 1,
-        dropout: float = 0.0,
-        return_sequences: bool = True,
-    ):
-        super().__init__()
-        self.return_sequences = return_sequences
-
-        self.cnn = CNNEncoder(cnn_dim=cnn_dim)
-        self.mlp = MLPEncoder(mlp_in=vec_size, mlp_dim=mlp_dim)
-
-        lstm_in = cnn_dim + mlp_dim
-        self.lstm = nn.LSTM(
-            input_size=lstm_in,
-            hidden_size=lstm_hidden,
-            num_layers=lstm_layers,
-            batch_first=True,
-            dropout=dropout if lstm_layers > 1 else 0.0,
-        )
-
-        self.head = nn.Sequential(
-            nn.Linear(lstm_hidden, 128),
-            nn.ReLU(),
-            nn.Linear(128, output_size),
-        )
-
-    def forward(self, depth_seq, vec_seq, hidden=None):
-        B, T = depth_seq.shape[0], depth_seq.shape[1]
-
-        # CNN per timestep
-        depth_flat = depth_seq.reshape(B * T, *depth_seq.shape[2:])  # (B*T, 1, H, W)
-        depth_emb = self.cnn(depth_flat).reshape(B, T, -1)           # (B, T, cnn_dim)
-
-        # MLP per timestep
-        vec_flat = vec_seq.reshape(B * T, vec_seq.shape[-1])         # (B*T, F)
-        vec_emb = self.mlp(vec_flat).reshape(B, T, -1)               # (B, T, mlp_dim)
-
-        # Fuse -> LSTM
-        x = torch.cat([depth_emb, vec_emb], dim=-1)                  # (B, T, cnn_dim+mlp_dim)
-        lstm_out, new_hidden = self.lstm(x, hidden)                  # (B, T, lstm_hidden)
-
-        if self.return_sequences:
-            out = self.head(lstm_out)                                # (B, T, output_size)
-        else:
-            out = self.head(lstm_out[:, -1])                         # (B, output_size)
-
-        return out, new_hidden
-    
+from dagger_network import DaggerNet
 
 
 @hydra_task_config(args_cli.task, args_cli.agent)
@@ -303,9 +196,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     num_episodes = 0
     num_steps_per_episode = 200
-    states = []
-    depths = []
-    actions_teacher = []
+    desired_lstm_seq_len = 10
+    episode_states = []
+    episode_depths = []
+    episode_actions = []
     dagger_net = DaggerNet(vec_size=obs["common"].shape[1], output_size=env.action_space.shape[1], return_sequences=False).to(env.unwrapped.device)
 
     # simulate environment
@@ -322,17 +216,29 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                 actions = policy(obs)
                 obs, _, _, _ = env.step(actions)
             
-            states.append(obs["common"])
-            depths.append(obs["depth"])
-            actions_teacher.append(actions)
+            episode_states.append(obs["common"])
+            episode_depths.append(obs["depth"])
+            episode_actions.append(actions) 
 
         timestep += 1
         if(timestep % num_steps_per_episode) == 0:
+
+            for j in range(timestep):
+                if j + desired_lstm_seq_len > timestep:
+                    break
+                # create sequences for dagger dataset
+                depth_seq = torch.stack(episode_depths[j:j+desired_lstm_seq_len]).unsqueeze(0)  # shape (1, T, 1, H, W)
+                state_seq = torch.stack(episode_states[j:j+desired_lstm_seq_len]).unsqueeze(0)  # shape (1, T, F)
+                action_seq = torch.stack(episode_actions[j:j+desired_lstm_seq_len]).unsqueeze(0)  # shape (1, T, output_size)
+                dagger_net.dataset.add_sample(depth_seq, state_seq, action_seq)
+
+            episode_states, episode_depths, episode_actions = [], [], []
+
             #train the dagger net
-            #TODO: implement training loop here
-        
+            dagger_net.train_model(batch_size=8, epochs=5, device=env.unwrapped.device)
         
             num_episodes += 1
+            timestep = 0
             print(f"[INFO] Completed episode, {num_episodes} remaining.")
 
     # close the simulator
