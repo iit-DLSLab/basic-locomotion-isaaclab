@@ -200,6 +200,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     episode_states = []
     episode_depths = []
     episode_actions = []
+    hidden = None
     dagger_net = DaggerNet(vec_size=obs["common"].shape[1], output_size=env.action_space.shape[1], return_sequences=False).to(env.unwrapped.device)
 
     # simulate environment
@@ -210,7 +211,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
             if torch.rand(1) > 0.99/(num_episodes*0.9+1):
                 breakpoint()
-                predicted_actions, hidden = dagger_net(obs["depth"], obs["common"], hidden=None)
+                predicted_actions, hidden = dagger_net(obs["depth"], obs["common"], hidden=hidden)
                 obs, _, _, _ = env.step(predicted_actions)
             else:
                 actions = policy(obs)
@@ -233,6 +234,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                 dagger_net.dataset.add_sample(depth_seq, state_seq, action_seq)
 
             episode_states, episode_depths, episode_actions = [], [], []
+            hidden = None
 
             #train the dagger net
             dagger_net.train_model(batch_size=8, epochs=5, device=env.unwrapped.device)
