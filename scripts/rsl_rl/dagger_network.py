@@ -179,6 +179,8 @@ class DaggerNet(nn.Module):
                 states = states.to(device)
                 actions = actions.to(device)
 
+                #todo: handle hidden state properly for LSTM
+
                 optimizer.zero_grad()
                 outputs, _ = self.forward(depths, states, hidden=None)
                 loss = loss_fn(outputs, actions)

@@ -179,18 +179,18 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     dt = env.unwrapped.step_dt
 
-    from isaaclab.sensors import MultiMeshRayCasterCamera, MultiMeshRayCasterCameraCfg
-    env.unwrapped._depth_camera = MultiMeshRayCasterCamera(env.unwrapped.cfg.depth_camera)
-    env.unwrapped.scene.sensors["depth_camera"] = env.unwrapped._depth_camera
+    #from isaaclab.sensors import MultiMeshRayCasterCamera, MultiMeshRayCasterCameraCfg
+    #env.unwrapped._depth_camera = MultiMeshRayCasterCamera(env.unwrapped.cfg.depth_camera)
+    #env.unwrapped.scene.sensors["depth_camera"] = env.unwrapped._depth_camera
 
     # reset environment
     obs = env.get_observations()
-
+    
     depth_data = env.unwrapped._depth_camera.data.output["distance_to_image_plane"]
     depth_data = torch.nan_to_num(depth_data, nan=0.0, posinf=1.0, neginf=-1.0)
     depth_data = depth_data.clip(-2.0, 2.0)
+    depth_data = depth_data.permute(0, 3, 1, 2)  # ora (B, 1, H, W)
     
-    breakpoint()
 
     timestep = 0
 
@@ -211,14 +211,19 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
             if torch.rand(1) > 0.99/(num_episodes*0.9+1):
                 breakpoint()
-                predicted_actions, hidden = dagger_net(obs["depth"], obs["common"], hidden=hidden)
+                predicted_actions, hidden = dagger_net(depth_data, obs["common"], hidden=hidden)
                 obs, _, _, _ = env.step(predicted_actions)
             else:
                 actions = policy(obs)
                 obs, _, _, _ = env.step(actions)
+
+            depth_data = env.unwrapped._depth_camera.data.output["distance_to_image_plane"]
+            depth_data = torch.nan_to_num(depth_data, nan=0.0, posinf=1.0, neginf=-1.0)
+            depth_data = depth_data.clip(-2.0, 2.0)
+            depth_data = depth_data.permute(0, 3, 1, 2)  # ora (B, 1, H, W)
             
             episode_states.append(obs["common"])
-            episode_depths.append(obs["depth"])
+            episode_depths.append(depth_data)
             episode_actions.append(actions) 
 
         timestep += 1
@@ -228,6 +233,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                 if j + desired_lstm_seq_len > timestep:
                     break
                 # create sequences for dagger dataset
+                breakpoint()
                 depth_seq = torch.stack(episode_depths[j:j+desired_lstm_seq_len]).unsqueeze(0)  # shape (1, T, 1, H, W)
                 state_seq = torch.stack(episode_states[j:j+desired_lstm_seq_len]).unsqueeze(0)  # shape (1, T, F)
                 action_seq = torch.stack(episode_actions[j:j+desired_lstm_seq_len]).unsqueeze(0)  # shape (1, T, output_size)
