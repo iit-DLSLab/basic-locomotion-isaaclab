@@ -241,7 +241,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
             hidden = None
 
             #train the dagger net
-            dagger_net.train(batch_size=8, epochs=5, device=env.unwrapped.device)
+            dagger_net.train_network(batch_size=8, epochs=5, device=env.unwrapped.device)
         
             num_episodes += 1
             timestep = 0

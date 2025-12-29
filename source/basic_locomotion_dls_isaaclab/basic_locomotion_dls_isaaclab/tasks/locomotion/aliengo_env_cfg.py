@@ -409,15 +409,18 @@ class AliengoRoughBlindEnvCfg(AliengoFlatEnvCfg):
 
 @configclass
 class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
-    # env
-    observation_space = 276
+
+    def __post_init__(self) -> None:
+        height_map_x_points = int(round(self.height_scanner2.pattern_cfg.size[0] / self.height_scanner2.pattern_cfg.resolution)) + 1
+        height_map_y_points = int(round(self.height_scanner2.pattern_cfg.size[1] / self.height_scanner2.pattern_cfg.resolution))
+        self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
 
     # we add a height scanner for perceptive locomotion
     height_scanner2 = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/base",
         offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 0.0)),
         ray_alignment='yaw',
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[0.6, 0.8]),
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
     )

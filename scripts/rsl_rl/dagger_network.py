@@ -151,7 +151,7 @@ class DaggerNet(nn.Module):
 
         return out, new_hidden
     
-    def train(self, batch_size=512, epochs=1000, learning_rate=1e-3, device='cpu', validation_split=0.2):
+    def train_network(self, batch_size=512, epochs=1000, learning_rate=1e-3, device='cpu', validation_split=0.2):
         """Train the network with validation loss tracking.
         
         Args:
@@ -188,7 +188,9 @@ class DaggerNet(nn.Module):
                 states = states.to(device)
                 actions = actions.to(device)
 
-                #todo: handle hidden state properly for LSTM
+                breakpoint()
+
+                
 
                 optimizer.zero_grad()
                 outputs, _ = self.forward(depths, states, hidden=None)
