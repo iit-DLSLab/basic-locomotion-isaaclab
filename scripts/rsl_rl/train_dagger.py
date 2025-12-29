@@ -210,7 +210,6 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         with torch.inference_mode():
 
             if torch.rand(1) > 0.99/(num_episodes*0.9+1):
-                breakpoint()
                 predicted_actions, hidden = dagger_net(depth_data, obs["common"], hidden=hidden)
                 obs, _, _, _ = env.step(predicted_actions)
             else:
@@ -233,7 +232,6 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
                 if j + desired_lstm_seq_len > timestep:
                     break
                 # create sequences for dagger dataset
-                breakpoint()
                 depth_seq = torch.stack(episode_depths[j:j+desired_lstm_seq_len]).unsqueeze(0)  # shape (1, T, 1, H, W)
                 state_seq = torch.stack(episode_states[j:j+desired_lstm_seq_len]).unsqueeze(0)  # shape (1, T, F)
                 action_seq = torch.stack(episode_actions[j:j+desired_lstm_seq_len]).unsqueeze(0)  # shape (1, T, output_size)
@@ -243,7 +241,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
             hidden = None
 
             #train the dagger net
-            dagger_net.train_model(batch_size=8, epochs=5, device=env.unwrapped.device)
+            dagger_net.train(batch_size=8, epochs=5, device=env.unwrapped.device)
         
             num_episodes += 1
             timestep = 0

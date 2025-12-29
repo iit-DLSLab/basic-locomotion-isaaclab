@@ -121,6 +121,15 @@ class DaggerNet(nn.Module):
         )
 
     def forward(self, depth_seq, vec_seq, hidden=None):
+
+        # depth_seq: (B,1,H,W) oppure (B,T,1,H,W)
+        # vec_seq:   (B,F)     oppure (B,T,F)
+
+        if depth_seq.dim() == 4:              # (B,1,H,W) -> (B,1,1,H,W)
+            depth_seq = depth_seq.unsqueeze(1)
+        if vec_seq.dim() == 2:                # (B,F) -> (B,1,F)
+            vec_seq = vec_seq.unsqueeze(1)
+
         B, T = depth_seq.shape[0], depth_seq.shape[1]
 
         # CNN per timestep
