@@ -207,7 +207,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     while simulation_app.is_running():
             
         # run everything in inference mode
-        with torch.inference_mode():
+        with torch.no_grad():
+        #with torch.inference_mode():
 
             if torch.rand(1) > 0.99/(num_episodes*0.9+1):
                 predicted_actions, hidden = dagger_net(depth_data, obs["common"], hidden=hidden)

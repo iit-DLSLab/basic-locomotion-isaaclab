@@ -188,13 +188,28 @@ class DaggerNet(nn.Module):
                 states = states.to(device)
                 actions = actions.to(device)
 
-                breakpoint()
+                # depths: (B, X, T, A, C, H, W)
+                B, X, T, A, C, H, W = depths.shape
+                depths = depths.squeeze(1)                 # (B, T, A, C, H, W)
+                depths = depths.permute(0, 2, 1, 3, 4, 5)  # (B, A, T, C, H, W)
+                depths = depths.reshape(B*A, T, C, H, W)   # (B*A, T, C, H, W)
 
-                
+                # states: (B, X, T, A, F)
+                B2, X2, T2, A2, F = states.shape
+                states = states.squeeze(1)                 # (B, T, A, F)
+                states = states.permute(0, 2, 1, 3)        # (B, A, T, F)
+                states = states.reshape(B2*A2, T2, F)         # (B*A, T, F)
+
+                # actions: (B, X, T, A, O)
+                B3, X3, T3, A3, O = actions.shape
+                actions = actions.squeeze(1)               # (B, T, A, O)
+                actions = actions.permute(0, 2, 1, 3)      # (B, A, T, O)
+                actions = actions.reshape(B3*A3, T3, O)       # (B*A, T, O)
+                actions_last = actions[:, -1, :]   
 
                 optimizer.zero_grad()
                 outputs, _ = self.forward(depths, states, hidden=None)
-                loss = loss_fn(outputs, actions)
+                loss = loss_fn(outputs, actions_last)
                 loss.backward()
                 optimizer.step()
                 total_train_loss += loss.item() * depths.size(0)
@@ -211,8 +226,27 @@ class DaggerNet(nn.Module):
                     states = states.to(device)
                     actions = actions.to(device)
 
+                    # depths: (B, X, T, A, C, H, W)
+                    B, X, T, A, C, H, W = depths.shape
+                    depths = depths.squeeze(1)                 # (B, T, A, C, H, W)
+                    depths = depths.permute(0, 2, 1, 3, 4, 5)  # (B, A, T, C, H, W)
+                    depths = depths.reshape(B*A, T, C, H, W)   # (B*A, T, C, H, W)
+
+                    # states: (B, X, T, A, F)
+                    B2, X2, T2, A2, F = states.shape
+                    states = states.squeeze(1)                 # (B, T, A, F)
+                    states = states.permute(0, 2, 1, 3)        # (B, A, T, F)
+                    states = states.reshape(B2*A2, T2, F)         # (B*A, T, F)
+
+                    # actions: (B, X, T, A, O)
+                    B3, X3, T3, A3, O = actions.shape
+                    actions = actions.squeeze(1)               # (B, T, A, O)
+                    actions = actions.permute(0, 2, 1, 3)      # (B, A, T, O)
+                    actions = actions.reshape(B3*A3, T3, O)       # (B*A, T, O)
+                    actions_last = actions[:, -1, :]   
+
                     outputs, _ = self.forward(depths, states, hidden=None)
-                    loss = loss_fn(outputs, actions)
+                    loss = loss_fn(outputs, actions_last)
                     total_val_loss += loss.item() * depths.size(0)
 
             avg_val_loss = total_val_loss / val_size
