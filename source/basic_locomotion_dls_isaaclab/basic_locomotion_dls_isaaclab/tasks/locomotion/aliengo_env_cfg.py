@@ -256,7 +256,7 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
     )
 
     # an imu sensor in case we don't want any state estimator
-    imu = ImuCfg(prim_path="/World/envs/env_.*/Robot/base", debug_vis=True)
+    imu = ImuCfg(prim_path="/World/envs/env_.*/Robot/base", debug_vis=False)
 
 
     # scene
@@ -430,14 +430,14 @@ class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
     depth_camera = MultiMeshRayCasterCameraCfg(
         prim_path="/World/envs/env_.*/Robot/base",
         update_period=1 / 60,
-        offset=MultiMeshRayCasterCameraCfg.OffsetCfg(pos=(0, -0.1, 1.5), rot=(0.0, 1.0, 0.0, 0.0)),
+        offset=MultiMeshRayCasterCameraCfg.OffsetCfg(pos=(0.33, 0.0, 0.08), rot=(-0.405579, 0.579228, -0.579228, 0.405579)),
         mesh_prim_paths=[
             "/World/ground",
-            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="{ENV_REGEX_NS}/Robot/LF_.*/visuals"),
-            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="{ENV_REGEX_NS}/Robot/RF_.*/visuals"),
-            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="{ENV_REGEX_NS}/Robot/LH_.*/visuals"),
-            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="{ENV_REGEX_NS}/Robot/RH_.*/visuals"),
-            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="{ENV_REGEX_NS}/Robot/base/visuals"),
+            MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/base/visuals"),
+            MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/FL_.*/visuals"),
+            MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/FR_.*/visuals"),
+            MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/RL_.*/visuals"),
+            MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/RR_.*/visuals"),
         ],
         pattern_cfg=patterns.PinholeCameraPatternCfg(
             focal_length=24.0,
