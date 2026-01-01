@@ -415,6 +415,8 @@ class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
         height_map_y_points = int(round(self.height_scanner2.pattern_cfg.size[1] / self.height_scanner2.pattern_cfg.resolution)) + 1
         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
 
+    use_vision = True
+
     # we add a height scanner for perceptive locomotion
     height_scanner2 = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/base",
