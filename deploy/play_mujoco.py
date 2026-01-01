@@ -101,8 +101,9 @@ if __name__ == '__main__':
         ref_base_lin_vel, ref_base_ang_vel = env.target_base_vel()
 
         if(locomotion_policy.use_vision):
-            heightmap.update_height_map(env.mjData.qpos[0:3] + heightmap_offset["pos"], yaw=env.base_ori_euler_xyz[2])
-    
+            offset_world_frame = heightmap_offset["pos"] @ heading_orientation_SO3.T
+            heightmap.update_height_map(env.mjData.qpos[0:3] + offset_world_frame, yaw=env.base_ori_euler_xyz[2])
+
         # RL controller --------------------------------------------------------------
         if env.step_num % round(1 / (locomotion_policy.RL_FREQ * simulation_dt)) == 0:            
             
