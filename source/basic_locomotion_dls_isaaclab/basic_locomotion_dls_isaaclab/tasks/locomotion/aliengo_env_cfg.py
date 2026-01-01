@@ -16,7 +16,7 @@ from isaaclab.utils import configclass
 from isaaclab.utils.noise import GaussianNoiseCfg, NoiseModelWithAdditiveBiasCfg
 from isaaclab.markers.config import VisualizationMarkersCfg
 
-from basic_locomotion_dls_isaaclab.assets.aliengo_asset import ALIENGO_CFG
+from basic_locomotion_dls_isaaclab.assets.aliengo_asset import ALIENGO_CFG, CAMERA_USD_CFG
 from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG
 
 import basic_locomotion_dls_isaaclab.tasks.custom_events as custom_events
@@ -408,7 +408,7 @@ class AliengoRoughBlindEnvCfg(AliengoFlatEnvCfg):
 
 
 @configclass
-class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
+class AliengoRoughVisionEnvCfg(AliengoFlatEnvCfg):
 
     def __post_init__(self) -> None:
         height_map_x_points = int(round(self.height_scanner2.pattern_cfg.size[0] / self.height_scanner2.pattern_cfg.resolution)) + 1
@@ -426,6 +426,8 @@ class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
     )
+
+    #camera_usd = CAMERA_USD_CFG
 
     depth_camera = MultiMeshRayCasterCameraCfg(
         prim_path="/World/envs/env_.*/Robot/base",
@@ -459,3 +461,63 @@ class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
         height=240,
     )"""
 
+
+    ROUGH_TERRAINS_CFG = TerrainGeneratorCfg(
+        curriculum=False,
+        size=(8.0, 8.0),
+        border_width=20.0,
+        num_rows=10,
+        num_cols=20,
+        horizontal_scale=0.1,
+        vertical_scale=0.005,
+        slope_threshold=0.75,
+        use_cache=False,
+        sub_terrains={
+            "flat": terrain_gen.MeshPlaneTerrainCfg(
+                proportion=0.2
+            ),
+            "boxes": terrain_gen.MeshRandomGridTerrainCfg(
+                proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.15), platform_width=2.0,
+            ),
+            "star": terrain_gen.MeshStarTerrainCfg(
+                proportion=0.1, num_bars=10, bar_width_range=(0.15, 0.20), bar_height_range=(0.05, 0.15), platform_width=2.0,
+            ),
+            "random_rough": terrain_gen.HfRandomUniformTerrainCfg(
+                proportion=0.1, noise_range=(0.02, 0.06), noise_step=0.02, border_width=0.25
+            ),
+            "hf_pyramid_slope": terrain_gen.HfPyramidSlopedTerrainCfg(
+                proportion=0.1, slope_range=(0.2, 0.4), platform_width=2.0, border_width=0.25
+            ),
+            "hf_pyramid_slope_inv": terrain_gen.HfInvertedPyramidSlopedTerrainCfg(
+                proportion=0.1, slope_range=(0.2, 0.4), platform_width=2.0, border_width=0.25
+            ),
+            "pyramid_stairs": terrain_gen.MeshPyramidStairsTerrainCfg(
+                proportion=0.15, step_height_range=(0.05, 0.25), step_width=0.3,
+                platform_width=3.0, border_width=1.0, holes=False,
+            ),
+            "pyramid_stairs_inv": terrain_gen.MeshInvertedPyramidStairsTerrainCfg(
+                proportion=0.15, step_height_range=(0.05, 0.25), step_width=0.3,
+                platform_width=3.0, border_width=1.0, holes=False,
+            ),
+        },
+    )
+
+    """Rough terrains configuration."""
+    terrain = TerrainImporterCfg(
+        prim_path="/World/ground",
+        terrain_type="generator",
+        terrain_generator=ROUGH_TERRAINS_CFG,
+        max_init_terrain_level=10,
+        collision_group=-1,
+        physics_material=sim_utils.RigidBodyMaterialCfg(
+            friction_combine_mode="multiply",
+            restitution_combine_mode="multiply",
+            static_friction=1.0,
+            dynamic_friction=1.0,
+        ),
+        visual_material=sim_utils.MdlFileCfg(
+            mdl_path="{NVIDIA_NUCLEUS_DIR}/Materials/Base/Architecture/Shingles_01.mdl",
+            project_uvw=True,
+        ),
+        debug_vis=False,
+    )

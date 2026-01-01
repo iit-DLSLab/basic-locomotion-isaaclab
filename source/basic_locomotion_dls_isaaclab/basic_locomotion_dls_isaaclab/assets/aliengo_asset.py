@@ -6,6 +6,7 @@
 import isaaclab.sim as sim_utils
 from basic_locomotion_dls_isaaclab.actuators import IdentifiedActuatorElectricCfg
 from isaaclab.assets.articulation import ArticulationCfg
+from isaaclab.assets import AssetBaseCfg
 
 from basic_locomotion_dls_isaaclab.assets import ISAAC_ASSET_DIR
 
@@ -112,4 +113,14 @@ ALIENGO_CFG = ArticulationCfg(
 
     actuators={"hip": ALIENGO_HIP_ACTUATOR_CFG, "thigh": ALIENGO_THIGH_ACTUATOR_CFG, "calf": ALIENGO_CALF_ACTUATOR_CFG},
     soft_joint_pos_limit_factor=0.95,
+)
+
+
+CAMERA_USD_CFG = AssetBaseCfg(
+    prim_path="/World/envs/env_.*/Robot/base/d435",
+    spawn=sim_utils.UsdFileCfg(usd_path=f"{ISAAC_ASSET_DIR}/d435.usd",),
+    init_state=AssetBaseCfg.InitialStateCfg(
+            pos=(0.33, 0.0, 0.08), 
+            rot=(-0.405579, 0.579228, -0.579228, 0.405579)
+    )
 )
