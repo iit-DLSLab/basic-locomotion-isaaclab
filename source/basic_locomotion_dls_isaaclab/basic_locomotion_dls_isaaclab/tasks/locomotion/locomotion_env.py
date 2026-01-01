@@ -142,7 +142,7 @@ class LocomotionEnv(DirectRLEnv):
         self.scene.sensors["height_scanner"] = self._height_scanner
 
         # if we came from depth-based env, we create the depth camera scanner
-        if isinstance(self.cfg, AliengoRoughVisionEnvCfg):
+        if isinstance(self.cfg, AliengoRoughVisionEnvCfg) or isinstance(self.cfg, Go2RoughVisionEnvCfg) or isinstance(self.cfg, HyQRealRoughVisionEnvCfg) or isinstance(self.cfg, B2RoughVisionEnvCfg):
             # we add a height scanner for the proprioceptive locomotion
             self._height_scanner2 = RayCaster(self.cfg.height_scanner2)
             self.scene.sensors["height_scanner2"] = self._height_scanner2
@@ -255,7 +255,7 @@ class LocomotionEnv(DirectRLEnv):
         # Add heightmap data to obs if needed
         if isinstance(self.cfg, AliengoRoughVisionEnvCfg) or isinstance(self.cfg, Go2RoughVisionEnvCfg) or isinstance(self.cfg, HyQRealRoughVisionEnvCfg) or isinstance(self.cfg, B2RoughVisionEnvCfg):
             height_data = (
-                self._height_scanner.data.pos_w[:, 2].unsqueeze(1) - self._height_scanner.data.ray_hits_w[..., 2] - 0.5
+                self._height_scanner2.data.pos_w[:, 2].unsqueeze(1) - self._height_scanner2.data.ray_hits_w[..., 2] - 0.5
             )
             height_data = torch.nan_to_num(height_data, nan=0.0, posinf=1.0, neginf=-1.0)
             height_data = height_data.clip(-1.0, 1.0)

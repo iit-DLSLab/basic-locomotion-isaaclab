@@ -76,7 +76,10 @@ class LocomotionPolicyWrapper:
         single_observation_space = int(self.observation_space/self.history_length)
         self._observation_history = np.zeros((self.history_length, single_observation_space), dtype=np.float32)
 
-        self.use_vision = config.use_vision
+        try:
+            self.use_vision = config.training_env["use_vision"]
+        except:
+            self.use_vision = False
 
         # RMA
         if(config.training_env["use_rma"] == True):
@@ -203,7 +206,7 @@ class LocomotionPolicyWrapper:
             height_data = height_data.clip(-1.0, 1.0)
             obs = np.concatenate((obs, height_data), axis=0)
             
-        
+            
         # RL Prediction
         obs = obs.reshape(1, -1)
         obs = obs.astype(np.float32)

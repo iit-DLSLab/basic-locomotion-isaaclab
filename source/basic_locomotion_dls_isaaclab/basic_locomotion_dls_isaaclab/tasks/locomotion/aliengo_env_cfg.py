@@ -412,7 +412,7 @@ class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
 
     def __post_init__(self) -> None:
         height_map_x_points = int(round(self.height_scanner2.pattern_cfg.size[0] / self.height_scanner2.pattern_cfg.resolution)) + 1
-        height_map_y_points = int(round(self.height_scanner2.pattern_cfg.size[1] / self.height_scanner2.pattern_cfg.resolution))
+        height_map_y_points = int(round(self.height_scanner2.pattern_cfg.size[1] / self.height_scanner2.pattern_cfg.resolution)) + 1
         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
 
     # we add a height scanner for perceptive locomotion
