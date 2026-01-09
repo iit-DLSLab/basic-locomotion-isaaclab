@@ -1,6 +1,8 @@
 import rclpy 
 from rclpy.node import Node 
 from dls2_interface.msg import BaseState, BlindState, Imu, TrajectoryGenerator, FeetContactState
+from rosgraph_msgs.msg import Clock
+from builtin_interfaces.msg import Time
 
 import time
 import numpy as np
@@ -38,6 +40,7 @@ class Simulator_Node(Node):
         self.publisher_blind_state = self.create_publisher(BlindState,"blind_state", 1)
         self.publisher_imu = self.create_publisher(Imu,"imu", 1)
         self.publisher_feet_contact_state = self.create_publisher(FeetContactState,"feet_contact_state", 1)
+        self.publisher_clock = self.create_publisher(Clock, "/clock", 1)
 
         self.subscriber_trajectory_generator = self.create_subscription(TrajectoryGenerator,"trajectory_generator", self.get_trajectory_generator_callback, 1)
 
@@ -46,6 +49,7 @@ class Simulator_Node(Node):
         # Timing stuff
         self.loop_time = 0.002
         self.last_start_time = None
+        self.sim_time = 0.0
         self.last_mpc_loop_time = 0.0
 
 
@@ -86,6 +90,10 @@ class Simulator_Node(Node):
         self.Kd = np.array(msg.kd)[0]
         
 
+    def get_current_timestamp(self):
+        """Get current timestamp in seconds since epoch"""
+        return time.time()
+
     def compute_simulator_step_callback(self):
 
         qpos, qvel = self.env.mjData.qpos, self.env.mjData.qvel
@@ -93,8 +101,16 @@ class Simulator_Node(Node):
         base_ang_vel = self.env.base_ang_vel(frame='base')
         base_pos = self.env.base_pos
 
+        # Publish Clock ------------------------------------------------
+        clock_msg = Clock()
+        clock_msg.clock.sec = int(self.sim_time)
+        clock_msg.clock.nanosec = int((self.sim_time % 1.0) * 1e9)
+        self.publisher_clock.publish(clock_msg)
+        self.sim_time += 1.0 / SCHEDULER_FREQ
+
         # Publish Base State ------------------------------------------------
         base_state_msg = BaseState()
+        base_state_msg.timestamp = self.get_current_timestamp()
         base_state_msg.pose.position = base_pos
         base_state_msg.pose.orientation = np.roll(self.env.mjData.qpos[3:7],-1)
         base_state_msg.velocity.linear = base_lin_vel
@@ -104,6 +120,7 @@ class Simulator_Node(Node):
 
         # Publish Blind State ------------------------------------------------
         blind_state_msg = BlindState()
+        blind_state_msg.timestamp = self.get_current_timestamp()
         blind_state_msg.joints_position = self.env.mjData.qpos[7:].tolist()
         blind_state_msg.joints_velocity = self.env.mjData.qvel[6:].tolist()
         self.publisher_blind_state.publish(blind_state_msg)
@@ -111,6 +128,7 @@ class Simulator_Node(Node):
 
         # Publish IMU ------------------------------------------------
         imu_msg = Imu()
+        imu_msg.timestamp = self.get_current_timestamp()
         imu_msg.linear_acceleration = self.env.mjData.sensordata[0:3]
         imu_msg.angular_velocity = self.env.mjData.sensordata[3:6]
         imu_msg.orientation = self.env.mjData.sensordata[9:13]
@@ -120,6 +138,7 @@ class Simulator_Node(Node):
         # Publish Feet Contact State ------------------------------------------------
         _, _, feet_GRF = self.env.feet_contact_state(ground_reaction_forces=True)
         feet_contact_state_msg = FeetContactState()
+        feet_contact_state_msg.timestamp = self.get_current_timestamp()
         feet_contact_state_msg.feet_name = ["FL", "FR", "RL", "RR"]
         feet_contact_state_msg.linear_grf_feet = np.concatenate([feet_GRF["FL"], feet_GRF["FR"], feet_GRF["RL"], feet_GRF["RR"]]).tolist()
         feet_contact_state_msg.angular_grf_feet = np.concatenate([feet_GRF["FL"]*0.0, feet_GRF["FR"]*0.0, feet_GRF["RL"]*0.0, feet_GRF["RR"]*0.0]).tolist()
