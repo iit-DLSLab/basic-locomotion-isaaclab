@@ -50,6 +50,7 @@ gym.register(
     },
 )
 
+
 # Go2 environments
 from .locomotion_env import Go2FlatEnvCfg, Go2RoughVisionEnvCfg, Go2RoughBlindEnvCfg
 

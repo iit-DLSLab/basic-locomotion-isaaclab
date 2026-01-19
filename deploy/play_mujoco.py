@@ -54,9 +54,10 @@ if __name__ == '__main__':
     locomotion_policy = LocomotionPolicyWrapper(env=env)
 
     if(locomotion_policy.use_vision):
-        resolution_heightmap = config.training_env["height_scanner"]["pattern_cfg"]["resolution"]
-        num_rows_heightmap = round(config.training_env["height_scanner"]["pattern_cfg"]["size"][0]/resolution_heightmap) + 1
-        num_cols_heightmap = round(config.training_env["height_scanner"]["pattern_cfg"]["size"][1]/resolution_heightmap) + 1
+        resolution_heightmap = config.training_env["height_scanner2"]["pattern_cfg"]["resolution"]
+        num_rows_heightmap = round(config.training_env["height_scanner2"]["pattern_cfg"]["size"][0]/resolution_heightmap) + 1
+        num_cols_heightmap = round(config.training_env["height_scanner2"]["pattern_cfg"]["size"][1]/resolution_heightmap) + 1
+        heightmap_offset = config.training_env["height_scanner2"]["offset"]
         heightmap = HeightMap(num_rows=num_rows_heightmap, num_cols=num_cols_heightmap, dist_x=resolution_heightmap, dist_y=resolution_heightmap, mj_model=env.mjModel, mj_data=env.mjData)     
     
 
@@ -100,8 +101,9 @@ if __name__ == '__main__':
         ref_base_lin_vel, ref_base_ang_vel = env.target_base_vel()
 
         if(locomotion_policy.use_vision):
-            heightmap.update_height_map(env.mjData.qpos[0:3], yaw=env.base_ori_euler_xyz[2])
-    
+            offset_world_frame = heightmap_offset["pos"] @ heading_orientation_SO3.T
+            heightmap.update_height_map(env.mjData.qpos[0:3] + offset_world_frame, yaw=env.base_ori_euler_xyz[2])
+
         # RL controller --------------------------------------------------------------
         if env.step_num % round(1 / (locomotion_policy.RL_FREQ * simulation_dt)) == 0:            
             

@@ -16,7 +16,7 @@ from isaaclab.envs import DirectRLEnv, DirectRLEnvCfg
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.scene import InteractiveSceneCfg
-from isaaclab.sensors import ContactSensor, ContactSensorCfg, RayCaster, RayCasterCfg, patterns, Imu
+from isaaclab.sensors import ContactSensor, ContactSensorCfg, RayCaster, RayCasterCfg, RayCasterCamera, RayCasterCameraCfg, MultiMeshRayCasterCamera, MultiMeshRayCasterCameraCfg, TiledCameraCfg, TiledCamera, patterns, Imu
 from isaaclab.sim import SimulationCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils import configclass
@@ -137,9 +137,20 @@ class LocomotionEnv(DirectRLEnv):
         self._contact_sensor = ContactSensor(self.cfg.contact_sensor)
         self.scene.sensors["contact_sensor"] = self._contact_sensor
 
-        # we add a height scanner for perceptive locomotion
+        # we add a height scanner for the proprioceptive locomotion
         self._height_scanner = RayCaster(self.cfg.height_scanner)
         self.scene.sensors["height_scanner"] = self._height_scanner
+
+        # if we came from depth-based env, we create the depth camera scanner
+        if isinstance(self.cfg, AliengoRoughVisionEnvCfg) or isinstance(self.cfg, Go2RoughVisionEnvCfg) or isinstance(self.cfg, HyQRealRoughVisionEnvCfg) or isinstance(self.cfg, B2RoughVisionEnvCfg):
+            # we add a height scanner for the proprioceptive locomotion
+            self._height_scanner2 = RayCaster(self.cfg.height_scanner2)
+            self.scene.sensors["height_scanner2"] = self._height_scanner2
+
+
+        #self._depth_camera = MultiMeshRayCasterCamera(self.cfg.depth_camera)
+        ##self._depth_camera = TiledCamera(self.cfg.depth_camera)
+        #self.scene.sensors["depth_camera"] = self._depth_camera
 
         # we add an imu
         self._imu = Imu(self.cfg.imu)
@@ -237,14 +248,19 @@ class LocomotionEnv(DirectRLEnv):
             obs = torch.flatten(self._observation_history, start_dim=1)
 
 
+        observations = {"common": obs}
+
+
+
         # Add heightmap data to obs if needed
         if isinstance(self.cfg, AliengoRoughVisionEnvCfg) or isinstance(self.cfg, Go2RoughVisionEnvCfg) or isinstance(self.cfg, HyQRealRoughVisionEnvCfg) or isinstance(self.cfg, B2RoughVisionEnvCfg):
             height_data = (
-                self._height_scanner.data.pos_w[:, 2].unsqueeze(1) - self._height_scanner.data.ray_hits_w[..., 2] - 0.5
+                self._height_scanner2.data.pos_w[:, 2].unsqueeze(1) - self._height_scanner2.data.ray_hits_w[..., 2] - 0.5
             )
             height_data = torch.nan_to_num(height_data, nan=0.0, posinf=1.0, neginf=-1.0)
             height_data = height_data.clip(-1.0, 1.0)
-            obs = torch.cat((obs, height_data), dim=-1)      
+            obs = torch.cat((obs, height_data), dim=-1)   
+
 
 
         # If RMA, we add some other predicted obs
@@ -255,7 +271,7 @@ class LocomotionEnv(DirectRLEnv):
 
 
         # Final observations dictionary
-        observations = {"policy": obs}    
+        observations["policy"] = obs    
         
 
         # Critic OBS could be different if needed
@@ -263,7 +279,6 @@ class LocomotionEnv(DirectRLEnv):
             obs_critic = self._get_privileged_observation()
             observations["critic"] = torch.cat((obs, obs_critic), dim=-1)
         # ------------------------------------------------------------------------------------------
-
 
         # AMP related observation if used
         if(self.cfg.use_amp):
@@ -282,6 +297,12 @@ class LocomotionEnv(DirectRLEnv):
                 dim=-1,
             )
             observations["amp"] = obs_amp
+
+        # --------------------------------------------------------------------------------------------
+        #depth_data = self._depth_camera.data.output["distance_to_image_plane"]
+        #depth_data = torch.nan_to_num(depth_data, nan=0.0, posinf=1.0, neginf=-1.0)
+        #depth_data = depth_data.clip(-2.0, 2.0)
+        #observations["depth"] = depth_data
 
 
         return observations
