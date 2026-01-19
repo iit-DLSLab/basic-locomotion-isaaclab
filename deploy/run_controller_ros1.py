@@ -125,13 +125,6 @@ class Basic_Locomotion_DLS_Isaaclab_Node():
         self.joint_positions = np.array(msg.joint_positions)
         self.joint_velocities = np.array(msg.joint_velocities)
 
-        if(config.robot == "aliengo"):
-            # Fix convention
-            self.joint_positions[0] = -self.joint_positions[0]
-            self.joint_positions[6] = -self.joint_positions[6]
-            self.joint_velocities[0] = -self.joint_velocities[0]
-            self.joint_velocities[6] = -self.joint_velocities[6]
-
         self.first_message_base_arrived = True
         self.first_message_joints_arrived = True
 
@@ -258,12 +251,7 @@ class Basic_Locomotion_DLS_Isaaclab_Node():
                 action[self.env.legs_tau_idx.RR] = tau.RR.reshape((3,))
                 self.env.step(action=action)
  
- 
-        if(config.robot == "aliengo"):
-            # Fix convention
-            desired_joint_pos.FL[0] = -desired_joint_pos.FL[0]
-            desired_joint_pos.RL[0] = -desired_joint_pos.RL[0] 
-
+        # Publish the desired joint positions to the trajectory generator --------------------------------
         rl_signal_out_msg = rl_signal_out()
         rl_signal_out_msg.kp = np.ones(12)*Kp
         rl_signal_out_msg.kd = np.ones(12)*Kd
