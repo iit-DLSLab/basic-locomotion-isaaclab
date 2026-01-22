@@ -38,7 +38,7 @@ else:
 
 # ----------------------------------------------------------------------------------------------------------------
 
-policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2025-12-31_19-36-38"
+policy_folder_path = dir_path + "/../tested_policies/" + robot + "/symmetricactor"
 #policy_folder_path = dir_path + "/../tested_policies/" + robot + "/go2_5asymm"
 
 cuncurrent_state_est_network = policy_folder_path + "/exported/cuncurrent_state_estimator.pth"

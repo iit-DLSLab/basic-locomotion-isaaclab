@@ -12,6 +12,9 @@ dependencies:
 - ros-humble-rmw-cyclonedds-cpp
 - ros-humble-rosidl-generator-dds-idl
 - ros-humble-plotjuggler-ros
+- ros-humble-librealsense2
+- ros-humble-realsense2-camera-msgs
+- ros-humble-realsense2-camera
 - compilers 
 - cmake 
 - pkg-config 
