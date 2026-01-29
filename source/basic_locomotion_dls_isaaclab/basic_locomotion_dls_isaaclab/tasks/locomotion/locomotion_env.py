@@ -487,6 +487,9 @@ class LocomotionEnv(DirectRLEnv):
 
         # feet height clearance periodic
         feet_z_target_error = self.cfg.desired_feet_height + torch.cat((mean_height_ray_front.unsqueeze(1).expand(-1, 2), mean_height_ray_back.unsqueeze(1).expand(-1, 2)), dim=1) - self._robot.data.body_pos_w[:, self._feet_ids_robot, 2]
+        # If the raw error is negative, halve it to not discourage too much
+        feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
+        feet_z_target_error = torch.abs(feet_z_target_error)
         feet_z_target_error = torch.clamp(feet_z_target_error, min=.0, max=self.cfg.desired_feet_height)
  
         feet_height_clearance_periodic_FL = torch.exp(-feet_z_target_error[:,0]/ 0.01) * should_move * ~contact_periodic_on[:,0]
@@ -520,7 +523,12 @@ class LocomotionEnv(DirectRLEnv):
         feet_to_hip_distance_x = torch.square(feet_to_base_h[:, 0] - hip_to_base_h[:, 0])
         feet_to_hip_distance_y = torch.square(feet_to_base_h[:, 1] + desired_hip_offset.unsqueeze(0) - hip_to_base_h[:, 1])
         feet_to_hip_distance = -torch.mean(torch.sqrt(feet_to_hip_distance_x + feet_to_hip_distance_y), dim=1)
-        
+        # If should_move is False, multiply the distance by 3 (GPU-friendly, vectorized)
+        # `should_move` is a boolean tensor defined earlier (shape: [num_envs])
+        feet_to_hip_distance = feet_to_hip_distance * torch.where(
+            should_move, torch.ones_like(feet_to_hip_distance), torch.full_like(feet_to_hip_distance, 3.0)
+        )
+
 
         # Penalize feet hitting vertical surfaces  
         forces_z = torch.abs(self._contact_sensor.data.net_forces_w[:, self._feet_ids, 2])
@@ -699,8 +707,8 @@ class LocomotionEnv(DirectRLEnv):
         self._commands[:, :3] = self._commands[:, :3] * ~resample_time_2.unsqueeze(1).expand(-1, 3) + commands_resample_2 * resample_time_2.unsqueeze(1).expand(-1, 3)        
 
         # Took some envs, and put to zero the vel
-        if self.num_envs > 100:
-            num_fixed_envs = 100
+        num_fixed_envs = 500
+        if self.num_envs > num_fixed_envs:
             fixed_env_ids = torch.arange(num_fixed_envs, device=self.device)
             self._commands[fixed_env_ids, :3] *= 0.0
 
