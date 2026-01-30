@@ -244,9 +244,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     height_scanner = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/base",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.0)),
-        #attach_yaw_only=True,
         ray_alignment='yaw',
-        #pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[1.4, 1.0]),
         pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[0.6, 0.6]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
@@ -287,7 +285,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
     # Desired tracking variables
     desired_base_height = 0.30
-    desired_feet_height = 0.04
+    desired_feet_height = 0.05
 
     # Desired clip actions
     desired_clip_actions = 3.0
@@ -306,37 +304,37 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     height_reward_scale = 1.0
     
     # Joint reward scale
-    joints_torque_reward_scale = -2.5e-6 * (1-use_amp)
-    joints_accel_reward_scale = -2.5e-7 * (1-use_amp)
-    joints_energy_reward_scale = -1e-4 * (1-use_amp)
-    joints_hip_position_reward_scale = -0.1 * (1-use_amp)
-    joints_thigh_position_reward_scale = -0.1 * (1-use_amp)
-    joints_calf_position_reward_scale = -0.001 * (1-use_amp)
+    joints_torque_reward_scale = -2.5e-6 
+    joints_accel_reward_scale = -2.5e-7
+    joints_energy_reward_scale = -1e-4
+    joints_hip_position_reward_scale = -0.1 * 0.0
+    joints_thigh_position_reward_scale = -0.1 * 0.0
+    joints_calf_position_reward_scale = -0.001 * 0.0
    
     
     # Undesired contacts reward scale
     undersired_contact_reward_scale = -1.0
-    action_rate_reward_scale = -0.01 * (1-use_amp)
-    action_smoothness_reward_scale = -0.001 * (1-use_amp)
+    action_rate_reward_scale = -0.01
+    action_smoothness_reward_scale = -0.001
 
     # Feet reward scale
-    feet_air_time_reward_scale = 0.5 * 0.0 * (1-use_amp)
-    
-    feet_height_clearance_reward_scale = 0.25 * (1-use_amp) * 0.0  
-    feet_height_clearance_periodic_reward_scale = 0.25 * (1-use_amp)
-    
-    feet_height_clearance_mujoco_reward_scale = 0.25 * (1-use_amp) * 0.0
-    feet_height_clearance_mujoco_periodic_reward_scale = 0.25 * (1-use_amp) * 0.0
-    
-    feet_slide_reward_scale = -0.25 * 0.0 * (1-use_amp)
-    feet_contact_suggestion_reward_scale =  0.25 * (1-use_amp)
-    feet_to_base_distance_reward_scale = 0.25 * 0.0 * (1-use_amp)
+    feet_air_time_reward_scale = 0.5 * 0.0
 
-    feet_to_hip_distance_reward_scale = 1.5 * (1-use_amp)# * 0.0
+    feet_height_clearance_reward_scale = 0.25 * 0.0  
+    feet_height_clearance_periodic_reward_scale = 0.25
+    
+    feet_height_clearance_mujoco_reward_scale = 0.25 * 0.0
+    feet_height_clearance_mujoco_periodic_reward_scale = 0.25 * 0.0
+    
+    feet_slide_reward_scale = -0.25 * 0.0
+    feet_contact_suggestion_reward_scale =  0.25
+    feet_to_base_distance_reward_scale = 0.25 * 0.0
+    
+    feet_to_hip_distance_reward_scale = 1.5
     # This is used in loocmotion_env.py for the above reward
     desired_hip_offset = 0.095
 
-    feet_vertical_surface_contacts_reward_scale = -0.25 * (1-use_amp)# * 0.0
+    feet_vertical_surface_contacts_reward_scale = -0.25
 
 
 import isaaclab.terrains as terrain_gen
