@@ -208,6 +208,11 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
     use_amp = False
 
+    observation_base_linear_scale = 0.1
+    observation_base_ang_vel_scale = 0.1
+    observation_joint_vel_scale = 0.1
+
+
 
     # simulation
     sim: SimulationCfg = SimulationCfg(
