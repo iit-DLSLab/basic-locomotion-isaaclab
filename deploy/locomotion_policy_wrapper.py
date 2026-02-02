@@ -158,20 +158,20 @@ class LocomotionPolicyWrapper:
             [joints_pos_delta.FL[1]], [joints_pos_delta.FR[1]], [joints_pos_delta.RL[1]], [joints_pos_delta.RR[1]],
             [joints_pos_delta.FL[2]], [joints_pos_delta.FR[2]], [joints_pos_delta.RL[2]], [joints_pos_delta.RR[2]],
             
-            [joints_vel.FL[0]] * config.training_env["observation_joint_vel_scale"], 
-            [joints_vel.FR[0]] * config.training_env["observation_joint_vel_scale"], 
-            [joints_vel.RL[0]] * config.training_env["observation_joint_vel_scale"], 
-            [joints_vel.RR[0]] * config.training_env["observation_joint_vel_scale"],
+            [joints_vel.FL[0] * config.training_env["observation_joint_vel_scale"]], 
+            [joints_vel.FR[0] * config.training_env["observation_joint_vel_scale"]], 
+            [joints_vel.RL[0] * config.training_env["observation_joint_vel_scale"]], 
+            [joints_vel.RR[0] * config.training_env["observation_joint_vel_scale"]],
 
-            [joints_vel.FL[1]] * config.training_env["observation_joint_vel_scale"], 
-            [joints_vel.FR[1]] * config.training_env["observation_joint_vel_scale"], 
-            [joints_vel.RL[1]] * config.training_env["observation_joint_vel_scale"], 
-            [joints_vel.RR[1]] * config.training_env["observation_joint_vel_scale"],
+            [joints_vel.FL[1] * config.training_env["observation_joint_vel_scale"]], 
+            [joints_vel.FR[1] * config.training_env["observation_joint_vel_scale"]], 
+            [joints_vel.RL[1] * config.training_env["observation_joint_vel_scale"]], 
+            [joints_vel.RR[1] * config.training_env["observation_joint_vel_scale"]],
             
-            [joints_vel.FL[2]] * config.training_env["observation_joint_vel_scale"], 
-            [joints_vel.FR[2]] * config.training_env["observation_joint_vel_scale"], 
-            [joints_vel.RL[2]] * config.training_env["observation_joint_vel_scale"], 
-            [joints_vel.RR[2]] * config.training_env["observation_joint_vel_scale"],
+            [joints_vel.FL[2] * config.training_env["observation_joint_vel_scale"]], 
+            [joints_vel.FR[2] * config.training_env["observation_joint_vel_scale"]], 
+            [joints_vel.RL[2] * config.training_env["observation_joint_vel_scale"]], 
+            [joints_vel.RR[2] * config.training_env["observation_joint_vel_scale"]],
             
             self.past_rl_actions.copy(),
         ])

@@ -570,6 +570,12 @@ class LocomotionEnv(DirectRLEnv):
             "feet_vertical_surface_contacts": feet_vertical_surface_contacts * self.cfg.feet_vertical_surface_contacts_reward_scale * self.step_dt,
         }
         reward = torch.sum(torch.stack(list(rewards.values())), dim=0)
+
+        # Check for NaNs and Infs
+        if torch.isnan(reward).any() or torch.isinf(reward).any():
+            print("NaN or Inf detected in reward computation. Setting reward to zero for affected environments.")
+            breakpoint()  # For debugging purposes
+            reward = torch.where(torch.isnan(reward) | torch.isinf(reward), torch.zeros_like(reward), reward)
         
         # Logging
         for key, value in rewards.items():
