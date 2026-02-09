@@ -43,15 +43,13 @@ python3 deploy/play_mujoco.py
 
 
 ## Sim-to-Sim with ROS2
-cd deploy/ros2_ws (TERMINAL 1)
-colcon build (TERMINAL 1)
-source install/setup.bash (TERMINAL 1)
+source deploy/ros2_localhost_connect.sh (TERMINAL 1)
 python3 deploy/run_controller_ros2.py (TERMINAL 1) 
 
-source install/setup.bash (TERMINAL 2)
+source deploy/ros2_localhost_connect.sh (TERMINAL 2)
 python3 deploy/run_simulator_ros2.py (TERMINAL 2)
 
-
+source deploy/ros2_localhost_connect.sh
 ros2 launch teleop_twist_joy teleop-launch.py joy_config:='xbox' (if want joystick) (TERMINAL 3)
 
 ```
@@ -60,10 +58,9 @@ ros2 launch teleop_twist_joy teleop-launch.py joy_config:='xbox' (if want joysti
 
 ```bash
 ## Sim-to-Real with ROS2 (TERMINAL 1)
-cd deploy/ros2_ws (TERMINAL 1)
-colcon build (TERMINAL 1)
-source install/setup.bash (TERMINAL 1) 
+source deploy/dls2_connect.sh (TERMINAL 1)
 python3 deploy/run_controller_ros2.py (TERMINAL 1)
 
+source deploy/dls2_connect.sh
 ros2 launch teleop_twist_joy teleop-launch.py joy_config:='xbox' (if want joystick) (TERMINAL 2)
 ```
