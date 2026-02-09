@@ -59,7 +59,7 @@ ros2 launch teleop_twist_joy teleop-launch.py joy_config:='xbox' (if want joysti
 Remember to change dls2_connect.sh with any other script you need to connect with your robot.
 
 ```bash
-## Sim-to-Real with ROS2 (TERMINAL 1)
+## Sim-to-Real with ROS2
 source deploy/dls2_connect.sh (TERMINAL 1)
 python3 deploy/run_controller_ros2.py (TERMINAL 1)
 
