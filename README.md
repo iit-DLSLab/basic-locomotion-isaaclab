@@ -63,3 +63,7 @@ If you find the work useful and you adopt [Morphological Symmetries](https://arx
   doi = {10.1177/02783649241282422},
 }
 ```
+
+## Maintainer
+
+This repository is maintained by [Giulio Turrisi](https://github.com/giulioturrisi).
