@@ -209,18 +209,18 @@ class LocomotionEnv(DirectRLEnv):
         # Choosing the main source of observation
         if(self.cfg.use_cuncurrent_state_est):
             # If Cuncurrent SE/Learned State Estimator, we predict linear and angular vel from IMU
-            velocity_b = self._get_cuncurrent_state_estimation(clock_data)
-            angular_velocity_b = self._imu.data.ang_vel_b
+            base_linear = self._get_cuncurrent_state_estimation(clock_data)
+            base_ang_vel = self._imu.data.ang_vel_b
             projected_gravity_b = self._imu.data.projected_gravity_b
         elif(self.cfg.use_imu):
             # Using directly the IMU
-            velocity_b = self._imu.data.lin_acc_b
-            angular_velocity_b = self._imu.data.ang_vel_b
+            base_linear = self._imu.data.lin_acc_b
+            base_ang_vel = self._imu.data.ang_vel_b
             projected_gravity_b = self._imu.data.projected_gravity_b
         else:
             #Using a model-based state estimation
-            velocity_b = self._robot.data.root_lin_vel_b
-            angular_velocity_b = self._robot.data.root_ang_vel_b
+            base_linear = self._robot.data.root_lin_vel_b
+            base_ang_vel = self._robot.data.root_ang_vel_b
             projected_gravity_b = self._robot.data.projected_gravity_b
         
         
@@ -229,12 +229,12 @@ class LocomotionEnv(DirectRLEnv):
             [
                 tensor
                 for tensor in (
-                    velocity_b,
-                    angular_velocity_b,
+                    base_linear * self.cfg.observation_base_linear_scale,
+                    base_ang_vel * self.cfg.observation_base_ang_vel_scale,
                     projected_gravity_b,
                     self._commands,
                     self._robot.data.joint_pos - self._robot.data.default_joint_pos,
-                    self._robot.data.joint_vel,
+                    self._robot.data.joint_vel * self.cfg.observation_joint_vel_scale,
                     self._actions,
                     clock_data,
                 )
@@ -570,6 +570,12 @@ class LocomotionEnv(DirectRLEnv):
             "feet_vertical_surface_contacts": feet_vertical_surface_contacts * self.cfg.feet_vertical_surface_contacts_reward_scale * self.step_dt,
         }
         reward = torch.sum(torch.stack(list(rewards.values())), dim=0)
+
+        # Check for NaNs and Infs
+        if torch.isnan(reward).any() or torch.isinf(reward).any():
+            print("NaN or Inf detected in reward computation. Setting reward to zero for affected environments.")
+            breakpoint()  # For debugging purposes
+            reward = torch.where(torch.isnan(reward) | torch.isinf(reward), torch.zeros_like(reward), reward)
         
         # Logging
         for key, value in rewards.items():
