@@ -42,7 +42,6 @@ os.system("echo -20 > /proc/" + str(pid) + "/autogroup")
 
 
 USE_MUJOCO_RENDER = False
-USE_MUJOCO_SIMULATION = False
 
 
 class Basic_Locomotion_DLS_Isaaclab_Node(Node):
@@ -134,9 +133,6 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         Callback function to handle joystick input. Joystick used is a 
         8Bitdi Ultimate 2C Wireless Controller.
         """
-        #self.env._ref_base_lin_vel_H[0] = msg.axes[1]/3.5  # Forward/Backward
-        #self.env._ref_base_lin_vel_H[1] = msg.axes[0]/3.5  # Left/Right
-        #self.env._ref_base_ang_yaw_dot = msg.axes[3]/2.  # Yaw
 
         filter_joystick = 0.7
         self.env._ref_base_lin_vel_H[0] = self.env._ref_base_lin_vel_H[0]*filter_joystick + (msg.axes[1]/3.5)*(1-filter_joystick)  # Forward/Backward
@@ -196,32 +192,31 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         
 
         # Safety check to not do anything until a first base and blind state are received
-        if(not USE_MUJOCO_SIMULATION):
-            if(config.training_env["use_imu"] or config.training_env["use_cuncurrent_state_est"]):
-                if(self.first_message_imu_arrived==False or self.first_message_joints_arrived==False):
-                    return
-            else:
-                if(self.first_message_base_arrived==False or self.first_message_joints_arrived==False):
-                    return
-            
-            # Update the mujoco model
-            # Note that in case of IMU or concurrent state estimator, these info below are not used,
-            # In the case we have a state estimator, this is usefull only for debugging visually
-            self.env.mjData.qpos[0:3] = copy.deepcopy(self.position)
-            self.env.mjData.qvel[0:3] = copy.deepcopy(self.linear_velocity)
+        if(config.training_env["use_imu"] or config.training_env["use_cuncurrent_state_est"]):
+            if(self.first_message_imu_arrived==False or self.first_message_joints_arrived==False):
+                return
+        else:
+            if(self.first_message_base_arrived==False or self.first_message_joints_arrived==False):
+                return
+        
+        # Update the mujoco model
+        # Note that in case of IMU or concurrent state estimator, these info below are not used,
+        # In the case we have a state estimator, this is usefull only for debugging visually
+        self.env.mjData.qpos[0:3] = copy.deepcopy(self.position)
+        self.env.mjData.qvel[0:3] = copy.deepcopy(self.linear_velocity)
 
-            if(config.training_env["use_imu"] or config.training_env["use_cuncurrent_state_est"]):
-                self.env.mjData.qpos[3:7] = copy.deepcopy(self.imu_orientation)
-                self.env.mjData.qvel[3:6] = copy.deepcopy(self.imu_angular_velocity)
-            else:
-                self.env.mjData.qpos[3:7] = copy.deepcopy(self.orientation)
-                self.env.mjData.qvel[3:6] = copy.deepcopy(self.angular_velocity)
-            
-            # These info instead are used for sure in all the cases
-            self.env.mjData.qpos[7:] = copy.deepcopy(self.joint_positions)
-            self.env.mjData.qvel[6:] = copy.deepcopy(self.joint_velocities)
-            self.env.mjModel.opt.timestep = simulation_dt
-            mujoco.mj_forward(self.env.mjModel, self.env.mjData) 
+        if(config.training_env["use_imu"] or config.training_env["use_cuncurrent_state_est"]):
+            self.env.mjData.qpos[3:7] = copy.deepcopy(self.imu_orientation)
+            self.env.mjData.qvel[3:6] = copy.deepcopy(self.imu_angular_velocity)
+        else:
+            self.env.mjData.qpos[3:7] = copy.deepcopy(self.orientation)
+            self.env.mjData.qvel[3:6] = copy.deepcopy(self.angular_velocity)
+        
+        # These info instead are used for sure in all the cases
+        self.env.mjData.qpos[7:] = copy.deepcopy(self.joint_positions)
+        self.env.mjData.qvel[6:] = copy.deepcopy(self.joint_velocities)
+        self.env.mjModel.opt.timestep = simulation_dt
+        mujoco.mj_forward(self.env.mjModel, self.env.mjData) 
         
         # Safety check for joystick timeout
         if(self.last_joy_time is not None and time.time() - self.last_joy_time > 1.0):
@@ -296,7 +291,6 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
 
 
         else:
-            #TODO uncomment
             desired_joint_pos = LegsAttr(*[np.zeros((1, int(env.mjModel.nu/4))) for _ in range(4)])
             desired_joint_pos.FL = self.stand_up_and_down_actions.FL
             desired_joint_pos.FR = self.stand_up_and_down_actions.FR
@@ -306,39 +300,6 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
             # Impedence Loop
             Kp = locomotion_policy.Kp_stand_up_and_down
             Kd = locomotion_policy.Kd_stand_up_and_down
-            #return
-
-        
-        if USE_MUJOCO_SIMULATION:
-            for j in range(10): #Hardcoded for now, if RL is 50Hz, this runs the simulation at 500Hz
-                joints_pos.FL = qpos[env.legs_qpos_idx.FL]
-                joints_pos.FR = qpos[env.legs_qpos_idx.FR]
-                joints_pos.RL = qpos[env.legs_qpos_idx.RL]
-                joints_pos.RR = qpos[env.legs_qpos_idx.RR]
-            
-                joints_vel.FL = qvel[env.legs_qvel_idx.FL]
-                joints_vel.FR = qvel[env.legs_qvel_idx.FR]
-                joints_vel.RL = qvel[env.legs_qvel_idx.RL]
-                joints_vel.RR = qvel[env.legs_qvel_idx.RR]
-
-                error_joints_pos = LegsAttr(*[np.zeros((1, int(env.mjModel.nu/4))) for _ in range(4)])
-                error_joints_pos.FL = desired_joint_pos.FL - joints_pos.FL
-                error_joints_pos.FR = desired_joint_pos.FR - joints_pos.FR
-                error_joints_pos.RL = desired_joint_pos.RL - joints_pos.RL
-                error_joints_pos.RR = desired_joint_pos.RR - joints_pos.RR
-                
-                tau = LegsAttr(*[np.zeros((1, int(env.mjModel.nu/4))) for _ in range(4)])
-                tau.FL = Kp * (error_joints_pos.FL) - Kd * joints_vel.FL
-                tau.FR = Kp * (error_joints_pos.FR) - Kd * joints_vel.FR
-                tau.RL = Kp * (error_joints_pos.RL) - Kd * joints_vel.RL
-                tau.RR = Kp * (error_joints_pos.RR) - Kd * joints_vel.RR
-
-                action = np.zeros(self.env.mjModel.nu)
-                action[self.env.legs_tau_idx.FL] = tau.FL.reshape((3,))
-                action[self.env.legs_tau_idx.FR] = tau.FR.reshape((3,))
-                action[self.env.legs_tau_idx.RL] = tau.RL.reshape((3,))
-                action[self.env.legs_tau_idx.RR] = tau.RR.reshape((3,))
-                self.env.step(action=action)
 
         # Publish the desired joint positions to the trajectory generator --------------------------------
         trajectory_generator_msg = TrajectoryGenerator()
