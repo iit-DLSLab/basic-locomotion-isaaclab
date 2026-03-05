@@ -278,6 +278,8 @@ class LocomotionEnv(DirectRLEnv):
         if(self.cfg.use_asymmetric_ppo):
             obs_critic = self._get_privileged_observation()
             observations["critic"] = torch.cat((obs, obs_critic), dim=-1)
+        else:
+            observations["critic"] = obs
         # ------------------------------------------------------------------------------------------
 
         # AMP related observation if used
