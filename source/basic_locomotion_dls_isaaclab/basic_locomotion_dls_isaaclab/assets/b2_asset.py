@@ -10,7 +10,7 @@ from isaaclab.assets.articulation import ArticulationCfg
 from basic_locomotion_dls_isaaclab.assets import ISAAC_ASSET_DIR
 from isaaclab.utils.assets import ISAACLAB_NUCLEUS_DIR
 
-# Aliengo robot configuration from mujoco
+# B2 robot configuration from mujoco
 stiffness_mujoco = 25.0
 damping_mujoco = 2.0
 friction_static_mujoco = 0.2
