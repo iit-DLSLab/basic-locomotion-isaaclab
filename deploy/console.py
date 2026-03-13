@@ -94,7 +94,15 @@ class Console():
                     start_time = time.time()
                     time_motion = 5.
 
-                    initial_joint_positions = copy.deepcopy(self.controller_node.locomotion_policy.desired_joint_pos)   
+                    if(self.isRLActivated):
+                        initial_joint_positions = copy.deepcopy(self.controller_node.locomotion_policy.desired_joint_pos)
+                    else:
+                        temp = copy.deepcopy(self.controller_node.locomotion_policy.desired_joint_pos)
+                        initial_joint_positions = LegsAttr(*[np.zeros((1, int(self.controller_node.env.mjModel.nu/4))) for _ in range(4)])
+                        initial_joint_positions.FL = temp[0:3]
+                        initial_joint_positions.FR = temp[3:6]
+                        initial_joint_positions.RL = temp[6:9]
+                        initial_joint_positions.RR = temp[9:12]  
                     
                     keyframe_id = mujoco.mj_name2id(self.controller_node.env.mjModel, mujoco.mjtObj.mjOBJ_KEY, "down")
                     goDown_qpos = self.controller_node.env.mjModel.key_qpos[keyframe_id]
