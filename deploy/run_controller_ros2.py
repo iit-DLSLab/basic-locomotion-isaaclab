@@ -77,6 +77,7 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         self.last_joy_time = None
         
         self.publisher_trajectory_generator = self.create_publisher(TrajectoryGenerator,"/trajectory_generator", 1)
+        self.sequence_id = 0 # To keep track of the last msg sent, useful for debugging and synchronization
         RL_FREQ = 1./(config.training_env["sim"]["dt"]*config.training_env["decimation"])  # Hz, frequency of the RL controller
         self.timer = self.create_timer(1.0/RL_FREQ, self.compute_rl_control)
 
@@ -304,6 +305,9 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         # Publish the desired joint positions to the trajectory generator --------------------------------
         trajectory_generator_msg = TrajectoryGenerator()
         trajectory_generator_msg.timestamp = float(self.get_clock().now().nanoseconds)
+        MAX_SEQUENCE_ID = 1000
+        trajectory_generator_msg.sequence_id = float(self.sequence_id % MAX_SEQUENCE_ID)
+        self.sequence_id += 1
         trajectory_generator_msg.joints_position = np.array([desired_joint_pos.FL, desired_joint_pos.FR, desired_joint_pos.RL, desired_joint_pos.RR]).flatten().tolist()
         trajectory_generator_msg.joints_velocity = np.zeros(12).tolist()
         trajectory_generator_msg.kp = (np.ones(12) * Kp).tolist()
