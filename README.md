@@ -1,6 +1,6 @@
 <div style="text-align: left;">
-  <img src="https://img.shields.io/badge/IsaacLab%202.3.2-blue" alt="IsaacLab 2.3.0" style="margin-bottom: 1px;">
-  <img src="https://img.shields.io/badge/rsl_rl%203.3.0-blue" alt="rsl-rl 3.3.0" style="margin-bottom: 1px;">
+  <img src="https://img.shields.io/badge/IsaacLab%20v2.3.2-blue" alt="IsaacLab v2.3.0" style="margin-bottom: 1px;">
+  <img src="https://img.shields.io/badge/rsl_rl%20v3.3.0-blue" alt="rsl-rl v3.3.0" style="margin-bottom: 1px;">
   <div style="display: flex; justify-content: space-around;">
     <img src="./gifs/train.gif" alt="Train" width="32%">
     <img src="./gifs/sim-to-sim.gif" alt="Sim-to-Sim" width="32%">
@@ -31,7 +31,7 @@ A list of robots and environments available are described below:
 
 If you want only to deploy a trained policy on your robot, continue on [README_DEPLOY](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_DEPLOY.md) otherwise on [README_TRAIN](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_TRAIN.md).
 
-**For the train, check first the compatibility with IsaacLab and rsl-rl at the top of this readme**.
+**For the train, check first the compatibility with IsaacLab and rsl-rl at the top of this readme. They indicated the releases that we tested.**.
 
 
 
