@@ -155,9 +155,8 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
 
 
     def get_base_state_callback(self, msg):
-        
         self.position = np.array(msg.pose.position) #world frame
-        # For the quaternion, the order is [w, x, y, z] on mujoco, and [x, y, z, w] on DLS2
+        # For the quaternion, the order is [x, y, z, w] on DLS2 but here we want [w, x, y, z] (mujoco convention)
         self.orientation = np.roll(np.array(msg.pose.orientation), 1) #world frame
         self.linear_velocity = np.array(msg.velocity.linear) #world frame
         self.angular_velocity = np.array(msg.velocity.angular) #base frame
@@ -167,7 +166,6 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
 
 
     def get_blind_state_callback(self, msg):
-        
         self.joint_positions = np.array(msg.joints_position)
         self.joint_velocities = np.array(msg.joints_velocity)
 
@@ -175,10 +173,9 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
      
         
     def get_imu_callback(self, msg):
-        # TODO check the frame
         self.imu_linear_acceleration = np.array(msg.linear_acceleration) 
         self.imu_angular_velocity = np.array(msg.angular_velocity) 
-        # For the quaternion, the order is [w, x, y, z] on mujoco, and [x, y, z, w] on DLS2
+        # For the quaternion, the order is [x, y, z, w] on DLS2 but here we want [w, x, y, z] (mujoco convention)
         self.imu_orientation = np.roll(np.array(msg.orientation), 1) 
 
         self.first_message_imu_arrived = True
