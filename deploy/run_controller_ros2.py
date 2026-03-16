@@ -178,7 +178,8 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         # TODO check the frame
         self.imu_linear_acceleration = np.array(msg.linear_acceleration) 
         self.imu_angular_velocity = np.array(msg.angular_velocity) 
-        self.imu_orientation = np.array(msg.orientation) 
+        # For the quaternion, the order is [w, x, y, z] on mujoco, and [x, y, z, w] on DLS2
+        self.imu_orientation = np.roll(np.array(msg.orientation), 1) 
 
         self.first_message_imu_arrived = True
 
@@ -306,7 +307,7 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         trajectory_generator_msg = TrajectoryGenerator()
         trajectory_generator_msg.timestamp = float(self.get_clock().now().nanoseconds)
         MAX_SEQUENCE_ID = 1000
-        trajectory_generator_msg.sequence_id = float(self.sequence_id % MAX_SEQUENCE_ID)
+        trajectory_generator_msg.sequence_id = int(self.sequence_id % MAX_SEQUENCE_ID)
         self.sequence_id += 1
         trajectory_generator_msg.joints_position = np.array([desired_joint_pos.FL, desired_joint_pos.FR, desired_joint_pos.RL, desired_joint_pos.RR]).flatten().tolist()
         trajectory_generator_msg.joints_velocity = np.zeros(12).tolist()
