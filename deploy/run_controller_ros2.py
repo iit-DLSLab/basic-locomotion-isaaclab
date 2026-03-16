@@ -191,7 +191,7 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         
 
         # Safety check to not do anything until a first base and blind state are received
-        if(config.training_env["use_imu"] or config.training_env["use_cuncurrent_state_est"]):
+        if(config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]):
             if(self.first_message_imu_arrived==False or self.first_message_joints_arrived==False):
                 return
         else:
@@ -204,7 +204,7 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         self.env.mjData.qpos[0:3] = copy.deepcopy(self.position)
         self.env.mjData.qvel[0:3] = copy.deepcopy(self.linear_velocity)
 
-        if(config.training_env["use_imu"] or config.training_env["use_cuncurrent_state_est"]):
+        if(config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]):
             self.env.mjData.qpos[3:7] = copy.deepcopy(self.imu_orientation)
             self.env.mjData.qvel[3:6] = copy.deepcopy(self.imu_angular_velocity)
         else:

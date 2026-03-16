@@ -147,16 +147,16 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
 
     use_imu = False
 
-    use_cuncurrent_state_est = False
-    if(use_cuncurrent_state_est):
-        cuncurrent_state_est_output_space = 3 #lin_vel_b
-        single_cuncurrent_state_est_observation_space = single_observation_space
-        cuncurrent_state_est_observation_space = observation_space
-        cuncurrent_state_est_batch_size = 32
-        cuncurrent_state_est_train_epochs = 500
-        cuncurrent_state_est_lr = 1e-3
-        cuncurrent_state_est_ep_saving_interval = 1000
-        cuncurrent_state_est_ep_saving_start = 6000
+    use_concurrent_state_est = False
+    if(use_concurrent_state_est):
+        concurrent_state_est_output_space = 3 #lin_vel_b
+        single_concurrent_state_est_observation_space = single_observation_space
+        concurrent_state_est_observation_space = observation_space
+        concurrent_state_est_batch_size = 32
+        concurrent_state_est_train_epochs = 500
+        concurrent_state_est_lr = 1e-3
+        concurrent_state_est_ep_saving_interval = 1000
+        concurrent_state_est_ep_saving_start = 6000
 
     use_rma = False
     if(use_rma):

@@ -12,7 +12,7 @@
 This repository provides basic reinforcement learning implementations for quadruped locomotion in IsaacLab. It includes support for different robots available at DLS, along with scripts for both sim-to-sim and sim-to-real transfer.
 
 Features:
-- [Cuncurrent State Estimator](https://arxiv.org/pdf/2202.05481)
+- [Concurrent State Estimator](https://arxiv.org/pdf/2202.05481)
 - [Rapid Motor Adaptation](https://arxiv.org/pdf/2107.04034)
 - [Morphological Symmetries](https://arxiv.org/pdf/2403.17320) 
 - [Adversarial Motion Priors](https://arxiv.org/pdf/2104.02180) (big thanks to [Giuseppe L'erario](https://github.com/Giulero) and [Giulio Romualdi](https://github.com/giulioromualdi))

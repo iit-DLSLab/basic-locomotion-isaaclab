@@ -87,9 +87,9 @@ class LocomotionPolicyWrapper:
             self._observation_history_rma = np.zeros((self.history_length, single_observation_space), dtype=np.float32)
 
         # Learned State Estimator
-        if(config.training_env["use_cuncurrent_state_est"] == True):
-            self._cuncurrent_state_est_network = load_network(config.cuncurrent_state_est_network, device='cpu')
-            self._observation_history_cuncurrent_state_est = np.zeros((self.history_length, single_observation_space), dtype=np.float32)
+        if(config.training_env["use_concurrent_state_est"] == True):
+            self._concurrent_state_est_network = load_network(config.concurrent_state_est_network, device='cpu')
+            self._observation_history_concurrent_state_est = np.zeros((self.history_length, single_observation_space), dtype=np.float32)
 
 
         # Desired joint vector
@@ -132,7 +132,7 @@ class LocomotionPolicyWrapper:
             heightmap_data=None):
 
         # Update Observation ----------------------        
-        if(config.training_env["use_imu"] or config.training_env["use_cuncurrent_state_est"]):
+        if(config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]):
             base_projected_gravity = self._get_projected_gravity(imu_orientation)
             base_linear = imu_linear_acceleration
             base_ang_vel = imu_angular_velocity
@@ -188,13 +188,13 @@ class LocomotionPolicyWrapper:
                 obs[48:52] = -1.0
 
 
-        if(config.training_env["use_cuncurrent_state_est"] == True):
+        if(config.training_env["use_concurrent_state_est"] == True):
             #the bottom element is the newest observation!!
-            past_cuncurrent_state_est = self._observation_history_cuncurrent_state_est[1:,:]
-            self._observation_history_cuncurrent_state_est = np.vstack((past_cuncurrent_state_est, copy.deepcopy(obs)))
-            obs_cuncurrent_state_est = self._observation_history_cuncurrent_state_est.flatten()
+            past_concurrent_state_est = self._observation_history_concurrent_state_est[1:,:]
+            self._observation_history_concurrent_state_est = np.vstack((past_concurrent_state_est, copy.deepcopy(obs)))
+            obs_concurrent_state_est = self._observation_history_concurrent_state_est.flatten()
             # QUERY THE NETOWRK
-            base_lin_vel_predicted = self._cuncurrent_state_est_network(torch.tensor(obs_cuncurrent_state_est, dtype=torch.float32).unsqueeze(0)).detach().numpy().squeeze()
+            base_lin_vel_predicted = self._concurrent_state_est_network(torch.tensor(obs_concurrent_state_est, dtype=torch.float32).unsqueeze(0)).detach().numpy().squeeze()
             obs[0:3] = base_lin_vel_predicted
             
             

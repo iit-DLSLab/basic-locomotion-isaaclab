@@ -24,7 +24,7 @@ Changes not staged for commit:
 	deleted:    tested_policies/aliengo/aliengo_small/params/env.pkl
 	deleted:    tested_policies/aliengo/aliengo_small/params/env.yaml
 	deleted:    tested_policies/go2/go2_last/events.out.tfevents.1761074696.alienware.2614466.0
-	deleted:    tested_policies/go2/go2_last/exported/cuncurrent_state_estimator.pth
+	deleted:    tested_policies/go2/go2_last/exported/concurrent_state_estimator.pth
 	deleted:    tested_policies/go2/go2_last/exported/policy.onnx
 	deleted:    tested_policies/go2/go2_last/exported/policy.pt
 	deleted:    tested_policies/go2/go2_last/git/basic-locomotion-dls-isaaclab.diff
@@ -54,7 +54,7 @@ index f2e7540..9885d42 100644
 +policy_folder_path = dir_path + "/../tested_policies/" + robot + "/aliengo_delay_rough"
  #policy_folder_path = dir_path + "/../tested_policies/" + robot + "/go2_5asymm"
  
- cuncurrent_state_est_network = policy_folder_path + "/exported/cuncurrent_state_estimator.pth"
+ concurrent_state_est_network = policy_folder_path + "/exported/concurrent_state_estimator.pth"
 diff --git a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/actuators/actuator_cfg.py b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/actuators/actuator_cfg.py
 index 6de4ca2..931a54a 100644
 --- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/actuators/actuator_cfg.py
@@ -381,11 +381,11 @@ index 5cf3262..84543a7 100644
  
      use_imu = False
  
--    use_cuncurrent_state_est = False
-+    use_cuncurrent_state_est = True
-     if(use_cuncurrent_state_est):
-         cuncurrent_state_est_output_space = 3 #lin_vel_b
-         single_cuncurrent_state_est_observation_space = single_observation_space
+-    use_concurrent_state_est = False
++    use_concurrent_state_est = True
+     if(use_concurrent_state_est):
+         concurrent_state_est_output_space = 3 #lin_vel_b
+         single_concurrent_state_est_observation_space = single_observation_space
 @@ -254,7 +254,12 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
      )
  
@@ -459,7 +459,7 @@ index 6ac0e8e..0000000
 -
 -Untracked files:
 -  (use "git add <file>..." to include in what will be committed)
--	tested_policies/go2/go2_cuncurrent_se_with_delayed_start/
+-	tested_policies/go2/go2_concurrent_se_with_delayed_start/
 -
 -no changes added to commit (use "git add" and/or "git commit -a") 
 -
@@ -492,11 +492,11 @@ index 6ac0e8e..0000000
 - 
 -     use_imu = False
 - 
---    use_cuncurrent_state_est = True
--+    use_cuncurrent_state_est = False
--     if(use_cuncurrent_state_est):
--         cuncurrent_state_est_output_space = 3 #lin_vel_b
--         single_cuncurrent_state_est_observation_space = single_observation_space
+--    use_concurrent_state_est = True
+-+    use_concurrent_state_est = False
+-     if(use_concurrent_state_est):
+-         concurrent_state_est_output_space = 3 #lin_vel_b
+-         single_concurrent_state_est_observation_space = single_observation_space
 \ No newline at end of file
 diff --git a/tested_policies/aliengo/aliengo_small/model_7999.pt b/tested_policies/aliengo/aliengo_small/model_7999.pt
 deleted file mode 100644
@@ -1382,7 +1382,7 @@ index f0c62a6..0000000
 -history_length: 5
 -single_observation_space: 52
 -use_imu: false
--use_cuncurrent_state_est: false
+-use_concurrent_state_est: false
 -use_rma: false
 -use_filter_actions: true
 -use_asymmetric_ppo: true
@@ -1851,10 +1851,10 @@ diff --git a/tested_policies/go2/go2_last/events.out.tfevents.1761074696.alienwa
 deleted file mode 100644
 index eee1314..0000000
 Binary files a/tested_policies/go2/go2_last/events.out.tfevents.1761074696.alienware.2614466.0 and /dev/null differ
-diff --git a/tested_policies/go2/go2_last/exported/cuncurrent_state_estimator.pth b/tested_policies/go2/go2_last/exported/cuncurrent_state_estimator.pth
+diff --git a/tested_policies/go2/go2_last/exported/concurrent_state_estimator.pth b/tested_policies/go2/go2_last/exported/concurrent_state_estimator.pth
 deleted file mode 100644
 index 74b66c1..0000000
-Binary files a/tested_policies/go2/go2_last/exported/cuncurrent_state_estimator.pth and /dev/null differ
+Binary files a/tested_policies/go2/go2_last/exported/concurrent_state_estimator.pth and /dev/null differ
 diff --git a/tested_policies/go2/go2_last/exported/policy.onnx b/tested_policies/go2/go2_last/exported/policy.onnx
 deleted file mode 100644
 index d477866..0000000
@@ -1881,7 +1881,7 @@ index 86221e8..0000000
 -
 -Untracked files:
 -  (use "git add <file>..." to include in what will be committed)
--	cuncurrent_state_estimator.pth
+-	concurrent_state_estimator.pth
 -	tested_policies/go2/flat_with_contact_asymm/
 -	tested_policies/go2/go2_more_noise/
 -
@@ -1916,7 +1916,7 @@ index 86221e8..0000000
 -+policy_folder_path = dir_path + "/../tested_policies/" + robot + "/flat_with_contact_asymm"
 - #policy_folder_path = dir_path + "/../tested_policies/" + robot + "/go2_5asymm"
 - 
-- cuncurrent_state_est_network = policy_folder_path + "/exported/cuncurrent_state_estimator.pth"
+- concurrent_state_est_network = policy_folder_path + "/exported/concurrent_state_estimator.pth"
 -diff --git a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
 -index 8fc520c..e212813 100644
 ---- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
@@ -1968,11 +1968,11 @@ index 86221e8..0000000
 ---- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
 -+++ b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/go2_env_cfg.py
 -@@ -167,7 +167,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
--         cuncurrent_state_est_train_epochs = 1000
--         cuncurrent_state_est_lr = 1e-3
--         cuncurrent_state_est_ep_saving_interval = 1000
---        cuncurrent_state_est_ep_saving_start = 6000 
--+        cuncurrent_state_est_ep_saving_start = 6000
+-         concurrent_state_est_train_epochs = 1000
+-         concurrent_state_est_lr = 1e-3
+-         concurrent_state_est_ep_saving_interval = 1000
+--        concurrent_state_est_ep_saving_start = 6000 
+-+        concurrent_state_est_ep_saving_start = 6000
 - 
 -     use_rma = False
 -     if(use_rma):
@@ -2901,15 +2901,15 @@ index 2353ffb..0000000
 -history_length: 5
 -single_observation_space: 52
 -use_imu: false
--use_cuncurrent_state_est: true
--cuncurrent_state_est_output_space: 3
--single_cuncurrent_state_est_observation_space: 52
--cuncurrent_state_est_observation_space: 260
--cuncurrent_state_est_batch_size: 512
--cuncurrent_state_est_train_epochs: 1000
--cuncurrent_state_est_lr: 0.001
--cuncurrent_state_est_ep_saving_interval: 1000
--cuncurrent_state_est_ep_saving_start: 6000
+-use_concurrent_state_est: true
+-concurrent_state_est_output_space: 3
+-single_concurrent_state_est_observation_space: 52
+-concurrent_state_est_observation_space: 260
+-concurrent_state_est_batch_size: 512
+-concurrent_state_est_train_epochs: 1000
+-concurrent_state_est_lr: 0.001
+-concurrent_state_est_ep_saving_interval: 1000
+-concurrent_state_est_ep_saving_start: 6000
 -use_rma: false
 -use_filter_actions: true
 -use_asymmetric_ppo: true

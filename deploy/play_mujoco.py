@@ -77,7 +77,7 @@ if __name__ == '__main__':
         base_quat_wxyz = qpos[3:7]
         base_pos = env.base_pos
 
-        if(config.training_env["use_imu"] or config.training_env["use_cuncurrent_state_est"]):
+        if(config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]):
             imu_linear_acceleration = env.mjData.sensordata[0:3]
             imu_angular_velocity = env.mjData.sensordata[3:6]
             imu_orientation = env.mjData.sensordata[9:13]

@@ -36,7 +36,7 @@ algorithm:
 clip_actions: null
 save_interval: 50
 experiment_name: rough_direct
-run_name: aliengo_5asymm_symm_cuncurrent
+run_name: aliengo_5asymm_symm_concurrent
 logger: wandb
 neptune_project: basic-rl
 wandb_project: basic-rl
