@@ -70,8 +70,8 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]), 
-            "friction_distribution_params": (0.2, 2.0),
-            "armature_distribution_params": (0.0, 1.0),
+            "friction_distribution_params": (0.9, 1.1),
+            "armature_distribution_params": (0.9, 1.1),
             "operation": "scale",
             "distribution": "uniform",
         },

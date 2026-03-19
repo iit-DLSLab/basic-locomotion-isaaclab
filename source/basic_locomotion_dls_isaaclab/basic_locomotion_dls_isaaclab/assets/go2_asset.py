@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import isaaclab.sim as sim_utils
-from basic_locomotion_dls_isaaclab.actuators import IdentifiedActuatorElectricCfg
+from basic_locomotion_dls_isaaclab.actuators import IdentifiedActuatorElectricCfg, PaceDCMotorCfg
 from isaaclab.assets.articulation import ArticulationCfg
 
 from basic_locomotion_dls_isaaclab.assets import ISAAC_ASSET_DIR
@@ -87,5 +87,6 @@ GO2_CFG = ArticulationCfg(
         joint_vel={".*": 0.0},
     ),
 
+    actuators={"hip": GO2_HIP_ACTUATOR_CFG, "thigh": GO2_THIGH_ACTUATOR_CFG, "calf": GO2_CALF_ACTUATOR_CFG},
     soft_joint_pos_limit_factor=0.95,
 )

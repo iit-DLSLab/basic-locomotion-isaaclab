@@ -28,3 +28,6 @@ from .actuator_cfg import (
 )
 from .actuator_electric import IdentifiedActuatorElectric
 from .actuator_hydraulic import IdentifiedActuatorHydraulic
+
+from .pace_actuator_cfg import PaceDCMotorCfg
+from .pace_actuator import PaceDCMotor

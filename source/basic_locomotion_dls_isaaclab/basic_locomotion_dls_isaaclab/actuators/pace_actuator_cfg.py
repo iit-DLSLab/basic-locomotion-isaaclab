@@ -8,7 +8,8 @@ import torch
 from isaaclab.utils import configclass
 
 from isaaclab.actuators import DCMotorCfg
-import pace_actuator
+
+from .pace_actuator import PaceDCMotor
 
 
 @configclass
@@ -17,6 +18,6 @@ class PaceDCMotorCfg(DCMotorCfg):
 
     This class extends the base DCMotorCfg with Pace-specific parameters.
     """
-    class_type: type = pace_actuator.PaceDCMotor
+    class_type: type = PaceDCMotor
     encoder_bias: dict[str, float] | float | None = 0.0
     max_delay: torch.int | None = 0
