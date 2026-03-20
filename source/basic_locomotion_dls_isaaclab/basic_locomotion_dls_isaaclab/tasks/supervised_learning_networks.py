@@ -79,7 +79,8 @@ class SimpleNN(torch.nn.Module):
     def __init__(self, in_features, out_features):
         super().__init__()
         self.fc1 = torch.nn.Linear(in_features, 128)
-        self.fc2 = torch.nn.Linear(128, 64)
+        self.fc2 = torch.nn.Linear(128, 128)
+        self.fc2 = torch.nn.Linear(128, 128)
         self.fc3 = torch.nn.Linear(64, out_features)
 
         self.dataset = CustomDataset(max_size=40000)

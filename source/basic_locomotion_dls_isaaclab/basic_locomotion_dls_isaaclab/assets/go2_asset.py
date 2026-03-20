@@ -80,7 +80,7 @@ GO2_CFG = ArticulationCfg(
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 1.0),
+        pos=(0.0, 0.0, 0.4),
         joint_pos={
             ".*L_hip_joint": 0.,
             ".*R_hip_joint": 0.,
