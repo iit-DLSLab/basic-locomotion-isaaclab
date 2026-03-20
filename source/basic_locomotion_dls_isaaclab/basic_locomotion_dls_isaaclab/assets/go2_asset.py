@@ -40,10 +40,11 @@ GO2_THIGH_ACTUATOR_CFG = PaceDCMotorCfg(
     # > in newer Isaac Sim versions, friction is renamed to static_friction
     friction={"FL_thigh_joint": 0.2167, "FR_thigh_joint": 0.1823, "RL_thigh_joint": 0.1621, "RR_thigh_joint": 0.2531},  # static friction coefficient (Nm)
     dynamic_friction={"FL_thigh_joint": 0.2167, "FR_thigh_joint": 0.1823, "RL_thigh_joint": 0.1621, "RR_thigh_joint": 0.2531},  # dynamic friction coefficient (Nm)
-    viscous_friction={"FL_thigh_joint": 0.2427, "FR_thigh_joint": 0.0192, "RL_thigh_joint": 0.0194, "RR_thigh_joint": 0.0167},  # viscous friction coefficient (Nm s/rad)
+    viscous_friction={"FL_thigh_joint": 0.2427, "FR_thigh_joint": 0.2309, "RL_thigh_joint": 0.2409, "RR_thigh_joint": 0.2570},  # viscous friction coefficient (Nm s/rad)
     armature={"FL_thigh_joint": 0.0201, "FR_thigh_joint": 0.0200, "RL_thigh_joint": 0.0188, "RR_thigh_joint": 0.0141},
     max_delay=2,  # max delay in simulation steps
 )
+
 
 GO2_CALF_ACTUATOR_CFG = PaceDCMotorCfg(
     joint_names_expr=[".*_calf_joint"],
