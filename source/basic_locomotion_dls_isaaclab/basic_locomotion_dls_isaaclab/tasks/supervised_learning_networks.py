@@ -207,7 +207,7 @@ class SimpleNN(torch.nn.Module):
         torch.save({
             'model_state_dict': self.state_dict(),
             'input_features': self.fc1.in_features,
-            'output_features': self.fc3.out_features,
+            'output_features': self.fc4.out_features,
         }, filepath)
         
         print(f"Network saved to {filepath}")
