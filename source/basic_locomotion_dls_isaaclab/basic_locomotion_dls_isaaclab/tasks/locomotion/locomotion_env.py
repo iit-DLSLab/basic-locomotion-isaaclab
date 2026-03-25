@@ -732,7 +732,7 @@ class LocomotionEnv(DirectRLEnv):
                     self._robot.data.projected_gravity_b,
                     self._commands,
                     self._robot.data.joint_pos - self._robot.data.default_joint_pos,
-                    self._robot.data.joint_vel,
+                    self._robot.data.joint_vel * self.cfg.observation_joint_vel_scale,
                     self._actions,
                     clock_data,
                 )
@@ -787,7 +787,7 @@ class LocomotionEnv(DirectRLEnv):
                     self._robot.data.projected_gravity_b,
                     self._commands,
                     self._robot.data.joint_pos - self._robot.data.default_joint_pos,
-                    self._robot.data.joint_vel,
+                    self._robot.data.joint_vel * self.cfg.observation_joint_vel_scale,
                     self._actions,
                     clock_data,
                 )
