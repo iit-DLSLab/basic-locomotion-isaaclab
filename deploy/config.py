@@ -38,8 +38,8 @@ else:
 
 # ----------------------------------------------------------------------------------------------------------------
 
-policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_se"
-#policy_folder_path = dir_path + "/../tested_policies/" + robot + "/go2_5asymm"
+policy_folder_path = dir_path + "/../tested_policies/" + robot + "/symmetricactor_data_augmented"
+#policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_se"
 
 concurrent_state_est_network = policy_folder_path + "/exported/concurrent_state_estimator.pth"
 rma_network = policy_folder_path + "/exported/rma.pth"
