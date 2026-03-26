@@ -113,7 +113,9 @@ class Simulator_Node(Node):
         imu_msg = Imu()
         imu_msg.linear_acceleration = self.env.mjData.sensordata[0:3]
         imu_msg.angular_velocity = self.env.mjData.sensordata[3:6]
-        imu_msg.orientation = self.env.mjData.sensordata[9:13]
+        # To be compliant with our hal, we expect the xyzw order, 
+        # but mujoco gives us wxyz, so we roll the array to get the correct order
+        imu_msg.orientation = np.roll(np.array(self.env.mjData.sensordata[9:13]), -1) 
         self.publisher_imu.publish(imu_msg)
 
 
