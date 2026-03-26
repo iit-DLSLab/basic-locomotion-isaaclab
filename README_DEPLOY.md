@@ -36,6 +36,7 @@ fi'
 
 ## Run Sim-to-Sim 
 
+Choose in deploy/config.py the robot/policy you want to run. Then:
 
 ```bash
 ## Sim-to-Sim
