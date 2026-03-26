@@ -50,7 +50,7 @@ python3 deploy/run_controller_ros2.py (TERMINAL 1)
 source deploy/ros2_localhost_connect.sh (TERMINAL 2)
 python3 deploy/run_simulator_ros2.py (TERMINAL 2)
 
-source deploy/ros2_localhost_connect.sh
+source deploy/ros2_localhost_connect.sh (TERMINAL 3)
 ros2 launch teleop_twist_joy teleop-launch.py joy_config:='xbox' (if want joystick) (TERMINAL 3)
 
 ```
