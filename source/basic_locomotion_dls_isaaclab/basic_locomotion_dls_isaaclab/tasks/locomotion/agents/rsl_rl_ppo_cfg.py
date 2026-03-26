@@ -23,6 +23,12 @@ class DiscriminatorCfg:
     reward_scale: float = MISSING
     """The reward coefficient."""
 
+    loss_type: str = "BCEWithLogits"
+    """The type of loss to use for training the discriminator. Default is BCEWithLogits."""
+    
+    empirical_normalization: bool = False
+    """Whether to use empirical normalization for the discriminator inputs. Default is False."""
+
 
 @configclass
 class MorphologycalSymmetriesCfg:
@@ -85,6 +91,8 @@ class FlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     discriminator = DiscriminatorCfg(
         hidden_dims=[128, 128],
         reward_scale=0.1,
+        loss_type="BCEWithLogits",
+        empirical_normalization= False
     )
 
     # Symmetry Related Stuff - Actor Critic
@@ -162,6 +170,8 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     discriminator = DiscriminatorCfg(
         hidden_dims=[1024, 512],
         reward_scale=1.0,
+        loss_type="BCEWithLogits",
+        empirical_normalization= False
     )
 
     # Symmetry Related Stuff - Actor Critic

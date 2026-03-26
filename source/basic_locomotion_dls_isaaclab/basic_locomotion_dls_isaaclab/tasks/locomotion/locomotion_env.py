@@ -292,7 +292,7 @@ class LocomotionEnv(DirectRLEnv):
                         self._robot.data.joint_pos,
                         self._robot.data.joint_vel,
                         self._robot.data.root_lin_vel_b,
-                        # self._robot.data.root_ang_vel_b,
+                        self._robot.data.root_ang_vel_b,
                     )
                     if tensor is not None
                 ],
