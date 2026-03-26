@@ -732,7 +732,7 @@ class LocomotionEnv(DirectRLEnv):
                     self._robot.data.projected_gravity_b,
                     self._commands,
                     self._robot.data.joint_pos - self._robot.data.default_joint_pos,
-                    self._robot.data.joint_vel,
+                    self._robot.data.joint_vel * self.cfg.observation_joint_vel_scale,
                     self._actions,
                     clock_data,
                 )
@@ -787,7 +787,7 @@ class LocomotionEnv(DirectRLEnv):
                     self._robot.data.projected_gravity_b,
                     self._commands,
                     self._robot.data.joint_pos - self._robot.data.default_joint_pos,
-                    self._robot.data.joint_vel,
+                    self._robot.data.joint_vel * self.cfg.observation_joint_vel_scale,
                     self._actions,
                     clock_data,
                 )
@@ -835,7 +835,7 @@ class LocomotionEnv(DirectRLEnv):
     def _get_privileged_observation(self):
         asset_cfg = SceneEntityCfg("robot", joint_names=[".*"])
         asset: Articulation = self.scene[asset_cfg.name]
-        hip_static_friction = asset.actuators["hip"].friction_static
+        """hip_static_friction = asset.actuators["hip"].friction_static
         thigh_static_friction = asset.actuators["thigh"].friction_static
         calf_static_friction = asset.actuators["calf"].friction_static
         
@@ -853,7 +853,7 @@ class LocomotionEnv(DirectRLEnv):
 
         hip_damping = asset.actuators["hip"].damping
         thigh_damping = asset.actuators["thigh"].damping
-        calf_damping = asset.actuators["calf"].damping
+        calf_damping = asset.actuators["calf"].damping"""
 
         #asset_cfg_base = SceneEntityCfg("robot", body_names="base")
         #asset_base = self.scene[asset_cfg_base.name]

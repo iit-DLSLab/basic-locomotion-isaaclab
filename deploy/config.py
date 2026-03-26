@@ -16,8 +16,8 @@ if(robot == "aliengo"):
     Kd_stand_up_and_down = 2.
 
 elif(robot == "go2"):
-    Kp_walking = 21.5
-    Kd_walking = 3.5
+    Kp_walking = 20.0
+    Kd_walking = 2.0 #1.5
 
     Kp_stand_up_and_down = 25.
     Kd_stand_up_and_down = 2.
@@ -38,8 +38,8 @@ else:
 
 # ----------------------------------------------------------------------------------------------------------------
 
-policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_se"
-#policy_folder_path = dir_path + "/../tested_policies/" + robot + "/go2_5asymm"
+policy_folder_path = dir_path + "/../tested_policies/" + robot + "/symmetricactor_data_augmented"
+#policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_se"
 
 concurrent_state_est_network = policy_folder_path + "/exported/concurrent_state_estimator.pth"
 rma_network = policy_folder_path + "/exported/rma.pth"

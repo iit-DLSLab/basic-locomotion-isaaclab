@@ -13,7 +13,7 @@ class CustomDataset(Dataset):
         # There is a problem! we append (num_envs, features) as one element inside the list, not N!
 
         # Save only random 128 element from the input_data and label
-        random_idx = random.sample(range(input_data.size(0)), min(512, input_data.size(0)))
+        random_idx = random.sample(range(input_data.size(0)), min(128, input_data.size(0)))
         input_data_cpu = input_data[random_idx].clone().detach().cpu()
         label_cpu = label[random_idx].clone().detach().cpu()
 
@@ -79,16 +79,18 @@ class SimpleNN(torch.nn.Module):
     def __init__(self, in_features, out_features):
         super().__init__()
         self.fc1 = torch.nn.Linear(in_features, 128)
-        self.fc2 = torch.nn.Linear(128, 64)
-        self.fc3 = torch.nn.Linear(64, out_features)
+        self.fc2 = torch.nn.Linear(128, 128)
+        self.fc3 = torch.nn.Linear(128, 128)
+        self.fc4 = torch.nn.Linear(128, out_features)
 
-        self.dataset = CustomDataset(max_size=40000)
+        self.dataset = CustomDataset(max_size=80000)
 
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        x = torch.tanh(self.fc3(x))*2.0
+        x = torch.relu(self.fc3(x))
+        x = torch.tanh(self.fc4(x))*2.0
         return x
     
 
@@ -205,7 +207,7 @@ class SimpleNN(torch.nn.Module):
         torch.save({
             'model_state_dict': self.state_dict(),
             'input_features': self.fc1.in_features,
-            'output_features': self.fc3.out_features,
+            'output_features': self.fc4.out_features,
         }, filepath)
         
         print(f"Network saved to {filepath}")

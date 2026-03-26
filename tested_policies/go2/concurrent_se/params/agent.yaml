@@ -36,7 +36,7 @@ algorithm:
   num_learning_epochs: 5
   num_mini_batches: 4
   learning_rate: 0.001
-  schedule: fixed
+  schedule: adaptive
   gamma: 0.99
   lam: 0.95
   entropy_coef: 0.005
