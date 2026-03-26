@@ -36,7 +36,7 @@ python scripts/morphosymm_rl/train_symm.py --task=Locomotion-Aliengo-Rough-Blind
 ```
 
 - To train with AMP, modify the related [rsl_rl_ppo_cfg.py](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/devel/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py) setting *class_name = AMP_PPO*
-```bash
+```bash. **You need for this to install rsl-rl v3.1.2**
 python scripts/amp_rl/train_amp.py --task=Locomotion-Aliengo-Flat --num_envs=4096 --headless
 python scripts/amp_rl/train_amp.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=4096 --headless
 ```
