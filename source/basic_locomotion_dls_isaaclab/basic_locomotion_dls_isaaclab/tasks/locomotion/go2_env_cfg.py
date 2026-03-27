@@ -196,8 +196,8 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
             restitution=0.0,
         ),
         physx=PhysxCfg(
-            #gpu_max_rigid_patch_count=2**23,
-            gpu_max_rigid_patch_count= 5 * 2 ** 16,
+            gpu_max_rigid_patch_count=2**23,
+            #gpu_max_rigid_patch_count= 5 * 2 ** 16,
         ),
     )
     terrain = TerrainImporterCfg(
