@@ -22,7 +22,7 @@ Features:
 - Sim-to-Real in ROS1 and ROS2 compatible with our public low-level robot's hal for unitree robots [unitree_ros2_dls](https://github.com/iit-DLSLab/unitree_ros2_dls)
 
 Real-world deployment via:
-- [muse](https://github.com/iit-DLSLab/muse/tree/unitree_sdk) for State Estimator
+- [muse](https://github.com/iit-DLSLab/muse/tree/unitree_sdk) for State Estimation
 - [unitree_ros2_dls](https://github.com/iit-DLSLab/unitree_ros2_dls) for Unitree HAL
 
 A list of robots and environments available are described below:
