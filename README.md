@@ -21,6 +21,10 @@ Features:
 - Sim-to-Sim in [Mujoco](https://github.com/google-deepmind/mujoco)
 - Sim-to-Real in ROS1 and ROS2 compatible with our public low-level robot's hal for unitree robots [unitree_ros2_dls](https://github.com/iit-DLSLab/unitree_ros2_dls)
 
+Real-world deployment via:
+- [muse](https://github.com/iit-DLSLab/muse/tree/unitree_sdk) for state estimation (if no concurrent state estimation is used)
+- [unitree_ros2_dls](https://github.com/iit-DLSLab/unitree_ros2_dls) for unitree robot communication
+
 A list of robots and environments available are described below:
 
 | Robot Model         | Environment Name Pattern                                   |
