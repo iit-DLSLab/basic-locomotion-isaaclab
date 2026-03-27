@@ -1,6 +1,7 @@
 import rclpy 
 from rclpy.node import Node 
-from dls2_interface.msg import BaseState, BlindState, Imu, TrajectoryGenerator, FeetContactState
+from dls2_interface.msg import BaseState, BlindState, Imu, TrajectoryGenerator
+from unitree_go.msg import LowState, MotorState, IMUState
 
 import time
 import numpy as np
@@ -37,7 +38,8 @@ class Simulator_Node(Node):
         self.publisher_base_state = self.create_publisher(BaseState,"base_state", 1)
         self.publisher_blind_state = self.create_publisher(BlindState,"blind_state", 1)
         self.publisher_imu = self.create_publisher(Imu,"imu", 1)
-        self.publisher_feet_contact_state = self.create_publisher(FeetContactState,"feet_contact_state", 1)
+
+        self.publisher_low_state = self.create_publisher(LowState,"low_state", 1)
 
         self.subscriber_trajectory_generator = self.create_subscription(TrajectoryGenerator,"trajectory_generator", self.get_trajectory_generator_callback, 1)
 
@@ -119,13 +121,18 @@ class Simulator_Node(Node):
         self.publisher_imu.publish(imu_msg)
 
 
-        # Publish Feet Contact State ------------------------------------------------
+        # Publish Low State of Unitree ------------------------------------------------
+        low_state_msg = LowState()
+        for i, val in enumerate(self.env.mjData.qpos[7:]):
+            low_state_msg.motor_state[i].q = self.env.mjData.qpos[7+i]
+        for i, val in enumerate(self.env.mjData.qvel[6:]):
+            low_state_msg.motor_state[i].dq = self.env.mjData.qvel[6+i]
         _, _, feet_GRF = self.env.feet_contact_state(ground_reaction_forces=True)
-        feet_contact_state_msg = FeetContactState()
-        feet_contact_state_msg.feet_name = ["FL", "FR", "RL", "RR"]
-        feet_contact_state_msg.linear_grf_feet = np.concatenate([feet_GRF["FL"], feet_GRF["FR"], feet_GRF["RL"], feet_GRF["RR"]]).tolist()
-        feet_contact_state_msg.angular_grf_feet = np.concatenate([feet_GRF["FL"]*0.0, feet_GRF["FR"]*0.0, feet_GRF["RL"]*0.0, feet_GRF["RR"]*0.0]).tolist()
-        self.publisher_feet_contact_state.publish(feet_contact_state_msg)
+        low_state_msg.foot_force = np.array([feet_GRF.FL[2], feet_GRF.FR[2], feet_GRF.RL[2], feet_GRF.RR[2]], dtype=np.int16)
+        low_state_msg.imu_state.accelerometer = self.env.mjData.sensordata[0:3].astype(np.float32)
+        low_state_msg.imu_state.gyroscope = self.env.mjData.sensordata[3:6].astype(np.float32)
+        low_state_msg.imu_state.quaternion = np.roll(np.array(self.env.mjData.sensordata[9:13].astype(np.float32)), -1)  
+        self.publisher_low_state.publish(low_state_msg)
 
 
         # Step the environment --------------------------------------------------------------------------------
