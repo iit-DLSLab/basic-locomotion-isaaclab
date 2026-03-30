@@ -39,7 +39,7 @@ class Simulator_Node(Node):
         self.publisher_blind_state = self.create_publisher(BlindState,"blind_state", 1)
         self.publisher_imu = self.create_publisher(Imu,"imu", 1)
 
-        self.publisher_low_state = self.create_publisher(LowState,"low_state", 1)
+        self.publisher_low_state = self.create_publisher(LowState,"lowstate", 1)
 
         self.subscriber_trajectory_generator = self.create_subscription(TrajectoryGenerator,"trajectory_generator", self.get_trajectory_generator_callback, 1)
 
@@ -122,17 +122,17 @@ class Simulator_Node(Node):
 
 
         # Publish Low State of Unitree ------------------------------------------------
-        low_state_msg = LowState()
+        lowstate_msg = LowState()
         for i, val in enumerate(self.env.mjData.qpos[7:]):
-            low_state_msg.motor_state[i].q = self.env.mjData.qpos[7+i]
+            lowstate_msg.motor_state[i].q = self.env.mjData.qpos[7+i]
         for i, val in enumerate(self.env.mjData.qvel[6:]):
-            low_state_msg.motor_state[i].dq = self.env.mjData.qvel[6+i]
+            lowstate_msg.motor_state[i].dq = self.env.mjData.qvel[6+i]
         _, _, feet_GRF = self.env.feet_contact_state(ground_reaction_forces=True)
-        low_state_msg.foot_force = np.array([feet_GRF.FL[2], feet_GRF.FR[2], feet_GRF.RL[2], feet_GRF.RR[2]], dtype=np.int16)
-        low_state_msg.imu_state.accelerometer = self.env.mjData.sensordata[0:3].astype(np.float32)
-        low_state_msg.imu_state.gyroscope = self.env.mjData.sensordata[3:6].astype(np.float32)
-        low_state_msg.imu_state.quaternion = np.roll(np.array(self.env.mjData.sensordata[9:13].astype(np.float32)), -1)  
-        self.publisher_low_state.publish(low_state_msg)
+        lowstate_msg.foot_force = np.array([feet_GRF.FL[2], feet_GRF.FR[2], feet_GRF.RL[2], feet_GRF.RR[2]], dtype=np.int16)
+        lowstate_msg.imu_state.accelerometer = self.env.mjData.sensordata[0:3].astype(np.float32)
+        lowstate_msg.imu_state.gyroscope = self.env.mjData.sensordata[3:6].astype(np.float32)
+        lowstate_msg.imu_state.quaternion = np.roll(np.array(self.env.mjData.sensordata[9:13].astype(np.float32)), -1)  
+        self.publisher_low_state.publish(lowstate_msg)
 
 
         # Step the environment --------------------------------------------------------------------------------
