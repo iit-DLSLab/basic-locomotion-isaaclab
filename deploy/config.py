@@ -4,7 +4,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../")
 sys.path.append(dir_path+"/../scripts/rsl_rl")
 
-robot = 'aliengo'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
+robot = 'go2'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
 scene = 'random_boxes'  # flat, random_boxes, random_pyramids, perlin
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -24,7 +24,7 @@ elif(robot == "go2"):
     Kp_stand_up_and_down = 25.
     Kd_stand_up_and_down = 2.
 
-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_se"
+    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/symmetricactor_data_augmented"
 
 elif(robot == "b2"):
     Kp_walking = 20.

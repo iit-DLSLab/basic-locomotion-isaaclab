@@ -101,7 +101,7 @@ class Simulator_Node(Node):
         base_state_msg.pose.orientation = np.roll(self.env.mjData.qpos[3:7],-1)
         base_state_msg.velocity.linear = base_lin_vel
         base_state_msg.velocity.angular = base_ang_vel
-        self.publisher_base_state.publish(base_state_msg)
+        #self.publisher_base_state.publish(base_state_msg)
 
 
         # Publish Blind State ------------------------------------------------
@@ -122,13 +122,24 @@ class Simulator_Node(Node):
 
 
         # Publish Low State of Unitree ------------------------------------------------
+        # We need to reorder the joint since the unitree standard msgs
+        # publish FR, FL, RR, RL, but we use FL, FR, RL, RR
         lowstate_msg = LowState()
-        for i, val in enumerate(self.env.mjData.qpos[7:]):
-            lowstate_msg.motor_state[i].q = self.env.mjData.qpos[7+i]
-        for i, val in enumerate(self.env.mjData.qvel[6:]):
-            lowstate_msg.motor_state[i].dq = self.env.mjData.qvel[6+i]
+        for i in range(3): #FL to FR
+            lowstate_msg.motor_state[i].q = self.env.mjData.qpos[self.env.legs_qpos_idx.FR[i]]
+            lowstate_msg.motor_state[i].dq = self.env.mjData.qvel[self.env.legs_qvel_idx.FR[i]]
+        for i in range(3): #FR to FL
+            lowstate_msg.motor_state[i+3].q = self.env.mjData.qpos[self.env.legs_qpos_idx.FL[i]]
+            lowstate_msg.motor_state[i+3].dq = self.env.mjData.qvel[self.env.legs_qvel_idx.FL[i]]
+        for i in range(3): #RL to RR
+            lowstate_msg.motor_state[i+6].q = self.env.mjData.qpos[self.env.legs_qpos_idx.RR[i]]
+            lowstate_msg.motor_state[i+6].dq = self.env.mjData.qvel[self.env.legs_qvel_idx.RR[i]]
+        for i in range(3): #RR to RL
+            lowstate_msg.motor_state[i+9].q = self.env.mjData.qpos[self.env.legs_qpos_idx.RL[i]]
+            lowstate_msg.motor_state[i+9].dq = self.env.mjData.qvel[self.env.legs_qvel_idx.RL[i]]
+
         _, _, feet_GRF = self.env.feet_contact_state(ground_reaction_forces=True)
-        lowstate_msg.foot_force = np.array([feet_GRF.FL[2], feet_GRF.FR[2], feet_GRF.RL[2], feet_GRF.RR[2]], dtype=np.int16)
+        lowstate_msg.foot_force = np.array([feet_GRF.FR[2], feet_GRF.FL[2], feet_GRF.RR[2], feet_GRF.RL[2]], dtype=np.int16)
         lowstate_msg.imu_state.accelerometer = self.env.mjData.sensordata[0:3].astype(np.float32)
         lowstate_msg.imu_state.gyroscope = self.env.mjData.sensordata[3:6].astype(np.float32)
         lowstate_msg.imu_state.quaternion = np.roll(np.array(self.env.mjData.sensordata[9:13].astype(np.float32)), -1)  

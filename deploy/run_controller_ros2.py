@@ -142,7 +142,6 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
 
         self.last_joy_time = time.time()
 
-
         #kill the node if the button is pressed
         if msg.buttons[8] == 1:
             self.get_logger().info("Joystick button pressed, shutting down the node.") 
@@ -255,19 +254,7 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         ref_base_lin_vel, ref_base_ang_vel = env.target_base_vel()
 
 
-        if(self.console.isDown):
-            desired_joint_pos = LegsAttr(*[np.zeros((1, int(env.mjModel.nu/4))) for _ in range(4)])
-            desired_joint_pos.FL = self.stand_up_and_down_actions.FL
-            desired_joint_pos.FR = self.stand_up_and_down_actions.FR
-            desired_joint_pos.RL = self.stand_up_and_down_actions.RL
-            desired_joint_pos.RR = self.stand_up_and_down_actions.RR
-
-            # Impedence Loop
-            Kp = locomotion_policy.Kp_stand_up_and_down
-            Kd = locomotion_policy.Kd_stand_up_and_down
-            
-
-        elif(self.console.isRLActivated):
+        if(self.console.isRLActivated):
 
             desired_joint_pos = locomotion_policy.compute_control(
                         base_pos=base_pos, 
@@ -303,8 +290,7 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         # Publish the desired joint positions to the trajectory generator --------------------------------
         trajectory_generator_msg = TrajectoryGenerator()
         trajectory_generator_msg.timestamp = float(self.get_clock().now().nanoseconds)
-        MAX_SEQUENCE_ID = 1000
-        trajectory_generator_msg.sequence_id = int(self.sequence_id % MAX_SEQUENCE_ID)
+        trajectory_generator_msg.sequence_id = int(self.sequence_id % 1000)  # To avoid overflow, we reset the sequence id after it reaches a certain value
         self.sequence_id += 1
         trajectory_generator_msg.joints_position = np.array([desired_joint_pos.FL, desired_joint_pos.FR, desired_joint_pos.RL, desired_joint_pos.RR]).flatten().tolist()
         trajectory_generator_msg.joints_velocity = np.zeros(12).tolist()
@@ -315,10 +301,9 @@ class Basic_Locomotion_DLS_Isaaclab_Node(Node):
         
         
         
-        # Render the simulation -----------------------------------------------------------------------------------
+        # Render the simulation at a certain frequency -----------------------------------------------------------
         if USE_MUJOCO_RENDER:
-            RENDER_FREQ = 30
-            # Render only at a certain frequency -----------------------------------------------------------------
+            RENDER_FREQ = 30  # Hz
             if time.time() - self.last_render_time > 1.0 / RENDER_FREQ or self.env.step_num == 1:
                 self.env.render()
                 self.last_render_time = time.time()

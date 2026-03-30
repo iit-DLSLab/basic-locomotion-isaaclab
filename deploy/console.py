@@ -90,6 +90,7 @@ class Console():
                         continue
 
                     self.isDown = True
+                    self.isRLActivated = False
 
                     start_time = time.time()
                     time_motion = 5.
