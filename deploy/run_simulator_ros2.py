@@ -101,7 +101,7 @@ class Simulator_Node(Node):
         base_state_msg.pose.orientation = np.roll(self.env.mjData.qpos[3:7],-1)
         base_state_msg.velocity.linear = base_lin_vel
         base_state_msg.velocity.angular = base_ang_vel
-        #self.publisher_base_state.publish(base_state_msg)
+        self.publisher_base_state.publish(base_state_msg)
 
 
         # Publish Blind State ------------------------------------------------
