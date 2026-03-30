@@ -122,19 +122,18 @@ class Simulator_Node(Node):
 
 
         # Publish Low State of Unitree ------------------------------------------------
-        # We need to reorder the joint since the unitree standard msgs
-        # publish FR, FL, RR, RL, but we use FL, FR, RL, RR
+        # FR, FL, RR, RL convention to follow the unitree standard msgs
         lowstate_msg = LowState()
-        for i in range(3): #FL to FR
+        for i in range(3):
             lowstate_msg.motor_state[i].q = self.env.mjData.qpos[self.env.legs_qpos_idx.FR[i]]
             lowstate_msg.motor_state[i].dq = self.env.mjData.qvel[self.env.legs_qvel_idx.FR[i]]
-        for i in range(3): #FR to FL
+        for i in range(3):
             lowstate_msg.motor_state[i+3].q = self.env.mjData.qpos[self.env.legs_qpos_idx.FL[i]]
             lowstate_msg.motor_state[i+3].dq = self.env.mjData.qvel[self.env.legs_qvel_idx.FL[i]]
-        for i in range(3): #RL to RR
+        for i in range(3):
             lowstate_msg.motor_state[i+6].q = self.env.mjData.qpos[self.env.legs_qpos_idx.RR[i]]
             lowstate_msg.motor_state[i+6].dq = self.env.mjData.qvel[self.env.legs_qvel_idx.RR[i]]
-        for i in range(3): #RR to RL
+        for i in range(3):
             lowstate_msg.motor_state[i+9].q = self.env.mjData.qpos[self.env.legs_qpos_idx.RL[i]]
             lowstate_msg.motor_state[i+9].dq = self.env.mjData.qvel[self.env.legs_qvel_idx.RL[i]]
 
