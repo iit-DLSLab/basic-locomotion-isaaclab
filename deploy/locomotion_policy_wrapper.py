@@ -23,7 +23,7 @@ import sys
 import os 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../")
-sys.path.append(dir_path+"/../source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/")
+sys.path.append(dir_path+"/../source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/")
 from supervised_learning_networks import load_network
 
 

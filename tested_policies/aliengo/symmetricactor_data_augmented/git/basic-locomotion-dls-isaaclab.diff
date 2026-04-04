@@ -3,16 +3,16 @@ HEAD detached from dc9bbf2
 Changes not staged for commit:
   (use "git add <file>..." to update what will be committed)
   (use "git restore <file>..." to discard changes in working directory)
-	modified:   source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
 
 no changes added to commit (use "git add" and/or "git commit -a") 
 
 
 --- git diff ---
-diff --git a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
 index ed6db40..82aba1f 100644
---- a/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
-+++ b/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
 @@ -137,7 +137,7 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
          activation="elu",
      )

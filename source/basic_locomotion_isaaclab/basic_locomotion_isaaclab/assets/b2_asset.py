@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import isaaclab.sim as sim_utils
-from basic_locomotion_dls_isaaclab.actuators import IdentifiedActuatorElectricCfg
+from basic_locomotion_isaaclab.actuators import IdentifiedActuatorElectricCfg
 from isaaclab.assets.articulation import ArticulationCfg
 
-from basic_locomotion_dls_isaaclab.assets import ISAAC_ASSET_DIR
+from basic_locomotion_isaaclab.assets import ISAAC_ASSET_DIR
 from isaaclab.utils.assets import ISAACLAB_NUCLEUS_DIR
 
 # B2 robot configuration from mujoco

@@ -44,9 +44,9 @@ os.system("echo -20 > /proc/" + str(pid) + "/autogroup")
 USE_MUJOCO_RENDER = False
 
 
-class Basic_Locomotion_DLS_Isaaclab_Node(Node):
+class ControllerROS2(Node):
     def __init__(self):
-        super().__init__('Basic_Locomotion_DLS_IsaacLab_Node')
+        super().__init__('ControllerROS2')
 
         # Mujoco env
         robot_name = config.robot
@@ -317,11 +317,11 @@ if __name__ == '__main__':
     print('Hello from basic-locomotion-dls-isaaclab ros node.')
     
     rclpy.init()
-    basic_locomotion_dls_isaaclab_node = Basic_Locomotion_DLS_Isaaclab_Node()
-    rclpy.spin(basic_locomotion_dls_isaaclab_node)
+    controller_ros2_node = ControllerROS2()
+    rclpy.spin(controller_ros2_node)
     
-    basic_locomotion_dls_isaaclab_node.destroy_node()
+    controller_ros2_node.destroy_node()
     rclpy.shutdown()
 
-    print("basic-locomotion-dls-isaaclab ros node is stopped")
+    print("ControllerROS2 node is stopped")
     exit(0)

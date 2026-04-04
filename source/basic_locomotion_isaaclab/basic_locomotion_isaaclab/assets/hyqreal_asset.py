@@ -4,77 +4,86 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import isaaclab.sim as sim_utils
-from basic_locomotion_dls_isaaclab.actuators import IdentifiedActuatorElectricCfg
+from basic_locomotion_isaaclab.actuators import IdentifiedActuatorHydraulicCfg
 from isaaclab.assets.articulation import ArticulationCfg
-from isaaclab.assets import AssetBaseCfg
 
-from basic_locomotion_dls_isaaclab.assets import ISAAC_ASSET_DIR
+from basic_locomotion_isaaclab.assets import ISAAC_ASSET_DIR
 
 
-# Aliengo robot configuration from mujoco
-stiffness_mujoco = 25.0
-damping_mujoco = 2.0
-friction_static_mujoco = 0.2
-friction_dynamic_mujoco = 0.6
+# HYQREAL robot configuration from mujoco
+stiffness_mujoco = 300.0 #200.0
+damping_mujoco = 20.0 #20.0
 armature_mujoco = 0.01
+first_order_delay_filter = 0.1
+second_order_delay_filter = 0.1
 
-static_friction_hip = 0.5 * 0.0
-dynamic_friction_hip = 0.3 * 0.0
-viscous_friction_hip = 0.3 * 0.0
+friction_static_mujoco = 0.2 * 0.0
+friction_dynamic_mujoco = 0.6 * 0.0
+activation_vel = 0.1# * 0.0
 
-static_friction_thigh = 0.5 * 0.0
-dynamic_friction_thigh = 0.3 * 0.0
-viscous_friction_thigh = 0.3 * 0.0
+static_friction_hip = 7.0
+dynamic_friction_hip = 0.3
+viscous_friction_hip = 0.3
 
-static_friction_calf = 0.5 * 0.0
-dynamic_friction_calf = 0.3 * 0.0
-viscous_friction_calf = 0.3 * 0.0
+static_friction_thigh = 7.0
+dynamic_friction_thigh = 0.3
+viscous_friction_thigh = 0.3
 
-ALIENGO_HIP_ACTUATOR_CFG = IdentifiedActuatorElectricCfg(
+static_friction_calf = 0.5
+dynamic_friction_calf = 0.3
+viscous_friction_calf = 0.3
+
+HYQREAL_HIP_ACTUATOR_CFG = IdentifiedActuatorHydraulicCfg(
     joint_names_expr=[".*_hip_joint"],
-    effort_limit=44.4,
+    effort_limit=173.0,
     velocity_limit=21.0,
-    saturation_effort=44.4,
+    saturation_effort=173.0,
     stiffness=stiffness_mujoco,
     damping=damping_mujoco,
     armature=armature_mujoco,
     friction_static=friction_static_mujoco,
-    activation_vel=0.1,
+    activation_vel=activation_vel,
     friction_dynamic=friction_dynamic_mujoco,
+    first_order_delay_filter=first_order_delay_filter,
+    second_order_delay_filter=second_order_delay_filter,
 
     friction = static_friction_hip,
     dynamic_friction = dynamic_friction_hip,
     viscous_friction = viscous_friction_hip,
 )
 
-ALIENGO_THIGH_ACTUATOR_CFG = IdentifiedActuatorElectricCfg(
+HYQREAL_THIGH_ACTUATOR_CFG = IdentifiedActuatorHydraulicCfg(
     joint_names_expr=[".*_thigh_joint"],
-    effort_limit=44.4,
+    effort_limit=208.0,
     velocity_limit=21.0,
-    saturation_effort=44.4,
+    saturation_effort=208.0,
     stiffness=stiffness_mujoco,
     damping=damping_mujoco,
     armature=armature_mujoco,
     friction_static=friction_static_mujoco,
     activation_vel=0.1,
     friction_dynamic=friction_dynamic_mujoco,
+    first_order_delay_filter=first_order_delay_filter,
+    second_order_delay_filter=second_order_delay_filter,
 
     friction = static_friction_thigh,
     dynamic_friction = dynamic_friction_thigh,
     viscous_friction = viscous_friction_thigh,
 )
 
-ALIENGO_CALF_ACTUATOR_CFG = IdentifiedActuatorElectricCfg(
+HYQREAL_CALF_ACTUATOR_CFG = IdentifiedActuatorHydraulicCfg(
     joint_names_expr=[".*_calf_joint"],
-    effort_limit=44.4,
+    effort_limit=249.0,
     velocity_limit=21.0,
-    saturation_effort=44.4,
+    saturation_effort=249.0,
     stiffness=stiffness_mujoco,
     damping=damping_mujoco,
     armature=armature_mujoco,
     friction_static=friction_static_mujoco,
     activation_vel=0.1,
     friction_dynamic=friction_dynamic_mujoco,
+    first_order_delay_filter=first_order_delay_filter,
+    second_order_delay_filter=second_order_delay_filter,
 
     friction = static_friction_calf,
     dynamic_friction = dynamic_friction_calf,
@@ -82,10 +91,10 @@ ALIENGO_CALF_ACTUATOR_CFG = IdentifiedActuatorElectricCfg(
 )
 
 
-ALIENGO_CFG = ArticulationCfg(
-    prim_path=None,
+
+HYQREAL_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path=f"{ISAAC_ASSET_DIR}/aliengo_asset/from_xml/aliengo.usd",
+        usd_path=f"{ISAAC_ASSET_DIR}/hyqreal_asset/from_xml/hyqreal2_nohpu.usd",
         activate_contact_sensors=True,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,
@@ -101,7 +110,7 @@ ALIENGO_CFG = ArticulationCfg(
         ),
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        pos=(0.0, 0.0, 0.4),
+        pos=(0.0, 0.0, 0.5),
         joint_pos={
             ".*L_hip_joint": 0.0,
             ".*R_hip_joint": 0.0,
@@ -111,16 +120,8 @@ ALIENGO_CFG = ArticulationCfg(
         joint_vel={".*": 0.0},
     ),
 
-    actuators={"hip": ALIENGO_HIP_ACTUATOR_CFG, "thigh": ALIENGO_THIGH_ACTUATOR_CFG, "calf": ALIENGO_CALF_ACTUATOR_CFG},
+    
+    actuators={"hip": HYQREAL_HIP_ACTUATOR_CFG, "thigh": HYQREAL_THIGH_ACTUATOR_CFG,
+               "calf": HYQREAL_CALF_ACTUATOR_CFG},
     soft_joint_pos_limit_factor=0.95,
-)
-
-
-CAMERA_USD_CFG = AssetBaseCfg(
-    prim_path="/World/envs/env_.*/Robot/base/d435",
-    spawn=sim_utils.UsdFileCfg(usd_path=f"{ISAAC_ASSET_DIR}/d435.usd",),
-    init_state=AssetBaseCfg.InitialStateCfg(
-            pos=(0.33, 0.0, 0.08), 
-            rot=(-0.405579, 0.579228, -0.579228, 0.405579)
-    )
 )

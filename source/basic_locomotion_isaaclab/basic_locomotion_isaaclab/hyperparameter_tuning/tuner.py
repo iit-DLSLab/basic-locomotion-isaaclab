@@ -42,10 +42,10 @@ Usage:
     echo "import ray; ray.init(); import time; [time.sleep(10) for _ in iter(int, 1)]" | ./../IsaacLab/isaaclab.sh -p
     
     (TERMINAL 2)
-    python3 ../basic_locomotion_dls_isaaclab/exts/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/hyperparameter_tuning/tuner.py \
-        --run_mode local --cfg_file ../basic_locomotion_dls_isaaclab/exts/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/hyperparameter_tuning/locomotion_tuning_cfg.py \
+    python3 ../basic_locomotion_isaaclab/exts/basic_locomotion_isaaclab/basic_locomotion_isaaclab/hyperparameter_tuning/tuner.py \
+        --run_mode local --cfg_file ../basic_locomotion_isaaclab/exts/basic_locomotion_isaaclab/basic_locomotion_isaaclab/hyperparameter_tuning/locomotion_tuning_cfg.py \
         --cfg_class LocomotionAliengoFlatTuner \
-        --workflow ../basic_locomotion_dls_isaaclab/scripts/rsl_rl/train.py \
+        --workflow ../basic_locomotion_isaaclab/scripts/rsl_rl/train.py \
         --metric Train/mean_reward
 
 """

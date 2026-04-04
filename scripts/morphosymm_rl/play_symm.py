@@ -76,12 +76,12 @@ from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
 # PLACEHOLDER: Extension template (do not remove this comment)
-import basic_locomotion_dls_isaaclab.tasks  # noqa: F401
+import basic_locomotion_isaaclab.tasks  # noqa: F401
 
 #from rsl_rl.runners import on_policy_runner
 from morphosymm_rl.runners.symm_on_policy_runner import SymmOnPolicyRunner
 # Import extensions to set up environment tasks
-import basic_locomotion_dls_isaaclab.tasks  # noqa: F401
+import basic_locomotion_isaaclab.tasks  # noqa: F401
 
 
 @hydra_task_config(args_cli.task, args_cli.agent)

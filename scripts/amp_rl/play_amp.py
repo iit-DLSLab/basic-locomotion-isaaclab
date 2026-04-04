@@ -54,7 +54,7 @@ from isaaclab.utils.dict import print_dict
 from isaaclab.envs import DirectMARLEnv, multi_agent_to_single_agent
 
 # Import extensions to set up environment tasks
-import basic_locomotion_dls_isaaclab.tasks  # noqa: F401
+import basic_locomotion_isaaclab.tasks  # noqa: F401
 
 def main():
     """Play with RSL-RL agent."""

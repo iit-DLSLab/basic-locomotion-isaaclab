@@ -41,7 +41,7 @@ USE_MUJOCO_SIMULATION = False
 
 USE_SMOOTH_VELOCITY = True
 
-class Basic_Locomotion_DLS_Isaaclab_Node():
+class ControllerROS1():
     def __init__(self):
 
         # Mujoco env
@@ -274,11 +274,11 @@ class Basic_Locomotion_DLS_Isaaclab_Node():
 #---------------------------
 if __name__ == '__main__':
     
-    print('Hello from basic-locomotion-dls-isaaclab ros node.')
+    print('Hello from basic-locomotion-isaaclab controller ros node.')
     
-    rospy.init_node('basic_locomotion_dls_isaaclab_node', anonymous=True)
-    basic_locomotion_dls_isaaclab_node = Basic_Locomotion_DLS_Isaaclab_Node()
+    rospy.init_node('ControllerROS1', anonymous=True)
+    controller_ros1_node = ControllerROS1()
     rospy.spin()
 
-    print("basic-locomotion-dls-isaaclab ros node is stopped")
+    print("ControllerROS1 node is stopped")
     exit(0)

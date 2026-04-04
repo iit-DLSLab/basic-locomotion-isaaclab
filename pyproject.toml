@@ -56,7 +56,7 @@ known_isaaclabparty = [
 ]
 
 # Modify the following to include the package names of your first-party code
-known_firstparty = "basic_locomotion_dls_isaaclab"
+known_firstparty = "basic_locomotion_isaaclab"
 known_local_folder = "config"
 
 [tool.pyright]

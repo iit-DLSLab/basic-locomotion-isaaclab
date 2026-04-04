@@ -30,9 +30,9 @@ SCHEDULER_FREQ = 500 # Frequency of the scheduler
 RENDER_FREQ = 30
 
 # Shell for the controllers ----------------------------------------------
-class Simulator_Node(Node):
+class SimulatorROS2(Node):
     def __init__(self):
-        super().__init__('Simulator_Node')
+        super().__init__('SimulatorROS2')
 
         # Subscribers and Publishers
         self.publisher_base_state = self.create_publisher(BaseState,"base_state", 1)
@@ -175,13 +175,13 @@ class Simulator_Node(Node):
 
 
 def main():
-    print('Hello from the gym_quadruped simulator.')
+    print('Hello from the SimulatorROS2 node.')
     rclpy.init()
 
-    simulator_node = Simulator_Node()
+    simulator_ros2_node = SimulatorROS2()
 
-    rclpy.spin(simulator_node)
-    simulator_node.destroy_node()
+    rclpy.spin(simulator_ros2_node)
+    simulator_ros2_node.destroy_node()
     rclpy.shutdown()
 
 

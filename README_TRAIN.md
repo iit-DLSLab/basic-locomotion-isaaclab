@@ -13,7 +13,7 @@ sudo apt install git-lfs
 4. Using a python interpreter that has Isaac Lab installed, install the library
 
 ```bash
-python -m pip install -e source/basic_locomotion_dls_isaaclab
+python -m pip install -e source/basic_locomotion_isaaclab
 ```
 
 5. If you want to play with [Morphologycal Symmetries](https://arxiv.org/pdf/2403.17320), install the repo [morphosymm-rl](https://github.com/iit-DLSLab/morphosymm-rl)
@@ -29,13 +29,13 @@ python scripts/rsl_rl/train.py --task=Locomotion-Aliengo-Flat --num_envs=4096 --
 python scripts/rsl_rl/train.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=4096 --headless
 ```
 
-- To train with Symmetries, modify the related [rsl_rl_ppo_cfg.py](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/devel/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py) setting *class_name = PPOSymmDataAugmented*
+- To train with Symmetries, modify the related [rsl_rl_ppo_cfg.py](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/devel/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py) setting *class_name = PPOSymmDataAugmented*
 ```bash
 python scripts/morphosymm_rl/train_symm.py --task=Locomotion-Aliengo-Flat --num_envs=4096 --headless
 python scripts/morphosymm_rl/train_symm.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=4096 --headless
 ```
 
-- To train with AMP, modify the related [rsl_rl_ppo_cfg.py](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/devel/source/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py) setting *class_name = AMP_PPO*
+- To train with AMP, modify the related [rsl_rl_ppo_cfg.py](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/devel/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py) setting *class_name = AMP_PPO*
 ```bash. **You need for this to install rsl-rl v3.1.2**
 python scripts/amp_rl/train_amp.py --task=Locomotion-Aliengo-Flat --num_envs=4096 --headless
 python scripts/amp_rl/train_amp.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=4096 --headless
@@ -61,7 +61,7 @@ echo "import ray; ray.init(); import time; [time.sleep(10) for _ in iter(int, 1)
 ```
 
 ```bash
-python3 ../basic_locomotion_dls_isaaclab/exts/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/hyperparameter_tuning/tuner.py --run_mode local --cfg_file ../basic_locomotion_dls_isaaclab/exts/basic_locomotion_dls_isaaclab/basic_locomotion_dls_isaaclab/hyperparameter_tuning/locomotion_aliengo_cfg.py --cfg_class LocomotionAliengoFlatTuner (TERMINAL 2)
+python3 ../basic_locomotion_isaaclab/exts/basic_locomotion_isaaclab/basic_locomotion_isaaclab/hyperparameter_tuning/tuner.py --run_mode local --cfg_file ../basic_locomotion_isaaclab/exts/basic_locomotion_isaaclab/basic_locomotion_isaaclab/hyperparameter_tuning/locomotion_aliengo_cfg.py --cfg_class LocomotionAliengoFlatTuner (TERMINAL 2)
 ```
 
 
@@ -69,7 +69,7 @@ python3 ../basic_locomotion_dls_isaaclab/exts/basic_locomotion_dls_isaaclab/basi
 We use model from [gym-quadruped](https://github.com/iit-DLSLab/gym-quadruped).
 
 ```bash
-./isaaclab.sh -p scripts/tools/convert_mjcf.py   ../basic_locomotion_dls_isaaclab/scripts/sim_to_sim_mujoco/gym-quadruped/gym_quadruped/robot_model/aliengo/aliengo.xml   ../aliengo.usd   --import-sites   --make-instanceable
+./isaaclab.sh -p scripts/tools/convert_mjcf.py   ../basic_locomotion_isaaclab/scripts/sim_to_sim_mujoco/gym-quadruped/gym_quadruped/robot_model/aliengo/aliengo.xml   ../aliengo.usd   --import-sites   --make-instanceable
 ```
 
 Remember to set in the application above, "set as default prim" to the root of the robot. Furthermore, for now, add the following lines in the xml of your robots to make the feet seen as body

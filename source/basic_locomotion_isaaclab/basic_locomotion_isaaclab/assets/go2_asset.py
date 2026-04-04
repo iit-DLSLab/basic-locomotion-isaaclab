@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 import isaaclab.sim as sim_utils
-from basic_locomotion_dls_isaaclab.actuators import IdentifiedActuatorElectricCfg, PaceDCMotorCfg
+from basic_locomotion_isaaclab.actuators import IdentifiedActuatorElectricCfg, PaceDCMotorCfg
 from isaaclab.assets.articulation import ArticulationCfg
 
-from basic_locomotion_dls_isaaclab.assets import ISAAC_ASSET_DIR
+from basic_locomotion_isaaclab.assets import ISAAC_ASSET_DIR
 
 armature = [0.015245300717651844, 0.02287333831191063, 0.04345845803618431, 0.02273648791015148, 0.021029189229011536, 0.04288801923394203, 0.020965829491615295, 0.02172032743692398, 0.041628554463386536, 0.016661761328577995, 0.01919594779610634, 0.0420747809112072]
 viscous_friction = [0.21183708310127258, 0.23815694451332092, 0.23462027311325073, 0.2426394820213318, 0.21587151288986206, 0.21994808316230774, 0.22393473982810974, 0.23609080910682678, 0.37616264820098877, 0.2554837763309479, 0.24458086490631104, 0.16209274530410767]

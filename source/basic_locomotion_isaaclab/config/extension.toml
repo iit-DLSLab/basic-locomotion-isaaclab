@@ -24,7 +24,7 @@ keywords = ["extension", "template", "isaaclab"]
 # TODO: We need to define our isaaclab dependencies here
 
 [[python.module]]
-name = "basic_locomotion_dls_isaaclab"
+name = "basic_locomotion_isaaclab"
 
 [isaaclab_settings]
 # TODO: Uncomment and list any apt dependencies here.

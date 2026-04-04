@@ -6,18 +6,19 @@ from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.managers import CurriculumTermCfg as CurrTerm
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.scene import InteractiveSceneCfg
-from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, patterns
-from isaaclab.sim import SimulationCfg
+from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, MultiMeshRayCasterCameraCfg, TiledCameraCfg, patterns
+from isaaclab.sim import SimulationCfg, PhysxCfg
+from isaaclab.envs import ViewerCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.sensors import ImuCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.noise import GaussianNoiseCfg, NoiseModelWithAdditiveBiasCfg
 
-from basic_locomotion_dls_isaaclab.assets.hyqreal_asset import HYQREAL_CFG # isort: skip
-from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG  # isort: skip
+from basic_locomotion_isaaclab.assets.go2_asset import GO2_CFG 
+from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG
 
-import basic_locomotion_dls_isaaclab.tasks.custom_events as custom_events
-import basic_locomotion_dls_isaaclab.tasks.custom_curriculums as custom_curriculums
+import basic_locomotion_isaaclab.tasks.custom_events as custom_events
+import basic_locomotion_isaaclab.tasks.custom_curriculums as custom_curriculums
 
 @configclass
 class EventCfg:
@@ -40,7 +41,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="base"),
-            "mass_distribution_params": (-5.0, 25.0),
+            "mass_distribution_params": (-5.0, 5.0),
             "operation": "add",
         },
     )
@@ -58,65 +59,31 @@ class EventCfg:
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="base"),
-            "force_range": (-15.0, 15.0),
-            "torque_range": (-15.0, 15.0),
+            "force_range": (-5.0, 5.0),
+            "torque_range": (-5.0, 5.0),
         },
     )
     
-
-    """scale_all_joint_friction_model = EventTerm(
-        func=custom_events.randomize_joint_friction_model,
-        mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]), 
-                "friction_distribution_params": (0.2, 2.0),
-                "operation": "scale"},
-    )
-
-
-    scale_all_joint_armature_model = EventTerm(
-        func=custom_events.randomize_joint_friction_model,
-        mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]), 
-                "armature_distribution_params": (0.0, 1.0),
-                "operation": "scale"},
-    )"""
-
+    
     randomize_joint_parameters = EventTerm(
-        func=mdp.randomize_joint_parameters,
+        func=custom_events.randomize_joint_parameters,
         mode="reset",
         params={
             "asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]), 
-            "friction_distribution_params": (0.2, 2.0),
-            "armature_distribution_params": (0.0, 1.0),
+            "friction_distribution_params": (0.8, 1.2),
+            "armature_distribution_params": (0.8, 1.2),
             "operation": "scale",
             "distribution": "uniform",
         },
     )
-
-    scale_all_joint_first_order_delay_filter_model = EventTerm(
-        func=custom_events.randomize_joint_delay_model,
-        mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]), 
-                "first_order_delay_filter_distribution_params": (0.1, 0.3),
-                "operation": "abs"},
-    )
-    
-    scale_all_joint_second_order_delay_filter_model = EventTerm(
-        func=custom_events.randomize_joint_delay_model,
-        mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]), 
-                "second_order_delay_filter_distribution_params": (0.1, 0.3),
-                "operation": "abs"},
-    )
-
 
     actuator_gains = EventTerm(
     func=mdp.randomize_actuator_gains,
     mode="reset",
     params={
         "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
-        "stiffness_distribution_params": (-20.0, 20.0),
-        "damping_distribution_params": (-5.0, 5.0),
+        "stiffness_distribution_params": (-2.0, 2.0),
+        "damping_distribution_params": (-0.5, 0.5),
         "operation": "add",
         "distribution": "uniform",
     },
@@ -131,27 +98,11 @@ class EventCfg:
                                    "roll": (-0.5, 0.5), "pitch": (-0.5, 0.5), "yaw": (-0.5, 0.5)}},
     )
 
-    # zero command velocity
-    """zero_command_velocity = EventTerm(
-        func=custom_events.zero_command_velocity,
-        mode="interval",
-        interval_range_s=(19.0, 19.0),
-    )"""
-
-    """# reset command velocity
-    resample_command_velocity = EventTerm(
-        func=custom_events.resample_command_velocity,
-        mode="interval",
-        interval_range_s=(11.0, 11.0),
-    )"""
-
-
 
 
 
 @configclass
-class HyQRealFlatEnvCfg(DirectRLEnvCfg):
-
+class Go2FlatEnvCfg(DirectRLEnvCfg):
     # Viewer
     #viewer = ViewerCfg(eye=(1.5, 1.5, 0.3), origin_type="world", env_index=0, asset_name="robot")
 
@@ -176,13 +127,13 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
 
     use_imu = False
 
-    use_concurrent_state_est = False
+    use_concurrent_state_est = True
     if(use_concurrent_state_est):
         concurrent_state_est_output_space = 3 #lin_vel_b
         single_concurrent_state_est_observation_space = single_observation_space
         concurrent_state_est_observation_space = observation_space
-        concurrent_state_est_batch_size = 32
-        concurrent_state_est_train_epochs = 500
+        concurrent_state_est_batch_size = 512
+        concurrent_state_est_train_epochs = 1000
         concurrent_state_est_lr = 1e-3
         concurrent_state_est_ep_saving_interval = 1000
         concurrent_state_est_ep_saving_start = 6000
@@ -191,24 +142,24 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
     if(use_rma):
         rma_output_space = 12 # P gain
         rma_output_space += 12 # D gain 
-        rma_output_space += 12 # friction static
-        rma_output_space += 12 # friction dynamic
-        rma_output_space += 12 # armature
+        #rma_output_space += 12 # friction static
+        #rma_output_space += 12 # friction dynamic
+        #rma_output_space += 12 # armature
         single_rma_observation_space = single_observation_space
         rma_observation_space = observation_space
         observation_space += rma_output_space
-        rma_batch_size = 32
-        rma_train_epochs = 500
+        rma_batch_size = 512
+        rma_train_epochs = 1000
         rma_lr = 1e-3
         rma_ep_saving_interval = 1000
         rma_ep_saving_start = 6000
         
-
+    
     use_filter_actions = True
 
     
     # asymmetric ppo
-    use_asymmetric_ppo = False
+    use_asymmetric_ppo = True
     if(use_asymmetric_ppo):
         state_space = observation_space
         #state_space += 12 # P gain
@@ -228,7 +179,8 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
 
     observation_base_linear_scale = 1.0
     observation_base_ang_vel_scale = 1.0
-    observation_joint_vel_scale = 1.0
+    observation_joint_vel_scale = 0.1
+
 
 
     # simulation
@@ -243,10 +195,10 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
             dynamic_friction=1.0,
             restitution=0.0,
         ),
-        #physx=PhysxCfg(
-        #    gpu_max_rigid_contact_count=2**20,
-        #    gpu_max_rigid_patch_count=2**24,
-        #),
+        physx=PhysxCfg(
+            gpu_max_rigid_patch_count=2**23,
+            #gpu_max_rigid_patch_count= 5 * 2 ** 16,
+        ),
     )
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
@@ -266,16 +218,19 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
     height_scanner = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/base",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.0)),
-        #attach_yaw_only=True,
         ray_alignment='yaw',
-        #pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[1.4, 1.0]),
         pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[0.6, 0.6]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
     )
 
-    # an imu sensor in case we don't want any state estimator
-    imu = ImuCfg(prim_path="/World/envs/env_.*/Robot/base", debug_vis=True)
+    # an imu sensor in case we don't want any state estimator (for now we can't use sites from the xml)
+    imu = ImuCfg(
+        prim_path="/World/envs/env_.*/Robot/base", 
+        offset=ImuCfg.OffsetCfg(
+            pos=(-0.02557, 0, 0.04232)
+        ), 
+        debug_vis=False)
 
 
     # scene
@@ -292,18 +247,18 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
     )
     # at every time-step add gaussian noise + bias. The bias is a gaussian sampled at reset
     observation_noise_model: NoiseModelWithAdditiveBiasCfg = NoiseModelWithAdditiveBiasCfg(
-        noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.002, operation="add"),
-        bias_noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.0001, operation="abs"),
+        noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.02, operation="add"),
+        bias_noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.001, operation="abs"),
     )
 
     # robot
-    robot: ArticulationCfg = HYQREAL_CFG.replace(prim_path="/World/envs/env_.*/Robot")
+    robot: ArticulationCfg = GO2_CFG.replace(prim_path="/World/envs/env_.*/Robot")
     contact_sensor: ContactSensorCfg = ContactSensorCfg(
         prim_path="/World/envs/env_.*/Robot/.*", history_length=3, update_period=0.005, track_air_time=True
     )
 
     # Desired tracking variables
-    desired_base_height = 0.5
+    desired_base_height = 0.30
     desired_feet_height = 0.05
 
     # Desired clip actions
@@ -323,12 +278,12 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
     height_reward_scale = 1.0
     
     # Joint reward scale
-    joints_torque_reward_scale = -0.5e-7 
+    joints_torque_reward_scale = -2.5e-6 
     joints_accel_reward_scale = -2.5e-7
-    joints_energy_reward_scale = -1.5e-5
-    joints_hip_position_reward_scale = -0.1
-    joints_thigh_position_reward_scale = -0.1
-    joints_calf_position_reward_scale = -0.001
+    joints_energy_reward_scale = -1e-4
+    joints_hip_position_reward_scale = -0.1 * 0.0
+    joints_thigh_position_reward_scale = -0.1 * 0.0
+    joints_calf_position_reward_scale = -0.001 * 0.0
    
     
     # Undesired contacts reward scale
@@ -338,29 +293,28 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
 
     # Feet reward scale
     feet_air_time_reward_scale = 0.5 * 0.0
-    
+
     feet_height_clearance_reward_scale = 0.25 * 0.0  
     feet_height_clearance_periodic_reward_scale = 0.25
     
     feet_height_clearance_mujoco_reward_scale = 0.25 * 0.0
     feet_height_clearance_mujoco_periodic_reward_scale = 0.25 * 0.0
-
+    
     feet_slide_reward_scale = -0.25 * 0.0
     feet_contact_suggestion_reward_scale =  0.25
     feet_to_base_distance_reward_scale = 0.25 * 0.0
     
     feet_to_hip_distance_reward_scale = 1.5
     # This is used in loocmotion_env.py for the above reward
-    desired_hip_offset = 0.165
+    desired_hip_offset = 0.095
 
     feet_vertical_surface_contacts_reward_scale = -0.25
-
 
 
 import isaaclab.terrains as terrain_gen
 from isaaclab.terrains.terrain_generator_cfg import TerrainGeneratorCfg
 @configclass
-class HyQRealRoughBlindEnvCfg(HyQRealFlatEnvCfg):
+class Go2RoughBlindEnvCfg(Go2FlatEnvCfg):
 
     ROUGH_TERRAINS_CFG = TerrainGeneratorCfg(
         curriculum=False,
@@ -380,7 +334,7 @@ class HyQRealRoughBlindEnvCfg(HyQRealFlatEnvCfg):
                 proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.10), platform_width=2.0,
             ),
             "star": terrain_gen.MeshStarTerrainCfg(
-                proportion=0.1, num_bars=10, bar_width_range=(0.15, 0.20), bar_height_range=(0.05, 0.15), platform_width=2.0,
+                proportion=0.1, num_bars=10, bar_width_range=(0.15, 0.20), bar_height_range=(0.05, 0.13), platform_width=2.0,
             ),
             "random_rough": terrain_gen.HfRandomUniformTerrainCfg(
                 proportion=0.1, noise_range=(0.02, 0.06), noise_step=0.02, border_width=0.25
@@ -392,11 +346,11 @@ class HyQRealRoughBlindEnvCfg(HyQRealFlatEnvCfg):
                 proportion=0.1, slope_range=(0.2, 0.4), platform_width=2.0, border_width=0.25
             ),
             "pyramid_stairs": terrain_gen.MeshPyramidStairsTerrainCfg(
-                proportion=0.15, step_height_range=(0.05, 0.18), step_width=0.3,
+                proportion=0.15, step_height_range=(0.05, 0.13), step_width=0.3,
                 platform_width=3.0, border_width=1.0, holes=False,
             ),
             "pyramid_stairs_inv": terrain_gen.MeshInvertedPyramidStairsTerrainCfg(
-                proportion=0.15, step_height_range=(0.05, 0.18), step_width=0.3,
+                proportion=0.15, step_height_range=(0.05, 0.13), step_width=0.3,
                 platform_width=3.0, border_width=1.0, holes=False,
             ),
         },
@@ -424,21 +378,119 @@ class HyQRealRoughBlindEnvCfg(HyQRealFlatEnvCfg):
 
 
 
-
-
 @configclass
-class HyQRealRoughVisionEnvCfg(HyQRealFlatEnvCfg):
-    # env
-    #observation_space = 276
-    observation_space = 429
+class Go2RoughVisionEnvCfg(Go2FlatEnvCfg):
+
+    def __post_init__(self) -> None:
+        height_map_x_points = int(round(self.height_scanner2.pattern_cfg.size[0] / self.height_scanner2.pattern_cfg.resolution)) + 1
+        height_map_y_points = int(round(self.height_scanner2.pattern_cfg.size[1] / self.height_scanner2.pattern_cfg.resolution)) + 1
+        self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
+
+        self.feet_vertical_surface_contacts_reward_scale = -0.25*4.0
+
+    use_vision = True
 
     # we add a height scanner for perceptive locomotion
-    height_scanner = RayCasterCfg(
+    height_scanner2 = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/base",
-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.0)),
-        #attach_yaw_only=True,
+        offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 0.0)),
         ray_alignment='yaw',
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.2, 1.2]),
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
+    )
+
+    #camera_usd = CAMERA_USD_CFG
+
+    """depth_camera = MultiMeshRayCasterCameraCfg(
+        prim_path="/World/envs/env_.*/Robot/base",
+        update_period=1 / 60,
+        offset=MultiMeshRayCasterCameraCfg.OffsetCfg(pos=(0.33, 0.0, 0.08), rot=(-0.405579, 0.579228, -0.579228, 0.405579)),
+        mesh_prim_paths=[
+            "/World/ground",
+            MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/base/visuals"),
+            MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/FL_.*/visuals"),
+            MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/FR_.*/visuals"),
+            MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/RL_.*/visuals"),
+            MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/RR_.*/visuals"),
+        ],
+        pattern_cfg=patterns.PinholeCameraPatternCfg(
+            focal_length=24.0,
+            horizontal_aperture=20.955,
+            height=120,
+            width=240,
+        ),
+        debug_vis=True,
+    )"""
+
+    """depth_camera = TiledCameraCfg(
+        prim_path="/World/envs/env_.*/Camera",
+        offset=TiledCameraCfg.OffsetCfg(pos=(-5.0, 0.0, 2.0), rot=(1.0, 0.0, 0.0, 0.0), convention="world"),
+        data_types=["depth"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=24.0, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+        ),
+        width=120,
+        height=240,
+    )"""
+
+
+    ROUGH_TERRAINS_CFG = TerrainGeneratorCfg(
+        curriculum=False,
+        size=(8.0, 8.0),
+        border_width=20.0,
+        num_rows=10,
+        num_cols=20,
+        horizontal_scale=0.1,
+        vertical_scale=0.005,
+        slope_threshold=0.75,
+        use_cache=False,
+        sub_terrains={
+            "flat": terrain_gen.MeshPlaneTerrainCfg(
+                proportion=0.2
+            ),
+            "boxes": terrain_gen.MeshRandomGridTerrainCfg(
+                proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.15), platform_width=2.0,
+            ),
+            "star": terrain_gen.MeshStarTerrainCfg(
+                proportion=0.1, num_bars=10, bar_width_range=(0.15, 0.20), bar_height_range=(0.05, 0.15), platform_width=2.0,
+            ),
+            "random_rough": terrain_gen.HfRandomUniformTerrainCfg(
+                proportion=0.1, noise_range=(0.02, 0.06), noise_step=0.02, border_width=0.25
+            ),
+            "hf_pyramid_slope": terrain_gen.HfPyramidSlopedTerrainCfg(
+                proportion=0.1, slope_range=(0.2, 0.4), platform_width=2.0, border_width=0.25
+            ),
+            "hf_pyramid_slope_inv": terrain_gen.HfInvertedPyramidSlopedTerrainCfg(
+                proportion=0.1, slope_range=(0.2, 0.4), platform_width=2.0, border_width=0.25
+            ),
+            "pyramid_stairs": terrain_gen.MeshPyramidStairsTerrainCfg(
+                proportion=0.15, step_height_range=(0.05, 0.25), step_width=0.3,
+                platform_width=3.0, border_width=1.0, holes=False,
+            ),
+            "pyramid_stairs_inv": terrain_gen.MeshInvertedPyramidStairsTerrainCfg(
+                proportion=0.15, step_height_range=(0.05, 0.25), step_width=0.3,
+                platform_width=3.0, border_width=1.0, holes=False,
+            ),
+        },
+    )
+
+    """Rough terrains configuration."""
+    terrain = TerrainImporterCfg(
+        prim_path="/World/ground",
+        terrain_type="generator",
+        terrain_generator=ROUGH_TERRAINS_CFG,
+        max_init_terrain_level=10,
+        collision_group=-1,
+        physics_material=sim_utils.RigidBodyMaterialCfg(
+            friction_combine_mode="multiply",
+            restitution_combine_mode="multiply",
+            static_friction=1.0,
+            dynamic_friction=1.0,
+        ),
+        visual_material=sim_utils.MdlFileCfg(
+            mdl_path="{NVIDIA_NUCLEUS_DIR}/Materials/Base/Architecture/Shingles_01.mdl",
+            project_uvw=True,
+        ),
+        debug_vis=False,
     )
