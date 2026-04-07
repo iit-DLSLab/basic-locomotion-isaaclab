@@ -10,7 +10,7 @@
 
 ## Overview
 
-Reinforcement learning implementation of quadruped locomotion in IsaacLab. It includes support for different robots available at DLS, with scripts for both sim-to-sim and sim-to-real transfer.
+Reinforcement learning implementation of **quadruped locomotion** in IsaacLab. It includes support for different robots available at DLS, with scripts for both sim-to-sim and sim-to-real transfer.
 
 Features:
 - [Concurrent State Estimator](https://arxiv.org/pdf/2202.05481)
