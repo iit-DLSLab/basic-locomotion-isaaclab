@@ -72,7 +72,7 @@ If you find the work useful and you adopt [Morphological Symmetries](https://arx
 }
 ```
 
-## Contribute
+## How to contribute
 
 PRs are very welcome (search for **TODO** in the issue, or add what you like)!
 
