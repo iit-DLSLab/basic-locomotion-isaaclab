@@ -32,6 +32,8 @@ A list of robots and environments available is described below:
 | [Aliengo](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/aliengo), [Go2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/go2), [B2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/b2), [HyQReal2](https://github.com/iit-DLSLab/gym-quadruped/tree/master/gym_quadruped/robot_model/hyqreal2) | Locomotion-**RobotModel**-Flat-Blind <br> Locomotion-**RobotModel**-Rough-Blind <br> Locomotion-**RobotModel**-Rough-Vision |
 
 
+PRs are very welcome (search for **TODO** in the issue, or add what you like)!
+
 ## Installation and Runs
 
 If you want only to deploy a trained policy on your robot, continue on [README_DEPLOY](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_DEPLOY.md) otherwise on [README_TRAIN](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/blob/main/README_TRAIN.md).
