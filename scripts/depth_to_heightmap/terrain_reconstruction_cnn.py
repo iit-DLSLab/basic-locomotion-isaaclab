@@ -12,6 +12,7 @@ from terrain_reconstruction_transformer import (
     ConvNormAct,
     FakeTerrainReconstructionDataset,
     ProprioceptiveHistoryEncoder,
+    SavedTerrainReconstructionDataset,
     TerrainReconstructionOutput,
     compute_reconstruction_losses,
     train_terrain_reconstructor,
@@ -232,26 +233,120 @@ def run_fake_data_smoke_test(
     )
 
 
+def train_from_saved_dataset(
+    dataset_path: str,
+    device: str | torch.device | None = None,
+    batch_size: int = 32,
+    num_epochs: int = 50,
+    validation_fraction: float = 0.2,
+    learning_rate: float = 3e-4,
+    weight_decay: float = 1e-4,
+) -> None:
+    torch.manual_seed(0)
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    dataset = SavedTerrainReconstructionDataset(dataset_path)
+    val_size = int(len(dataset) * validation_fraction)
+    train_size = len(dataset) - val_size
+    if train_size <= 0:
+        raise ValueError(
+            f"Dataset at {dataset_path} has {len(dataset)} samples, which is too small "
+            f"for validation_fraction={validation_fraction}."
+        )
+
+    if val_size > 0:
+        train_dataset, val_dataset = random_split(
+            dataset,
+            [train_size, val_size],
+            generator=torch.Generator().manual_seed(0),
+        )
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    else:
+        train_dataset = dataset
+        val_loader = None
+
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+
+    model = CNNGRUTerrainReconstructor(
+        proprio_dim=dataset.robot_info.shape[-1],
+        depth_channels=dataset.depth_data.shape[-3],
+        heightmap_size=tuple(dataset.heightmaps.shape[-2:]),
+    )
+    history = train_terrain_reconstructor(
+        model=model,
+        train_loader=train_loader,
+        validation_loader=val_loader,
+        num_epochs=num_epochs,
+        learning_rate=learning_rate,
+        weight_decay=weight_decay,
+        device=device,
+    )
+
+    final_metrics = history[-1]
+    print(
+        "CNN-GRU training finished | "
+        f"samples={len(dataset)}, "
+        f"train_samples={train_size}, "
+        f"val_samples={val_size}, "
+        f"depth={tuple(dataset.depth_data.shape[1:])}, "
+        f"robot_info={tuple(dataset.robot_info.shape[1:])}, "
+        f"heightmap={tuple(dataset.heightmaps.shape[1:])}, "
+        f"final_val_loss={final_metrics.get('val_loss', final_metrics['train_loss']):.4f}"
+    )
+
+
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Fake-data smoke test for the CNN-GRU terrain reconstructor.")
+    parser = argparse.ArgumentParser(description="Train the CNN-GRU terrain reconstructor.")
+    parser.add_argument(
+        "--dataset_path",
+        type=str,
+        default=None,
+        help="Path to a collected terrain_reconstruction_dataset.pt file. If omitted, runs a fake-data smoke test.",
+    )
     parser.add_argument("--device", type=str, default=None, help="Training device. Defaults to cuda if available.")
     parser.add_argument("--num_samples", type=int, default=96, help="Number of fake samples.")
-    parser.add_argument("--batch_size", type=int, default=8, help="Batch size for the fake-data smoke test.")
-    parser.add_argument("--epochs", type=int, default=3, help="Number of fake-data training epochs.")
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="Training batch size. Defaults to 32 for saved datasets and 8 for fake-data smoke tests.",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=None,
+        help="Number of training epochs. Defaults to 50 for saved datasets and 3 for fake-data smoke tests.",
+    )
+    parser.add_argument("--validation_fraction", type=float, default=0.2, help="Fraction of samples used for validation.")
+    parser.add_argument("--learning_rate", type=float, default=3e-4, help="AdamW learning rate.")
+    parser.add_argument("--weight_decay", type=float, default=1e-4, help="AdamW weight decay.")
     return parser.parse_args()
 
 
 __all__ = [
     "CNNGRUTerrainReconstructor",
     "run_fake_data_smoke_test",
+    "train_from_saved_dataset",
 ]
 
 
 if __name__ == "__main__":
     args = _parse_args()
-    run_fake_data_smoke_test(
-        device=args.device,
-        num_samples=args.num_samples,
-        batch_size=args.batch_size,
-        num_epochs=args.epochs,
-    )
+    if args.dataset_path:
+        train_from_saved_dataset(
+            dataset_path=args.dataset_path,
+            device=args.device,
+            batch_size=args.batch_size if args.batch_size is not None else 32,
+            num_epochs=args.epochs if args.epochs is not None else 50,
+            validation_fraction=args.validation_fraction,
+            learning_rate=args.learning_rate,
+            weight_decay=args.weight_decay,
+        )
+    else:
+        run_fake_data_smoke_test(
+            device=args.device,
+            num_samples=args.num_samples,
+            batch_size=args.batch_size if args.batch_size is not None else 8,
+            num_epochs=args.epochs if args.epochs is not None else 3,
+        )
