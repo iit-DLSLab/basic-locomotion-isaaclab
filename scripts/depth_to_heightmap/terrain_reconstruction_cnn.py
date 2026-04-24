@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 import torch
 import torch.nn.functional as F
@@ -233,6 +234,69 @@ def run_fake_data_smoke_test(
     )
 
 
+def _default_artifact_dir(dataset_path: str) -> Path:
+    return Path(dataset_path).expanduser().resolve().parent / "cnn_gru_training"
+
+
+def _save_heightmap_comparison_png(
+    model: nn.Module,
+    data_loader: DataLoader,
+    device: torch.device,
+    output_path: str | Path,
+    max_samples: int = 4,
+) -> None:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    depth_data, robot_info, target_heightmap = next(iter(data_loader))
+    depth_data = depth_data.to(device)
+    robot_info = robot_info.to(device)
+    target_heightmap = target_heightmap.to(device)
+
+    model.eval()
+    with torch.no_grad():
+        prediction = model(depth_data=depth_data, robot_info=robot_info)
+
+    max_samples = max(1, min(max_samples, target_heightmap.shape[0]))
+    target = target_heightmap[:max_samples, 0].detach().cpu()
+    predicted = prediction.refined_heightmap[:max_samples, 0].detach().cpu()
+    error = predicted - target
+    num_samples = target.shape[0]
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    fig, axes = plt.subplots(num_samples, 3, figsize=(9, 3 * num_samples), squeeze=False)
+    for sample_index in range(num_samples):
+        target_map = target[sample_index].numpy()
+        predicted_map = predicted[sample_index].numpy()
+        error_map = error[sample_index].numpy()
+        value_min = min(float(target_map.min()), float(predicted_map.min()))
+        value_max = max(float(target_map.max()), float(predicted_map.max()))
+        error_abs_max = max(abs(float(error_map.min())), abs(float(error_map.max())), 1e-6)
+
+        images = (
+            axes[sample_index, 0].imshow(target_map, cmap="viridis", vmin=value_min, vmax=value_max),
+            axes[sample_index, 1].imshow(predicted_map, cmap="viridis", vmin=value_min, vmax=value_max),
+            axes[sample_index, 2].imshow(error_map, cmap="coolwarm", vmin=-error_abs_max, vmax=error_abs_max),
+        )
+        axes[sample_index, 0].set_title("Target")
+        axes[sample_index, 1].set_title("Predicted")
+        axes[sample_index, 2].set_title("Error")
+
+        for axis, image in zip(axes[sample_index], images):
+            axis.set_xticks([])
+            axis.set_yticks([])
+            fig.colorbar(image, ax=axis, fraction=0.046, pad=0.04)
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=160)
+    plt.close(fig)
+    print(f"[INFO] Saved heightmap comparison PNG to: {output_path}")
+
+
 def train_from_saved_dataset(
     dataset_path: str,
     device: str | torch.device | None = None,
@@ -241,10 +305,14 @@ def train_from_saved_dataset(
     validation_fraction: float = 0.2,
     learning_rate: float = 3e-4,
     weight_decay: float = 1e-4,
+    model_path: str | None = None,
+    comparison_png_path: str | None = None,
+    comparison_samples: int = 4,
 ) -> None:
     torch.manual_seed(0)
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device)
 
     dataset = SavedTerrainReconstructionDataset(dataset_path)
     val_size = int(len(dataset) * validation_fraction)
@@ -268,10 +336,13 @@ def train_from_saved_dataset(
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
+    depth_channels = dataset.depth_data.shape[-3]
+    heightmap_size = tuple(dataset.heightmaps.shape[-2:])
+    proprio_dim = dataset.robot_info.shape[-1]
     model = CNNGRUTerrainReconstructor(
-        proprio_dim=dataset.robot_info.shape[-1],
-        depth_channels=dataset.depth_data.shape[-3],
-        heightmap_size=tuple(dataset.heightmaps.shape[-2:]),
+        proprio_dim=proprio_dim,
+        depth_channels=depth_channels,
+        heightmap_size=heightmap_size,
     )
     history = train_terrain_reconstructor(
         model=model,
@@ -281,6 +352,38 @@ def train_from_saved_dataset(
         learning_rate=learning_rate,
         weight_decay=weight_decay,
         device=device,
+    )
+
+    artifact_dir = _default_artifact_dir(dataset_path)
+    model_path = model_path or str(artifact_dir / "cnn_gru_terrain_reconstructor.pt")
+    comparison_png_path = comparison_png_path or str(artifact_dir / "heightmap_comparison.png")
+
+    model_path = Path(model_path)
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    model_state_dict = {name: parameter.detach().cpu() for name, parameter in model.state_dict().items()}
+    torch.save(
+        {
+            "model_state_dict": model_state_dict,
+            "model_config": {
+                "proprio_dim": proprio_dim,
+                "depth_channels": depth_channels,
+                "heightmap_size": heightmap_size,
+            },
+            "dataset_path": str(Path(dataset_path).expanduser().resolve()),
+            "dataset_metadata": dataset.metadata,
+            "history": history,
+        },
+        model_path,
+    )
+    print(f"[INFO] Saved CNN-GRU model checkpoint to: {model_path}")
+
+    comparison_loader = val_loader if val_loader is not None else train_loader
+    _save_heightmap_comparison_png(
+        model=model,
+        data_loader=comparison_loader,
+        device=device,
+        output_path=comparison_png_path,
+        max_samples=comparison_samples,
     )
 
     final_metrics = history[-1]
@@ -321,6 +424,19 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--validation_fraction", type=float, default=0.2, help="Fraction of samples used for validation.")
     parser.add_argument("--learning_rate", type=float, default=3e-4, help="AdamW learning rate.")
     parser.add_argument("--weight_decay", type=float, default=1e-4, help="AdamW weight decay.")
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        default=None,
+        help="Where to save the trained model. Defaults to <dataset_dir>/cnn_gru_training/cnn_gru_terrain_reconstructor.pt.",
+    )
+    parser.add_argument(
+        "--comparison_png_path",
+        type=str,
+        default=None,
+        help="Where to save the target-vs-predicted PNG. Defaults to <dataset_dir>/cnn_gru_training/heightmap_comparison.png.",
+    )
+    parser.add_argument("--comparison_samples", type=int, default=4, help="Number of samples to include in the PNG.")
     return parser.parse_args()
 
 
@@ -342,6 +458,9 @@ if __name__ == "__main__":
             validation_fraction=args.validation_fraction,
             learning_rate=args.learning_rate,
             weight_decay=args.weight_decay,
+            model_path=args.model_path,
+            comparison_png_path=args.comparison_png_path,
+            comparison_samples=args.comparison_samples,
         )
     else:
         run_fake_data_smoke_test(
