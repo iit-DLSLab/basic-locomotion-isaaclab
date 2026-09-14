@@ -41,6 +41,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Joy
 from visualization_msgs.msg import Marker, MarkerArray
 from dls2_interface.msg import BaseState, BlindState, Imu, ControlSignal
+from unitree_go.msg import LowState
 
 # Python imports
 import time
