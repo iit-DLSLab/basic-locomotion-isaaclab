@@ -23,6 +23,8 @@ gymnasium = "*"
 readchar = "*"
 onnxruntime = "*"
 torch = "*"
+mujoco = "*"
+scipy = "*"
 
 [feature.common.activation.env]
 ROS_LOCALHOST_ONLY = "1"
