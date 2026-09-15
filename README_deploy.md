@@ -12,10 +12,8 @@ conda activate basic_locomotion_isaaclab_env
 conda env create -f deploy/installation/mamba_environment_lyrical.yaml
 conda activate basic_locomotion_isaaclab_env
 
-pixi install --manifest-path deploy/installation/pixi.toml -e humble
 pixi shell --manifest-path deploy/installation/pixi.toml -e humble
 
-pixi install --manifest-path deploy/installation/pixi.toml -e lyrical
 pixi shell --manifest-path deploy/installation/pixi.toml -e lyrical
 
 ```
