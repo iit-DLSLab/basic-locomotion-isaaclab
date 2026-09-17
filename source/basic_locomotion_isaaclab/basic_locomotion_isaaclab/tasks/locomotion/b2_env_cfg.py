@@ -302,6 +302,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
             restitution=0.0,
         ),
         physics=PhysicsCfg(),
+        use_newton_actuators=False,
     )
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",

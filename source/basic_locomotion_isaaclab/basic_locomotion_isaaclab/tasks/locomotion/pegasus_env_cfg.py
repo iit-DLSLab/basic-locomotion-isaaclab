@@ -189,7 +189,8 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     imu = ImuCfg(
         prim_path="/World/envs/env_.*/Robot/base", 
         offset=ImuCfg.OffsetCfg(
-            pos=(0.0, 0.0, 0.0)
+            pos=(-0.0085648, -0.0065251, -0.03696),
+            rot=(0, 0, -0.70710678, 0.70710678)
         ), 
         debug_vis=False)
 
@@ -305,6 +306,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
             restitution=0.0,
         ),
         physics=PhysicsCfg(),
+        use_newton_actuators=False,
     )
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
