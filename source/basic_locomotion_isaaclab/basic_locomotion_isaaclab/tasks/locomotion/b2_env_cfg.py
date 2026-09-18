@@ -256,6 +256,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
         pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[0.6, 0.6]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
+        global_world_only=True,
     )
 
     # Template copied onto each foot link to measure the terrain immediately around that foot.
@@ -266,6 +267,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
+        global_world_only=True,
     )
 
 
@@ -510,6 +512,7 @@ class B2RoughVisionEnvCfg(B2RoughBlindEnvCfg):
         pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
+        global_world_only=True,
     )
 
     # we add a height scanner for feet edge reward
@@ -520,6 +523,7 @@ class B2RoughVisionEnvCfg(B2RoughBlindEnvCfg):
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
+        global_world_only=True,
     )
 
     #camera_usd = CAMERA_USD_CFG

@@ -260,6 +260,10 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[0.6, 0.6]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
+        # Newton ray-casting otherwise also considers collision geometry in the
+        # sensor's environment, including the carrier body. Since the scanner
+        # starts at the base origin, it can hit the robot before the ground.
+        global_world_only=True,
     )
 
     # Template copied onto each foot link to measure the terrain immediately around that foot.
@@ -270,6 +274,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
+        global_world_only=True,
     )
 
 
@@ -361,7 +366,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
 
 
     # Desired clip actions
-    desired_clip_actions = 3.0
+    desired_clip_actions = 6.0
     use_filter_actions = True
         
 
@@ -375,9 +380,9 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     
 
     # Joint reward scale
-    joints_torque_reward_scale = -2.5e-7
+    joints_torque_reward_scale = -2.5e-8
     joints_accel_reward_scale = -2.5e-7
-    joints_energy_reward_scale = -1e-4
+    joints_energy_reward_scale = -1e-5
     joints_hip_position_reward_scale = -0.1 * 0.0
     joints_thigh_position_reward_scale = -0.1 * 0.0
     joints_calf_position_reward_scale = -0.001 * 0.0
@@ -515,6 +520,7 @@ class PegasusRoughVisionEnvCfg(PegasusRoughBlindEnvCfg):
         pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
+        global_world_only=True,
     )
 
     # we add a height scanner for feet edge reward
@@ -525,6 +531,7 @@ class PegasusRoughVisionEnvCfg(PegasusRoughBlindEnvCfg):
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
+        global_world_only=True,
     )
 
     #camera_usd = CAMERA_USD_CFG
