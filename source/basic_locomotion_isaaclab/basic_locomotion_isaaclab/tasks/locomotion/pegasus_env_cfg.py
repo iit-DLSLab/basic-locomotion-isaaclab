@@ -408,7 +408,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     feet_edge_radius_px = 0
     visualize_edge_map = False
 
-    feet_vertical_surface_contacts_reward_scale = -2.5
+    feet_vertical_surface_contacts_reward_scale = -1.0
 
     # variables used in feet air time and periodic contact suggestion reward
     desired_step_freq = 1.4 
