@@ -95,7 +95,7 @@ class SimulatorROS2(Node):
         self.timer = self.create_timer(1.0/SCHEDULER_FREQ, self.compute_simulator_step_callback)
 
         # Mujoco model and data
-        self.mjModel = mujoco.MjModel.from_xml_path(file_path + "/mujoco_utils/robot_model/" + config.robot + "/" + config.scene + ".xml")
+        self.mjModel = mujoco.MjModel.from_xml_path(file_path + "/../robot_model/" + config.robot + "/" + config.scene + ".xml")
         self.mjModel.opt.timestep = 1.0/SCHEDULER_FREQ
         self.mjData = mujoco.MjData(self.mjModel)
         keyframe_id = mujoco.mj_name2id(self.mjModel, mujoco.mjtObj.mjOBJ_KEY, "home")

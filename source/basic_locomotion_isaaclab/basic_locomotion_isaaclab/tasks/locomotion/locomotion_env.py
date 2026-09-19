@@ -215,8 +215,10 @@ class LocomotionEnv(DirectRLEnv):
         # Use one small height map centered on each foot for the clearance rewards.
         self._foot_height_scanners = []
         for foot_name in ("FL_foot", "FR_foot", "RL_foot", "RR_foot"):
+            # Preserve the configured hierarchy, replacing the leg prefix in each link.
+            leg_prefix = foot_name.split("_", 1)[0]
             scanner_cfg = self.cfg.foot_height_scanner.replace(
-                prim_path=f"/World/envs/env_.*/Robot/{foot_name}",
+                prim_path=self.cfg.foot_height_scanner.prim_path.replace("FL_", f"{leg_prefix}_"),
                 visualizer_cfg=self.cfg.foot_height_scanner.visualizer_cfg.replace(
                     prim_path=f"/Visuals/{foot_name}HeightScanner"
                 ),

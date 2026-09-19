@@ -70,7 +70,7 @@ PEGASUS_CALF_ACTUATOR_CFG = PaceDCMotorCfg(
 
 PEGASUS_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path=f"{ISAAC_ASSET_DIR}/pegasus_asset/pegasus.usd",
+        usd_path=f"{ISAAC_ASSET_DIR}/../../../../robot_model/pegasus/generated_usd/pegasus.usda",
         activate_contact_sensors=True,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,

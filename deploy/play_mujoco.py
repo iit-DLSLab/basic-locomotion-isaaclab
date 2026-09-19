@@ -27,7 +27,7 @@ class PlayMujoco:
     def __init__(self):
         self.simulation_dt = 0.002
 
-        self.mjModel = mujoco.MjModel.from_xml_path(file_path + "/mujoco_utils/robot_model/" + config.robot + "/" + config.scene + ".xml")
+        self.mjModel = mujoco.MjModel.from_xml_path(file_path + "/../robot_model/" + config.robot + "/" + config.scene + ".xml")
         self.mjModel.opt.timestep = self.simulation_dt
         self.mjData = mujoco.MjData(self.mjModel)
         keyframe_id = mujoco.mj_name2id(self.mjModel, mujoco.mjtObj.mjOBJ_KEY, "home")

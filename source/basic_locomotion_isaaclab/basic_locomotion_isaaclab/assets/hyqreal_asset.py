@@ -94,7 +94,7 @@ HYQREAL_CALF_ACTUATOR_CFG = IdentifiedActuatorHydraulicCfg(
 
 HYQREAL_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path=f"{ISAAC_ASSET_DIR}/hyqreal_asset/hyqreal2_nohpu.usd",
+        usd_path=f"{ISAAC_ASSET_DIR}//../../../../robot_model/hyqreal2/hyqreal2_nohpu.usd",
         activate_contact_sensors=True,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,

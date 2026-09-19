@@ -82,7 +82,7 @@ class ControllerROS2(Node):
         super().__init__('ControllerROS2')
 
         # Mujoco model and data
-        self.mjModel = mujoco.MjModel.from_xml_path(file_path + "/mujoco_utils/robot_model/" + config.robot + "/" + config.scene + ".xml")
+        self.mjModel = mujoco.MjModel.from_xml_path(file_path + "/../robot_model/" + config.robot + "/" + config.scene + ".xml")
         self.mjData = mujoco.MjData(self.mjModel)
         keyframe_id = mujoco.mj_name2id(self.mjModel, mujoco.mjtObj.mjOBJ_KEY, "down")
         self.mjData.qpos = self.mjModel.key_qpos[keyframe_id]

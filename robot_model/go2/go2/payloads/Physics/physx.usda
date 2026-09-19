@@ -1,0 +1,166 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "MuJoCo USD Converter v0.2.0"
+    }
+    defaultPrim = "go2_description"
+    doc = """Generated from Composed Stage of root layer /tmp/tmpmqmq1jez/go2_description.usdc
+
+
+Generated from Composed Stage of root layer /tmp/mjcf_import_go2_nhk9jaht/usdex_go2/go2_description.usdc
+
+
+Generated from Composed Stage of root layer /tmp/mjcf_import_go2_nhk9jaht/temp_go2/go2.usd
+
+
+Generated from Composed Stage of root layer /home/gturrisi-iit.local/other_ws_home/sim2real-robot-identification/robot_model/go2/go2/payloads/base.usd
+"""
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    subLayers = [
+        @./physics.usda@
+    ]
+    upAxis = "Z"
+)
+
+over "go2_description"
+{
+    over "Geometry"
+    {
+        over "base"
+        {
+            over "FL_hip"
+            {
+                over "FL_thigh"
+                {
+                    over "FL_calf"
+                    {
+                        over "FL_calf_joint" (
+                            prepend apiSchemas = ["PhysxJointAPI"]
+                        )
+                        {
+                            float physxJoint:armature = 0.0356
+                            float physxJoint:jointFriction = 1.0151
+                        }
+                    }
+
+                    over "FL_thigh_joint" (
+                        prepend apiSchemas = ["PhysxJointAPI"]
+                    )
+                    {
+                        float physxJoint:armature = 0.0197
+                        float physxJoint:jointFriction = 0.1739
+                    }
+                }
+
+                over "FL_hip_joint" (
+                    prepend apiSchemas = ["PhysxJointAPI"]
+                )
+                {
+                    float physxJoint:armature = 0.001
+                    float physxJoint:jointFriction = 0.2884
+                }
+            }
+
+            over "FR_hip"
+            {
+                over "FR_thigh"
+                {
+                    over "FR_calf"
+                    {
+                        over "FR_calf_joint" (
+                            prepend apiSchemas = ["PhysxJointAPI"]
+                        )
+                        {
+                            float physxJoint:armature = 0.0371
+                            float physxJoint:jointFriction = 0.4912
+                        }
+                    }
+
+                    over "FR_thigh_joint" (
+                        prepend apiSchemas = ["PhysxJointAPI"]
+                    )
+                    {
+                        float physxJoint:armature = 0.0135
+                        float physxJoint:jointFriction = 0.2386
+                    }
+                }
+
+                over "FR_hip_joint" (
+                    prepend apiSchemas = ["PhysxJointAPI"]
+                )
+                {
+                    float physxJoint:armature = 0.0129
+                    float physxJoint:jointFriction = 0.1835
+                }
+            }
+
+            over "RL_hip"
+            {
+                over "RL_thigh"
+                {
+                    over "RL_calf"
+                    {
+                        over "RL_calf_joint" (
+                            prepend apiSchemas = ["PhysxJointAPI"]
+                        )
+                        {
+                            float physxJoint:armature = 0.0228
+                            float physxJoint:jointFriction = 1.3573
+                        }
+                    }
+
+                    over "RL_thigh_joint" (
+                        prepend apiSchemas = ["PhysxJointAPI"]
+                    )
+                    {
+                        float physxJoint:armature = 0.0205
+                        float physxJoint:jointFriction = 0.1388
+                    }
+                }
+
+                over "RL_hip_joint" (
+                    prepend apiSchemas = ["PhysxJointAPI"]
+                )
+                {
+                    float physxJoint:armature = 0.0075
+                    float physxJoint:jointFriction = 0.155
+                }
+            }
+
+            over "RR_hip"
+            {
+                over "RR_thigh"
+                {
+                    over "RR_calf"
+                    {
+                        over "RR_calf_joint" (
+                            prepend apiSchemas = ["PhysxJointAPI"]
+                        )
+                        {
+                            float physxJoint:armature = 0.0332
+                            float physxJoint:jointFriction = 0.7893
+                        }
+                    }
+
+                    over "RR_thigh_joint" (
+                        prepend apiSchemas = ["PhysxJointAPI"]
+                    )
+                    {
+                        float physxJoint:armature = 0.0139
+                        float physxJoint:jointFriction = 0.2484
+                    }
+                }
+
+                over "RR_hip_joint" (
+                    prepend apiSchemas = ["PhysxJointAPI"]
+                )
+                {
+                    float physxJoint:armature = 0.0081
+                    float physxJoint:jointFriction = 0.2488
+                }
+            }
+        }
+    }
+}
+

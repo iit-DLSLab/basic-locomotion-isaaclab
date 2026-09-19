@@ -1,0 +1,728 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "MuJoCo USD Converter v0.2.0"
+    }
+    doc = """Generated from Composed Stage of root layer /tmp/tmpmqmq1jez/go2_description.usdc
+
+
+Generated from Composed Stage of root layer /tmp/mjcf_import_go2_nhk9jaht/usdex_go2/go2_description.usdc
+
+
+Generated from Composed Stage of root layer /tmp/mjcf_import_go2_nhk9jaht/temp_go2/go2.usd
+
+
+Generated from Composed Stage of root layer /home/gturrisi-iit.local/other_ws_home/sim2real-robot-identification/robot_model/go2/go2/payloads/base.usd
+"""
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Scope "Instances"
+{
+    def Xform "base_0" (
+        prepend references = @./geometries.usd@</Geometries/base_0>
+    )
+    {
+        over "base_0" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/base_0/VisualMaterials/black>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "black" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/black>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "base_1" (
+        prepend references = @./geometries.usd@</Geometries/base_1>
+    )
+    {
+        over "base_1" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/base_1/VisualMaterials/black>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "black" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/black>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "base_2" (
+        prepend references = @./geometries.usd@</Geometries/base_2>
+    )
+    {
+        over "base_2" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/base_2/VisualMaterials/black>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "black" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/black>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "base_3" (
+        prepend references = @./geometries.usd@</Geometries/base_3>
+    )
+    {
+        over "base_3" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/base_3/VisualMaterials/white>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "white" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/white>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "base_4" (
+        prepend references = @./geometries.usd@</Geometries/base_4>
+    )
+    {
+        over "base_4" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/base_4/VisualMaterials/gray>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "gray" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/gray>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "hip_0" (
+        prepend references = @./geometries.usd@</Geometries/hip_0>
+    )
+    {
+        over "hip_0" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/hip_0/VisualMaterials/metal>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "metal" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/metal>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "hip_1" (
+        prepend references = @./geometries.usd@</Geometries/hip_1>
+    )
+    {
+        over "hip_1" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/hip_1/VisualMaterials/gray>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "gray" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/gray>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "thigh_0" (
+        prepend references = @./geometries.usd@</Geometries/thigh_0>
+    )
+    {
+        over "thigh_0" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/thigh_0/VisualMaterials/metal>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "metal" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/metal>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "thigh_1" (
+        prepend references = @./geometries.usd@</Geometries/thigh_1>
+    )
+    {
+        over "thigh_1" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/thigh_1/VisualMaterials/gray>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "gray" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/gray>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "calf_0" (
+        prepend references = @./geometries.usd@</Geometries/calf_0>
+    )
+    {
+        over "calf_0" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/calf_0/VisualMaterials/gray>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "gray" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/gray>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "calf_1" (
+        prepend references = @./geometries.usd@</Geometries/calf_1>
+    )
+    {
+        over "calf_1" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/calf_1/VisualMaterials/black>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "black" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/black>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "foot" (
+        prepend references = @./geometries.usd@</Geometries/foot>
+    )
+    {
+        over "foot" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/foot/VisualMaterials/black>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "black" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/black>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "thigh_mirror_0" (
+        prepend references = @./geometries.usd@</Geometries/thigh_mirror_0>
+    )
+    {
+        over "thigh_mirror_0" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/thigh_mirror_0/VisualMaterials/metal>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "metal" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/metal>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "thigh_mirror_1" (
+        prepend references = @./geometries.usd@</Geometries/thigh_mirror_1>
+    )
+    {
+        over "thigh_mirror_1" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/thigh_mirror_1/VisualMaterials/gray>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "gray" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/gray>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "calf_mirror_0" (
+        prepend references = @./geometries.usd@</Geometries/calf_mirror_0>
+    )
+    {
+        over "calf_mirror_0" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/calf_mirror_0/VisualMaterials/gray>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "gray" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/gray>
+            )
+            {
+            }
+        }
+    }
+
+    def Xform "calf_mirror_1" (
+        prepend references = @./geometries.usd@</Geometries/calf_mirror_1>
+    )
+    {
+        over "calf_mirror_1" (
+            apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+        )
+        {
+            custom rel material:binding
+            prepend rel material:binding = </Instances/calf_mirror_1/VisualMaterials/black>
+            custom rel material:binding:physics
+            prepend rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+            int mjc:group = 2
+            double mjc:margin = 0.001
+            float newton:contactGap = 0 (
+                limits = {
+                    dictionary hard = {
+                        double minimum = 0
+                    }
+                }
+            )
+            float newton:contactMargin = 0.001 (
+                limits = {
+                    dictionary soft = {
+                        double minimum = 0
+                    }
+                }
+            )
+            token physics:approximation = "convexHull"
+            bool physics:collisionEnabled = 0
+            float physics:density = 1000
+        }
+
+        def Scope "VisualMaterials"
+        {
+            def Material "black" (
+                instanceable = true
+                prepend references = @./materials.usda@</Materials/black>
+            )
+            {
+            }
+        }
+    }
+}
+

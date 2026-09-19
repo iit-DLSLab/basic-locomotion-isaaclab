@@ -1,0 +1,725 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "MuJoCo USD Converter v0.2.0"
+    }
+    defaultPrim = "go2_description"
+    doc = """Generated from Composed Stage of root layer /tmp/tmpmqmq1jez/go2_description.usdc
+
+
+Generated from Composed Stage of root layer /tmp/mjcf_import_go2_nhk9jaht/usdex_go2/go2_description.usdc
+
+
+Generated from Composed Stage of root layer /tmp/mjcf_import_go2_nhk9jaht/temp_go2/go2.usd
+
+
+Generated from Composed Stage of root layer /home/gturrisi-iit.local/other_ws_home/sim2real-robot-identification/robot_model/go2/go2/payloads/base.usd
+"""
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    subLayers = [
+        @./physics.usda@
+    ]
+    upAxis = "Z"
+)
+
+over "go2_description"
+{
+    over "Geometry"
+    {
+        over "base"
+        {
+            over "Box" (
+                prepend apiSchemas = ["MjcCollisionAPI"]
+            )
+            {
+                uniform int mjc:group = 2
+                uniform double mjc:margin = 0.001
+            }
+
+            over "Box_1" (
+                prepend apiSchemas = ["MjcCollisionAPI"]
+            )
+            {
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+            }
+
+            over "Box_2" (
+                prepend apiSchemas = ["MjcCollisionAPI"]
+            )
+            {
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+            }
+
+            over "Box_3" (
+                prepend apiSchemas = ["MjcCollisionAPI"]
+            )
+            {
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+            }
+
+            over "Capsule" (
+                prepend apiSchemas = ["MjcCollisionAPI"]
+            )
+            {
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+            }
+
+            over "Capsule_1" (
+                prepend apiSchemas = ["MjcCollisionAPI"]
+            )
+            {
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+            }
+
+            over "Capsule_2" (
+                prepend apiSchemas = ["MjcCollisionAPI"]
+            )
+            {
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+            }
+
+            over "Sphere" (
+                prepend apiSchemas = ["MjcCollisionAPI"]
+            )
+            {
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+            }
+
+            over "imu" (
+                prepend apiSchemas = ["MjcSiteAPI"]
+            )
+            {
+            }
+
+            over "FL_hip"
+            {
+                over "Capsule" (
+                    prepend apiSchemas = ["MjcCollisionAPI"]
+                )
+                {
+                    uniform int mjc:group = 3
+                    uniform double mjc:margin = 0.001
+                }
+
+                over "FL_thigh"
+                {
+                    over "Box" (
+                        prepend apiSchemas = ["MjcCollisionAPI"]
+                    )
+                    {
+                        uniform int mjc:group = 3
+                        uniform double mjc:margin = 0.001
+                    }
+
+                    over "FL_calf"
+                    {
+                        over "Box" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "Box_2" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "FL_foot"
+                        {
+                            over "FL" (
+                                prepend apiSchemas = ["MjcCollisionAPI"]
+                            )
+                            {
+                                uniform int mjc:group = 3
+                                uniform double mjc:margin = 0.001
+                            }
+
+                            over "PhysicsFixedJoint"
+                            {
+                            }
+                        }
+
+                        over "FL_calf_joint" (
+                            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.0356
+                            uniform double mjc:damping = 0.145
+                            uniform double mjc:frictionloss = 1.0151
+                        }
+
+                        over "calf_0"
+                        {
+                        }
+
+                        over "calf_1"
+                        {
+                        }
+
+                        over "foot"
+                        {
+                        }
+                    }
+
+                    over "FL_thigh_joint" (
+                        delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.0197
+                        uniform double mjc:damping = 0.2406
+                        uniform double mjc:frictionloss = 0.1739
+                    }
+
+                    over "thigh_0"
+                    {
+                    }
+
+                    over "thigh_1"
+                    {
+                    }
+                }
+
+                over "FL_hip_joint" (
+                    delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.001
+                    uniform double mjc:damping = 0.1531
+                    uniform double mjc:frictionloss = 0.2884
+                }
+
+                over "hip_0"
+                {
+                }
+
+                over "hip_1"
+                {
+                }
+            }
+
+            over "FR_hip"
+            {
+                over "Capsule" (
+                    prepend apiSchemas = ["MjcCollisionAPI"]
+                )
+                {
+                    uniform int mjc:group = 3
+                    uniform double mjc:margin = 0.001
+                }
+
+                over "FR_thigh"
+                {
+                    over "Box" (
+                        prepend apiSchemas = ["MjcCollisionAPI"]
+                    )
+                    {
+                        uniform int mjc:group = 3
+                        uniform double mjc:margin = 0.001
+                    }
+
+                    over "FR_calf"
+                    {
+                        over "Box" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "Box_2" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "FR_foot"
+                        {
+                            over "FR" (
+                                prepend apiSchemas = ["MjcCollisionAPI"]
+                            )
+                            {
+                                uniform int mjc:group = 3
+                                uniform double mjc:margin = 0.001
+                            }
+
+                            over "PhysicsFixedJoint"
+                            {
+                            }
+                        }
+
+                        over "FR_calf_joint" (
+                            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.0371
+                            uniform double mjc:damping = 0.1728
+                            uniform double mjc:frictionloss = 0.4912
+                        }
+
+                        over "calf_mirror_0"
+                        {
+                        }
+
+                        over "calf_mirror_1"
+                        {
+                        }
+
+                        over "foot"
+                        {
+                        }
+                    }
+
+                    over "FR_thigh_joint" (
+                        delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.0135
+                        uniform double mjc:damping = 0.142
+                        uniform double mjc:frictionloss = 0.2386
+                    }
+
+                    over "thigh_mirror_0"
+                    {
+                    }
+
+                    over "thigh_mirror_1"
+                    {
+                    }
+                }
+
+                over "FR_hip_joint" (
+                    delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.0129
+                    uniform double mjc:damping = 0.2628
+                    uniform double mjc:frictionloss = 0.1835
+                }
+
+                over "hip_0"
+                {
+                }
+
+                over "hip_1"
+                {
+                }
+            }
+
+            over "RL_hip"
+            {
+                over "Capsule" (
+                    prepend apiSchemas = ["MjcCollisionAPI"]
+                )
+                {
+                    uniform int mjc:group = 3
+                    uniform double mjc:margin = 0.001
+                }
+
+                over "RL_thigh"
+                {
+                    over "Box" (
+                        prepend apiSchemas = ["MjcCollisionAPI"]
+                    )
+                    {
+                        uniform int mjc:group = 3
+                        uniform double mjc:margin = 0.001
+                    }
+
+                    over "RL_calf"
+                    {
+                        over "Box" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "Box_2" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "RL_foot"
+                        {
+                            over "RL" (
+                                prepend apiSchemas = ["MjcCollisionAPI"]
+                            )
+                            {
+                                uniform int mjc:group = 3
+                                uniform double mjc:margin = 0.001
+                            }
+
+                            over "PhysicsFixedJoint"
+                            {
+                            }
+                        }
+
+                        over "RL_calf_joint" (
+                            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.0228
+                            uniform double mjc:damping = 0.1201
+                            uniform double mjc:frictionloss = 1.3573
+                        }
+
+                        over "calf_0"
+                        {
+                        }
+
+                        over "calf_1"
+                        {
+                        }
+
+                        over "foot"
+                        {
+                        }
+                    }
+
+                    over "RL_thigh_joint" (
+                        delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.0205
+                        uniform double mjc:damping = 0.2352
+                        uniform double mjc:frictionloss = 0.1388
+                    }
+
+                    over "thigh_0"
+                    {
+                    }
+
+                    over "thigh_1"
+                    {
+                    }
+                }
+
+                over "RL_hip_joint" (
+                    delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.0075
+                    uniform double mjc:damping = 0.2243
+                    uniform double mjc:frictionloss = 0.155
+                }
+
+                over "hip_0"
+                {
+                }
+
+                over "hip_1"
+                {
+                }
+            }
+
+            over "RR_hip"
+            {
+                over "Capsule" (
+                    prepend apiSchemas = ["MjcCollisionAPI"]
+                )
+                {
+                    uniform int mjc:group = 3
+                    uniform double mjc:margin = 0.001
+                }
+
+                over "RR_thigh"
+                {
+                    over "Box" (
+                        prepend apiSchemas = ["MjcCollisionAPI"]
+                    )
+                    {
+                        uniform int mjc:group = 3
+                        uniform double mjc:margin = 0.001
+                    }
+
+                    over "RR_calf"
+                    {
+                        over "Box" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "Box_2" (
+                            prepend apiSchemas = ["MjcCollisionAPI"]
+                        )
+                        {
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                        }
+
+                        over "RR_foot"
+                        {
+                            over "RR" (
+                                prepend apiSchemas = ["MjcCollisionAPI"]
+                            )
+                            {
+                                uniform int mjc:group = 3
+                                uniform double mjc:margin = 0.001
+                            }
+
+                            over "PhysicsFixedJoint"
+                            {
+                            }
+                        }
+
+                        over "RR_calf_joint" (
+                            delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.0332
+                            uniform double mjc:damping = 0.1
+                            uniform double mjc:frictionloss = 0.7893
+                        }
+
+                        over "calf_mirror_0"
+                        {
+                        }
+
+                        over "calf_mirror_1"
+                        {
+                        }
+
+                        over "foot"
+                        {
+                        }
+                    }
+
+                    over "RR_thigh_joint" (
+                        delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.0139
+                        uniform double mjc:damping = 0.1983
+                        uniform double mjc:frictionloss = 0.2484
+                    }
+
+                    over "thigh_mirror_0"
+                    {
+                    }
+
+                    over "thigh_mirror_1"
+                    {
+                    }
+                }
+
+                over "RR_hip_joint" (
+                    delete apiSchemas = ["PhysicsDriveAPI:angular", "PhysicsJointStateAPI:angular"]
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.0081
+                    uniform double mjc:damping = 0.2989
+                    uniform double mjc:frictionloss = 0.2488
+                }
+
+                over "hip_0"
+                {
+                }
+
+                over "hip_1"
+                {
+                }
+            }
+
+            over "base_0"
+            {
+            }
+
+            over "base_1"
+            {
+            }
+
+            over "base_2"
+            {
+            }
+
+            over "base_3"
+            {
+            }
+
+            over "base_4"
+            {
+            }
+        }
+    }
+
+    over "Physics"
+    {
+        over "PhysicsMaterial" (
+            prepend apiSchemas = ["MjcMaterialAPI"]
+        )
+        {
+        }
+
+        def MjcActuator "FL_hip"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/FL_hip/FL_hip_joint>
+        }
+
+        def MjcActuator "FL_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/FL_hip/FL_thigh/FL_thigh_joint>
+        }
+
+        def MjcActuator "FL_calf"
+        {
+            uniform double mjc:ctrlRange:max = 45.43
+            uniform double mjc:ctrlRange:min = -45.43
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_calf_joint>
+        }
+
+        def MjcActuator "FR_hip"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/FR_hip/FR_hip_joint>
+        }
+
+        def MjcActuator "FR_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/FR_hip/FR_thigh/FR_thigh_joint>
+        }
+
+        def MjcActuator "FR_calf"
+        {
+            uniform double mjc:ctrlRange:max = 45.43
+            uniform double mjc:ctrlRange:min = -45.43
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/FR_hip/FR_thigh/FR_calf/FR_calf_joint>
+        }
+
+        def MjcActuator "RL_hip"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/RL_hip/RL_hip_joint>
+        }
+
+        def MjcActuator "RL_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/RL_hip/RL_thigh/RL_thigh_joint>
+        }
+
+        def MjcActuator "RL_calf"
+        {
+            uniform double mjc:ctrlRange:max = 45.43
+            uniform double mjc:ctrlRange:min = -45.43
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/RL_hip/RL_thigh/RL_calf/RL_calf_joint>
+        }
+
+        def MjcActuator "RR_hip"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/RR_hip/RR_hip_joint>
+        }
+
+        def MjcActuator "RR_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/RR_hip/RR_thigh/RR_thigh_joint>
+        }
+
+        def MjcActuator "RR_calf"
+        {
+            uniform double mjc:ctrlRange:max = 45.43
+            uniform double mjc:ctrlRange:min = -45.43
+            custom rel mjc:target
+            prepend rel mjc:target = </go2_description/Geometry/base/RR_hip/RR_thigh/RR_calf/RR_calf_joint>
+        }
+    }
+
+    over "Materials"
+    {
+    }
+
+    over "VisualMaterials"
+    {
+    }
+}
+

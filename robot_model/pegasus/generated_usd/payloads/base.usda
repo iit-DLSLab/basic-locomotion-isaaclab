@@ -1,0 +1,1130 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "MuJoCo USD Converter v0.2.0"
+    }
+    defaultPrim = "pegasus_description"
+    doc = """Generated from Composed Stage of root layer /tmp/tmp5xhcx9pd/pegasus_description.usdc
+
+
+Generated from Composed Stage of root layer /tmp/mjcf_import_pegasus_156c5nuj/usdex_pegasus/pegasus_description.usdc
+
+
+Generated from Composed Stage of root layer /tmp/mjcf_import_pegasus_156c5nuj/temp_pegasus/pegasus.usd
+"""
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    subLayers = [
+        @./robot.usda@
+    ]
+    upAxis = "Z"
+)
+
+def Xform "pegasus_description" (
+    prepend apiSchemas = ["GeomModelAPI", "IsaacRobotAPI"]
+    assetInfo = {
+        string name = "pegasus_description"
+    }
+    kind = "component"
+)
+{
+    float3[] extentsHint = [(-0.4794999, -0.35250002, -0.386146), (0.47950011, 0.35250002, -0.304146), (3.4028235e38, 3.4028235e38, 3.4028235e38), (-3.4028235e38, -3.4028235e38, -3.4028235e38), (3.4028235e38, 3.4028235e38, 3.4028235e38), (-3.4028235e38, -3.4028235e38, -3.4028235e38), (-0.514, -0.3615, -0.386146), (0.5245475, 0.3615, 0.595)]
+    custom rel isaac:physics:robotJoints
+    custom rel isaac:physics:robotLinks
+    custom token isaac:robotType = "Default"
+
+    def Scope "Geometry"
+    {
+        def Xform "base" (
+            prepend apiSchemas = ["IsaacLinkAPI"]
+        )
+        {
+            quatf xformOp:orient = (1, 0, 0, 0)
+            float3 xformOp:scale = (1, 1, 1)
+            double3 xformOp:translate = (0, 0, 0.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+            def Cube "Box" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayColor:indices = None
+                float[] primvars:displayOpacity = [1] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayOpacity:indices = None
+                uniform token purpose = "guide"
+                double size = 2
+                quatf xformOp:orient = (1, 0, 0, 0)
+                float3 xformOp:scale = (0.36, 0.11, 0.115)
+                double3 xformOp:translate = (0, 0, -0.03)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Capsule "Capsule" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+            )
+            {
+                uniform token axis = "Z"
+                float3[] extent = [(-0.06, -0.06, -0.36), (0.06, 0.06, 0.36)]
+                double height = 0.6
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayColor:indices = None
+                float[] primvars:displayOpacity = [1] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayOpacity:indices = None
+                uniform token purpose = "guide"
+                double radius = 0.06
+                quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0, 0.18, 0.035)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Capsule "Capsule_1" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                displayName = "Capsule"
+            )
+            {
+                uniform token axis = "Z"
+                float3[] extent = [(-0.03, -0.03, -0.33), (0.03, 0.03, 0.33)]
+                double height = 0.6
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayColor:indices = None
+                float[] primvars:displayOpacity = [1] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayOpacity:indices = None
+                uniform token purpose = "guide"
+                double radius = 0.03
+                quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0, 0.21, -0.03)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Capsule "Capsule_2" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                displayName = "Capsule"
+            )
+            {
+                uniform token axis = "Z"
+                float3[] extent = [(-0.06, -0.06, -0.36), (0.06, 0.06, 0.36)]
+                double height = 0.6
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayColor:indices = None
+                float[] primvars:displayOpacity = [1] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayOpacity:indices = None
+                uniform token purpose = "guide"
+                double radius = 0.06
+                quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0, 0.16, -0.09)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Capsule "Capsule_3" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                displayName = "Capsule"
+            )
+            {
+                uniform token axis = "Z"
+                float3[] extent = [(-0.06, -0.06, -0.36), (0.06, 0.06, 0.36)]
+                double height = 0.6
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayColor:indices = None
+                float[] primvars:displayOpacity = [1] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayOpacity:indices = None
+                uniform token purpose = "guide"
+                double radius = 0.06
+                quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0, -0.18, 0.035)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Capsule "Capsule_4" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                displayName = "Capsule"
+            )
+            {
+                uniform token axis = "Z"
+                float3[] extent = [(-0.03, -0.03, -0.33), (0.03, 0.03, 0.33)]
+                double height = 0.6
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayColor:indices = None
+                float[] primvars:displayOpacity = [1] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayOpacity:indices = None
+                uniform token purpose = "guide"
+                double radius = 0.03
+                quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0, -0.21, -0.03)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Capsule "Capsule_5" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                displayName = "Capsule"
+            )
+            {
+                uniform token axis = "Z"
+                float3[] extent = [(-0.06, -0.06, -0.36), (0.06, 0.06, 0.36)]
+                double height = 0.6
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayColor:indices = None
+                float[] primvars:displayOpacity = [1] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayOpacity:indices = None
+                uniform token purpose = "guide"
+                double radius = 0.06
+                quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0, -0.16, -0.09)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Sphere "imu"
+            {
+                float3[] extent = [(-0.005, -0.005, -0.005), (0.005, 0.005, 0.005)]
+                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayColor:indices = None
+                float[] primvars:displayOpacity = [1] (
+                    interpolation = "constant"
+                )
+                int[] primvars:displayOpacity:indices = None
+                uniform token purpose = "guide"
+                double radius = 0.005
+                quatf xformOp:orient = (0.7071068, 0, 0, -0.7071067)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-0.0085648, -0.0065251, -0.03696)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Xform "FL_hip" (
+                prepend apiSchemas = ["IsaacLinkAPI"]
+            )
+            {
+                quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0.334, 0.163, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                def Capsule "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    uniform token axis = "Z"
+                    float3[] extent = [(-0.04, -0.04, -0.08), (0.04, 0.04, 0.08)]
+                    double height = 0.08
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayColor:indices = None
+                    float[] primvars:displayOpacity = [1] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayOpacity:indices = None
+                    uniform token purpose = "guide"
+                    double radius = 0.04
+                    quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0.01, 0.14, 0.07)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                }
+
+                def Capsule "Capsule_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    displayName = "Capsule"
+                )
+                {
+                    uniform token axis = "Z"
+                    float3[] extent = [(-0.04, -0.04, -0.08), (0.04, 0.04, 0.08)]
+                    double height = 0.08
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayColor:indices = None
+                    float[] primvars:displayOpacity = [1] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayOpacity:indices = None
+                    uniform token purpose = "guide"
+                    double radius = 0.04
+                    quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0.01, 0.14, 0.12)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                }
+
+                def Xform "FL_thigh" (
+                    prepend apiSchemas = ["IsaacLinkAPI"]
+                )
+                {
+                    quatf xformOp:orient = (0.7071068, -0.7071067, 0, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0, 0.1485, 0.1045)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                    def Cube "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayColor:indices = None
+                        float[] primvars:displayOpacity = [1] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayOpacity:indices = None
+                        uniform token purpose = "guide"
+                        double size = 2
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (0.15, 0.025, 0.025)
+                        double3 xformOp:translate = (0.25, 0.03, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                    }
+
+                    def Sphere "Sphere" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        float3[] extent = [(-0.05, -0.05, -0.05), (0.05, 0.05, 0.05)]
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayColor:indices = None
+                        float[] primvars:displayOpacity = [1] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayOpacity:indices = None
+                        uniform token purpose = "guide"
+                        double radius = 0.05
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (1, 1, 1)
+                        double3 xformOp:translate = (0.42, 0.015, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                    }
+
+                    def Xform "FL_calf" (
+                        prepend apiSchemas = ["IsaacLinkAPI"]
+                    )
+                    {
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (1, 1, 1)
+                        double3 xformOp:translate = (0.418, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                        def Cube "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            uniform token purpose = "guide"
+                            double size = 2
+                            quatf xformOp:orient = (6.123234e-17, 0.9887711, -0.14943801, 1.246887e-19)
+                            float3 xformOp:scale = (0.125, 0.025, 0.025)
+                            double3 xformOp:translate = (0.15, -0.02, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Cube "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                            displayName = "Box"
+                        )
+                        {
+                            float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            uniform token purpose = "guide"
+                            double size = 2
+                            quatf xformOp:orient = (6.123234e-17, 0.9887711, 0.14943801, 2.8097198e-19)
+                            float3 xformOp:scale = (0.075, 0.025, 0.025)
+                            double3 xformOp:translate = (0.35, -0.04, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Sphere "Sphere" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            float3[] extent = [(-0.041, -0.041, -0.041), (0.041, 0.041, 0.041)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0, 0, 0)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            double radius = 0.041
+                            quatf xformOp:orient = (1, 0, 0, 0)
+                            float3 xformOp:scale = (1, 1, 1)
+                            double3 xformOp:translate = (0.427146, 0, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Xform "FL_foot" (
+                            prepend apiSchemas = ["IsaacLinkAPI"]
+                        )
+                        {
+                            quatf xformOp:orient = (1, 0, 0, 0)
+                            float3 xformOp:scale = (1, 1, 1)
+                            double3 xformOp:translate = (0.427146, 0, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                            def Sphere "FL" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                float3[] extent = [(-0.041, -0.041, -0.041), (0.041, 0.041, 0.041)]
+                                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                                    interpolation = "constant"
+                                )
+                                int[] primvars:displayColor:indices = None
+                                float[] primvars:displayOpacity = [1] (
+                                    interpolation = "constant"
+                                )
+                                int[] primvars:displayOpacity:indices = None
+                                uniform token purpose = "guide"
+                                double radius = 0.041
+                                quatf xformOp:orient = (1, 0, 0, 0)
+                                float3 xformOp:scale = (1, 1, 1)
+                                double3 xformOp:translate = (0, 0, 0)
+                                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                            }
+                        }
+                    }
+                }
+            }
+
+            def Xform "FR_hip" (
+                prepend apiSchemas = ["IsaacLinkAPI"]
+            )
+            {
+                quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0.334, -0.163, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                def Capsule "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    uniform token axis = "Z"
+                    float3[] extent = [(-0.04, -0.04, -0.08), (0.04, 0.04, 0.08)]
+                    double height = 0.08
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayColor:indices = None
+                    float[] primvars:displayOpacity = [1] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayOpacity:indices = None
+                    uniform token purpose = "guide"
+                    double radius = 0.04
+                    quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0.01, -0.14, 0.07)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                }
+
+                def Capsule "Capsule_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    displayName = "Capsule"
+                )
+                {
+                    uniform token axis = "Z"
+                    float3[] extent = [(-0.04, -0.04, -0.08), (0.04, 0.04, 0.08)]
+                    double height = 0.08
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayColor:indices = None
+                    float[] primvars:displayOpacity = [1] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayOpacity:indices = None
+                    uniform token purpose = "guide"
+                    double radius = 0.04
+                    quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0.01, -0.14, 0.12)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                }
+
+                def Xform "FR_thigh" (
+                    prepend apiSchemas = ["IsaacLinkAPI"]
+                )
+                {
+                    quatf xformOp:orient = (0.7071068, -0.7071067, 0, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0, -0.1485, 0.1045)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                    def Cube "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayColor:indices = None
+                        float[] primvars:displayOpacity = [1] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayOpacity:indices = None
+                        uniform token purpose = "guide"
+                        double size = 2
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (0.15, 0.025, 0.025)
+                        double3 xformOp:translate = (0.25, 0.03, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                    }
+
+                    def Sphere "Sphere" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        float3[] extent = [(-0.05, -0.05, -0.05), (0.05, 0.05, 0.05)]
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayColor:indices = None
+                        float[] primvars:displayOpacity = [1] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayOpacity:indices = None
+                        uniform token purpose = "guide"
+                        double radius = 0.05
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (1, 1, 1)
+                        double3 xformOp:translate = (0.42, 0.015, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                    }
+
+                    def Xform "FR_calf" (
+                        prepend apiSchemas = ["IsaacLinkAPI"]
+                    )
+                    {
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (1, 1, 1)
+                        double3 xformOp:translate = (0.418, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                        def Cube "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            uniform token purpose = "guide"
+                            double size = 2
+                            quatf xformOp:orient = (6.123234e-17, 0.9887711, -0.14943801, 1.246887e-19)
+                            float3 xformOp:scale = (0.125, 0.025, 0.025)
+                            double3 xformOp:translate = (0.15, -0.02, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Cube "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                            displayName = "Box"
+                        )
+                        {
+                            float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            uniform token purpose = "guide"
+                            double size = 2
+                            quatf xformOp:orient = (6.123234e-17, 0.9887711, 0.14943801, 2.8097198e-19)
+                            float3 xformOp:scale = (0.075, 0.025, 0.025)
+                            double3 xformOp:translate = (0.35, -0.04, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Sphere "Sphere" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            float3[] extent = [(-0.041, -0.041, -0.041), (0.041, 0.041, 0.041)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0, 0, 0)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            double radius = 0.041
+                            quatf xformOp:orient = (1, 0, 0, 0)
+                            float3 xformOp:scale = (1, 1, 1)
+                            double3 xformOp:translate = (0.427146, 0, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Xform "FR_foot" (
+                            prepend apiSchemas = ["IsaacLinkAPI"]
+                        )
+                        {
+                            quatf xformOp:orient = (1, 0, 0, 0)
+                            float3 xformOp:scale = (1, 1, 1)
+                            double3 xformOp:translate = (0.427146, 0, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                            def Sphere "FR" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                float3[] extent = [(-0.041, -0.041, -0.041), (0.041, 0.041, 0.041)]
+                                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                                    interpolation = "constant"
+                                )
+                                int[] primvars:displayColor:indices = None
+                                float[] primvars:displayOpacity = [1] (
+                                    interpolation = "constant"
+                                )
+                                int[] primvars:displayOpacity:indices = None
+                                uniform token purpose = "guide"
+                                double radius = 0.041
+                                quatf xformOp:orient = (1, 0, 0, 0)
+                                float3 xformOp:scale = (1, 1, 1)
+                                double3 xformOp:translate = (0, 0, 0)
+                                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                            }
+                        }
+                    }
+                }
+            }
+
+            def Xform "RL_hip" (
+                prepend apiSchemas = ["IsaacLinkAPI"]
+            )
+            {
+                quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-0.334, 0.163, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                def Capsule "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    uniform token axis = "Z"
+                    float3[] extent = [(-0.04, -0.04, -0.08), (0.04, 0.04, 0.08)]
+                    double height = 0.08
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayColor:indices = None
+                    float[] primvars:displayOpacity = [1] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayOpacity:indices = None
+                    uniform token purpose = "guide"
+                    double radius = 0.04
+                    quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0.01, 0.14, -0.09)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                }
+
+                def Capsule "Capsule_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    displayName = "Capsule"
+                )
+                {
+                    uniform token axis = "Z"
+                    float3[] extent = [(-0.04, -0.04, -0.08), (0.04, 0.04, 0.08)]
+                    double height = 0.08
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayColor:indices = None
+                    float[] primvars:displayOpacity = [1] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayOpacity:indices = None
+                    uniform token purpose = "guide"
+                    double radius = 0.04
+                    quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0.01, 0.14, -0.14)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                }
+
+                def Xform "RL_thigh" (
+                    prepend apiSchemas = ["IsaacLinkAPI"]
+                )
+                {
+                    quatf xformOp:orient = (0.7071068, -0.7071067, 0, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0, 0.1485, -0.1045)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                    def Cube "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayColor:indices = None
+                        float[] primvars:displayOpacity = [1] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayOpacity:indices = None
+                        uniform token purpose = "guide"
+                        double size = 2
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (0.15, 0.025, 0.025)
+                        double3 xformOp:translate = (0.25, 0.03, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                    }
+
+                    def Sphere "Sphere" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        float3[] extent = [(-0.05, -0.05, -0.05), (0.05, 0.05, 0.05)]
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayColor:indices = None
+                        float[] primvars:displayOpacity = [1] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayOpacity:indices = None
+                        uniform token purpose = "guide"
+                        double radius = 0.05
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (1, 1, 1)
+                        double3 xformOp:translate = (0.42, 0.015, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                    }
+
+                    def Xform "RL_calf" (
+                        prepend apiSchemas = ["IsaacLinkAPI"]
+                    )
+                    {
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (1, 1, 1)
+                        double3 xformOp:translate = (0.418, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                        def Cube "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            uniform token purpose = "guide"
+                            double size = 2
+                            quatf xformOp:orient = (6.123234e-17, 0.9887711, -0.14943801, 1.246887e-19)
+                            float3 xformOp:scale = (0.125, 0.025, 0.025)
+                            double3 xformOp:translate = (0.15, -0.02, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Cube "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                            displayName = "Box"
+                        )
+                        {
+                            float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            uniform token purpose = "guide"
+                            double size = 2
+                            quatf xformOp:orient = (6.123234e-17, 0.9887711, 0.14943801, 2.8097198e-19)
+                            float3 xformOp:scale = (0.075, 0.025, 0.025)
+                            double3 xformOp:translate = (0.35, -0.04, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Sphere "Sphere" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            float3[] extent = [(-0.041, -0.041, -0.041), (0.041, 0.041, 0.041)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0, 0, 0)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            double radius = 0.041
+                            quatf xformOp:orient = (1, 0, 0, 0)
+                            float3 xformOp:scale = (1, 1, 1)
+                            double3 xformOp:translate = (0.427146, 0, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Xform "RL_foot" (
+                            prepend apiSchemas = ["IsaacLinkAPI"]
+                        )
+                        {
+                            quatf xformOp:orient = (1, 0, 0, 0)
+                            float3 xformOp:scale = (1, 1, 1)
+                            double3 xformOp:translate = (0.427146, 0, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                            def Sphere "RL" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                float3[] extent = [(-0.041, -0.041, -0.041), (0.041, 0.041, 0.041)]
+                                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                                    interpolation = "constant"
+                                )
+                                int[] primvars:displayColor:indices = None
+                                float[] primvars:displayOpacity = [1] (
+                                    interpolation = "constant"
+                                )
+                                int[] primvars:displayOpacity:indices = None
+                                uniform token purpose = "guide"
+                                double radius = 0.041
+                                quatf xformOp:orient = (1, 0, 0, 0)
+                                float3 xformOp:scale = (1, 1, 1)
+                                double3 xformOp:translate = (0, 0, 0)
+                                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                            }
+                        }
+                    }
+                }
+            }
+
+            def Xform "RR_hip" (
+                prepend apiSchemas = ["IsaacLinkAPI"]
+            )
+            {
+                quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (-0.334, -0.163, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                def Capsule "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                )
+                {
+                    uniform token axis = "Z"
+                    float3[] extent = [(-0.04, -0.04, -0.08), (0.04, 0.04, 0.08)]
+                    double height = 0.08
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayColor:indices = None
+                    float[] primvars:displayOpacity = [1] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayOpacity:indices = None
+                    uniform token purpose = "guide"
+                    double radius = 0.04
+                    quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0.01, -0.14, -0.09)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                }
+
+                def Capsule "Capsule_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    displayName = "Capsule"
+                )
+                {
+                    uniform token axis = "Z"
+                    float3[] extent = [(-0.04, -0.04, -0.08), (0.04, 0.04, 0.08)]
+                    double height = 0.08
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayColor:indices = None
+                    float[] primvars:displayOpacity = [1] (
+                        interpolation = "constant"
+                    )
+                    int[] primvars:displayOpacity:indices = None
+                    uniform token purpose = "guide"
+                    double radius = 0.04
+                    quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0.01, -0.14, -0.14)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                }
+
+                def Xform "RR_thigh" (
+                    prepend apiSchemas = ["IsaacLinkAPI"]
+                )
+                {
+                    quatf xformOp:orient = (0.7071068, -0.7071067, 0, 0)
+                    float3 xformOp:scale = (1, 1, 1)
+                    double3 xformOp:translate = (0, -0.1485, -0.1045)
+                    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                    def Cube "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayColor:indices = None
+                        float[] primvars:displayOpacity = [1] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayOpacity:indices = None
+                        uniform token purpose = "guide"
+                        double size = 2
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (0.15, 0.025, 0.025)
+                        double3 xformOp:translate = (0.25, 0.03, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                    }
+
+                    def Sphere "Sphere" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        float3[] extent = [(-0.05, -0.05, -0.05), (0.05, 0.05, 0.05)]
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayColor:indices = None
+                        float[] primvars:displayOpacity = [1] (
+                            interpolation = "constant"
+                        )
+                        int[] primvars:displayOpacity:indices = None
+                        uniform token purpose = "guide"
+                        double radius = 0.05
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (1, 1, 1)
+                        double3 xformOp:translate = (0.42, 0.015, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                    }
+
+                    def Xform "RR_calf" (
+                        prepend apiSchemas = ["IsaacLinkAPI"]
+                    )
+                    {
+                        quatf xformOp:orient = (1, 0, 0, 0)
+                        float3 xformOp:scale = (1, 1, 1)
+                        double3 xformOp:translate = (0.418, 0, 0)
+                        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                        def Cube "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            uniform token purpose = "guide"
+                            double size = 2
+                            quatf xformOp:orient = (6.123234e-17, 0.9887711, -0.14943801, 1.246887e-19)
+                            float3 xformOp:scale = (0.125, 0.025, 0.025)
+                            double3 xformOp:translate = (0.15, -0.02, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Cube "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                            displayName = "Box"
+                        )
+                        {
+                            float3[] extent = [(-1, -1, -1), (1, 1, 1)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0.913725, 0.913725, 0.847059)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            uniform token purpose = "guide"
+                            double size = 2
+                            quatf xformOp:orient = (6.123234e-17, 0.9887711, 0.14943801, 2.8097198e-19)
+                            float3 xformOp:scale = (0.075, 0.025, 0.025)
+                            double3 xformOp:translate = (0.35, -0.04, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Sphere "Sphere" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            float3[] extent = [(-0.041, -0.041, -0.041), (0.041, 0.041, 0.041)]
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            color3f[] primvars:displayColor = [(0, 0, 0)] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayColor:indices = None
+                            float[] primvars:displayOpacity = [1] (
+                                interpolation = "constant"
+                            )
+                            int[] primvars:displayOpacity:indices = None
+                            double radius = 0.041
+                            quatf xformOp:orient = (1, 0, 0, 0)
+                            float3 xformOp:scale = (1, 1, 1)
+                            double3 xformOp:translate = (0.427146, 0, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                        }
+
+                        def Xform "RR_foot" (
+                            prepend apiSchemas = ["IsaacLinkAPI"]
+                        )
+                        {
+                            quatf xformOp:orient = (1, 0, 0, 0)
+                            float3 xformOp:scale = (1, 1, 1)
+                            double3 xformOp:translate = (0.427146, 0, 0)
+                            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+                            def Sphere "RR" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                float3[] extent = [(-0.041, -0.041, -0.041), (0.041, 0.041, 0.041)]
+                                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                                color3f[] primvars:displayColor = [(0.5, 0.5, 0.5)] (
+                                    interpolation = "constant"
+                                )
+                                int[] primvars:displayColor:indices = None
+                                float[] primvars:displayOpacity = [1] (
+                                    interpolation = "constant"
+                                )
+                                int[] primvars:displayOpacity:indices = None
+                                uniform token purpose = "guide"
+                                double radius = 0.041
+                                quatf xformOp:orient = (1, 0, 0, 0)
+                                float3 xformOp:scale = (1, 1, 1)
+                                double3 xformOp:translate = (0, 0, 0)
+                                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    def Scope "Physics"
+    {
+        def Material "PhysicsMaterial"
+        {
+        }
+    }
+}
+
