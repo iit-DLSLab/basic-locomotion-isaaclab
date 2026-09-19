@@ -36,7 +36,7 @@ A list of robots and environments available is described below:
 
 | Robot Model         | Environment Name Pattern                                   |
 |---------------------|------------------------------------------------------------|
-| [Aliengo](./deploy/mujoco_utils/robot_model/aliengo/), [Go2](./deploy/mujoco_utils/robot_model/go2/), [B2](./deploy/mujoco_utils/robot_model/B2/), [HyQReal2](./deploy/mujoco_utils/robot_model/HyQReal2/) | Locomotion-**RobotModel**-Flat-Blind <br> Locomotion-**RobotModel**-Rough-Blind <br> Locomotion-**RobotModel**-Rough-Vision |
+| [Aliengo](./robot_model/aliengo/), [Go2](./robot_model/go2/), [B2](./robot_model/B2/), [A2](./robot_model/a2/), [HyQReal2](./robot_model/HyQReal2/) | Locomotion-**RobotModel**-Flat-Blind <br> Locomotion-**RobotModel**-Rough-Blind <br> Locomotion-**RobotModel**-Rough-Vision |
 
 
 ## Installation and Runs
