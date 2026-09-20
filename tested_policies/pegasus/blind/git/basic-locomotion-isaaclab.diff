@@ -1,0 +1,49 @@
+--- git commit ---
+f71e8c388e295ff27e53122cef69b2d2fdf237cf
+
+
+--- git status ---
+HEAD detached from dffc687
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   deploy/config.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	deploy/mujoco_utils/robot_model/
+	deploy/rosbag/
+	tested_policies/pegasus/
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/deploy/config.py b/deploy/config.py
+index 6ed46f6..6f4c87d 100644
+--- a/deploy/config.py
++++ b/deploy/config.py
+@@ -32,12 +32,23 @@ elif(robot == "b2"):
+ 
+     Kp_stand_up_and_down = 25.
+     Kd_stand_up_and_down = 2.
++
+ elif(robot == "hyqreal2"):
+     Kp_walking = 175.
+     Kd_walking = 20.
+ 
+     Kp_stand_up_and_down = 175.
+     Kd_stand_up_and_down = 20.
++
++elif(robot == "pegasus"):
++    Kp_walking = 160.
++    Kd_walking = 6.
++
++    Kp_stand_up_and_down = 200.
++    Kd_stand_up_and_down = 10.
++
++    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-09-19_10-54-20"
++
+ else:
+     raise ValueError(f"Robot {robot} not supported")
+ 

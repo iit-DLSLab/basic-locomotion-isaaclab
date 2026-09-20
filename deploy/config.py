@@ -4,7 +4,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../")
 sys.path.append(dir_path+"/../scripts/rsl_rl")
 
-robot = 'go2'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
+robot = 'pegasus'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
 scene = 'scene_random_boxes'  # flat, random_boxes, random_pyramids, perlin
 
 # ----------------------------------------------------------------------------------------------------------------
@@ -32,12 +32,23 @@ elif(robot == "b2"):
 
     Kp_stand_up_and_down = 25.
     Kd_stand_up_and_down = 2.
+
 elif(robot == "hyqreal2"):
     Kp_walking = 175.
     Kd_walking = 20.
 
     Kp_stand_up_and_down = 175.
     Kd_stand_up_and_down = 20.
+
+elif(robot == "pegasus"):
+    Kp_walking = 120.
+    Kd_walking = 6.
+
+    Kp_stand_up_and_down = 200.
+    Kd_stand_up_and_down = 10.
+
+    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/blind"
+
 else:
     raise ValueError(f"Robot {robot} not supported")
 
