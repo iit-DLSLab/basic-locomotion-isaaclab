@@ -12,7 +12,7 @@ import torch
 import isaaclab.envs.mdp as mdp
 import isaaclab.sim as sim_utils
 import isaaclab.utils.math as math_utils
-from isaaclab.assets import Articulation, ArticulationCfg
+from isaaclab.assets import Articulation, ArticulationCfg, AssetBaseCfg
 from isaaclab.envs import DirectRLEnv, DirectRLEnvCfg
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.scene import InteractiveSceneCfg
@@ -49,7 +49,16 @@ class LocomotionEnv(DirectRLEnv):
 
     def __init__(self, cfg, render_mode: str | None = None, **kwargs):
         self._edge_map_visualizer = None
+        self._configure_scene(cfg)
         super().__init__(cfg, render_mode, **kwargs)
+
+        # Explicit controllers own PD gains; PhysX drive gains are zero for these joints.
+        self._nominal_actuator_stiffness = {
+            name: actuator.stiffness.clone() for name, actuator in self._robot.actuators.items()
+        }
+        self._nominal_actuator_damping = {
+            name: actuator.damping.clone() for name, actuator in self._robot.actuators.items()
+        }
 
         # Joint position command (deviation from default joint positions)
         self._actions = torch.zeros(self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device)
@@ -176,71 +185,56 @@ class LocomotionEnv(DirectRLEnv):
             self.set_debug_vis(True)
 
 
-    def _setup_scene(self):
-        self._robot = Articulation(self.cfg.robot)
-        self.scene.articulations["robot"] = self._robot
-        self._contact_sensor = ContactSensor(self.cfg.contact_sensor)
-        self.scene.sensors["contact_sensor"] = self._contact_sensor
-
-        # Keep the base-centered scanner for base-height and terrain-orientation terms.
-        self._pose_height_scanner = RayCaster(self.cfg.pose_height_scanner)
-        self.scene.sensors["pose_height_scanner"] = self._pose_height_scanner
-
-        # Use one small height map centered on each foot for the clearance rewards.
-        self._foot_height_scanners = []
+    @staticmethod
+    def _configure_scene(cfg):
+        """Declare scene entities before Isaac Lab builds and clones the scene."""
+        cfg.scene.robot = cfg.robot
+        cfg.scene.contact_sensor = cfg.contact_sensor
+        cfg.scene.pose_height_scanner = cfg.pose_height_scanner
         for foot_name in ("FL_foot", "FR_foot", "RL_foot", "RR_foot"):
-            scanner_cfg = self.cfg.foot_height_scanner.replace(
-                prim_path=f"/World/envs/env_.*/Robot/{foot_name}",
-                visualizer_cfg=self.cfg.foot_height_scanner.visualizer_cfg.replace(
+            setattr(cfg.scene, f"{foot_name.lower()}_height_scanner", cfg.foot_height_scanner.replace(
+                prim_path=f"{{ENV_REGEX_NS}}/Robot/{foot_name}",
+                visualizer_cfg=cfg.foot_height_scanner.visualizer_cfg.replace(
                     prim_path=f"/Visuals/{foot_name}HeightScanner"
                 ),
-            )
-            scanner = RayCaster(scanner_cfg)
-            self.scene.sensors[f"{foot_name.lower()}_height_scanner"] = scanner
-            self._foot_height_scanners.append(scanner)
+            ))
+        if getattr(cfg, "use_vision", False):
+            cfg.scene.perceptive_height_scanner = cfg.perceptive_height_scanner
+            cfg.scene.edge_height_scanner = cfg.edge_height_scanner
+        if getattr(cfg, "use_depth_camera", False):
+            cfg.scene.depth_camera = cfg.depth_camera
+        if getattr(cfg, "use_unitree_l2_lidar", False):
+            cfg.scene.unitree_l2_lidar = cfg.unitree_l2_lidar
+        cfg.scene.imu = cfg.imu
+        cfg.scene.terrain = cfg.terrain
+        cfg.scene.light = AssetBaseCfg(
+            prim_path="/World/Light",
+            spawn=sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75)),
+        )
 
-        # Add the perceptive and edge scanners only for vision-based locomotion.
-        if(getattr(self.cfg, "use_vision", False)):
-            self._perceptive_height_scanner = RayCaster(self.cfg.perceptive_height_scanner)
-            self.scene.sensors["perceptive_height_scanner"] = self._perceptive_height_scanner
-
-            self._edge_height_scanner = RayCaster(self.cfg.edge_height_scanner)
-            self.scene.sensors["edge_height_scanner"] = self._edge_height_scanner
-
-        # we add a depth camera if needed for vision-based locomotion
-        if(getattr(self.cfg, "use_depth_camera", False)):
-            self._depth_camera = MultiMeshRayCasterCamera(self.cfg.depth_camera)
-            ##self._depth_camera = TiledCamera(self.cfg.depth_camera)
-            self.scene.sensors["depth_camera"] = self._depth_camera
-            pass
-
-        # we add the Unitree L2 LiDAR if needed for vision-based locomotion
-        if(getattr(self.cfg, "use_unitree_l2_lidar", False)):
-            self._unitree_l2_lidar = MultiMeshRayCaster(self.cfg.unitree_l2_lidar)
-            self.scene.sensors["unitree_l2_lidar"] = self._unitree_l2_lidar
-
-        # we add an imu
-        self._imu = Imu(self.cfg.imu)
-        self.scene.sensors["imu"] = self._imu
-
-        self.cfg.terrain.num_envs = self.scene.cfg.num_envs
-        self.cfg.terrain.env_spacing = self.scene.cfg.env_spacing
-        self._terrain = self.cfg.terrain.class_type(self.cfg.terrain)
-        
-        # clone, filter, and replicate
-        self.scene.clone_environments(copy_from_source=False)
-        self.scene.filter_collisions(global_prim_paths=[self.cfg.terrain.prim_path])
-        
-        # add lights
-        light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
-        light_cfg.func("/World/Light", light_cfg)
+    def _setup_scene(self):
+        self._robot = self.scene["robot"]
+        self._contact_sensor = self.scene["contact_sensor"]
+        self._pose_height_scanner = self.scene["pose_height_scanner"]
+        self._foot_height_scanners = [
+            self.scene[f"{name}_height_scanner"] for name in ("fl_foot", "fr_foot", "rl_foot", "rr_foot")
+        ]
+        if getattr(self.cfg, "use_vision", False):
+            self._perceptive_height_scanner = self.scene["perceptive_height_scanner"]
+            self._edge_height_scanner = self.scene["edge_height_scanner"]
+        if getattr(self.cfg, "use_depth_camera", False):
+            self._depth_camera = self.scene["depth_camera"]
+        if getattr(self.cfg, "use_unitree_l2_lidar", False):
+            self._unitree_l2_lidar = self.scene["unitree_l2_lidar"]
+        self._imu = self.scene["imu"]
+        self._terrain = self.scene.terrain
 
 
     def _pre_physics_step(self, actions: torch.Tensor):
         self._previous_previous_actions = self._previous_actions.clone()
         self._previous_actions = self._actions.clone()
         self._actions = actions.clone()
-        default_joint_pos_ordered = self._robot.data.default_joint_pos[:, self._ids_joints_order]
+        default_joint_pos_ordered = self._robot.data.default_joint_pos.torch[:, self._ids_joints_order]
         
         # Clip the action
         self._actions = torch.clamp(self._actions, -self.cfg.desired_clip_actions, self.cfg.desired_clip_actions)
@@ -279,18 +273,18 @@ class LocomotionEnv(DirectRLEnv):
         if(self.cfg.use_concurrent_state_est):
             # If concurrent SE/Learned State Estimator, we predict linear and angular vel from IMU
             base_linear = custom_observations._get_concurrent_state_estimation(self)
-            base_ang_vel = self._imu.data.ang_vel_b
-            projected_gravity_b = self._imu.data.projected_gravity_b
+            base_ang_vel = self._imu.data.ang_vel_b.torch
+            projected_gravity_b = self._imu.data.projected_gravity_b.torch
         elif(self.cfg.use_imu):
             # Using directly the IMU
-            base_linear = self._imu.data.lin_acc_b
-            base_ang_vel = self._imu.data.ang_vel_b
-            projected_gravity_b = self._imu.data.projected_gravity_b
+            base_linear = self._imu.data.lin_acc_b.torch
+            base_ang_vel = self._imu.data.ang_vel_b.torch
+            projected_gravity_b = self._imu.data.projected_gravity_b.torch
         else:
             #Using a model-based state estimation
-            base_linear = self._robot.data.root_lin_vel_b
-            base_ang_vel = self._robot.data.root_ang_vel_b
-            projected_gravity_b = self._robot.data.projected_gravity_b
+            base_linear = self._robot.data.root_lin_vel_b.torch
+            base_ang_vel = self._robot.data.root_ang_vel_b.torch
+            projected_gravity_b = self._robot.data.projected_gravity_b.torch
         
         
         # Standard Obs for the Actor/Critic
@@ -302,8 +296,8 @@ class LocomotionEnv(DirectRLEnv):
                     base_ang_vel,
                     projected_gravity_b,
                     self._commands,
-                    self._robot.data.joint_pos[:, self._ids_joints_order] - self._robot.data.default_joint_pos[:, self._ids_joints_order],
-                    self._robot.data.joint_vel[:, self._ids_joints_order],
+                    self._robot.data.joint_pos.torch[:, self._ids_joints_order] - self._robot.data.default_joint_pos.torch[:, self._ids_joints_order],
+                    self._robot.data.joint_vel.torch[:, self._ids_joints_order],
                     self._actions,
                     clock_data,
                 )
@@ -323,8 +317,8 @@ class LocomotionEnv(DirectRLEnv):
         # Add heightmap data to obs if needed
         if(getattr(self.cfg, "use_vision", False)):
             height_data = (
-                self._perceptive_height_scanner.data.pos_w[:, 2].unsqueeze(1)
-                - self._perceptive_height_scanner.data.ray_hits_w[..., 2]
+                self._perceptive_height_scanner.data.pos_w.torch[:, 2].unsqueeze(1)
+                - self._perceptive_height_scanner.data.ray_hits_w.torch[..., 2]
                 - 0.5
             )
             height_data = torch.nan_to_num(height_data, nan=0.0, posinf=1.0, neginf=-1.0)
@@ -358,11 +352,11 @@ class LocomotionEnv(DirectRLEnv):
                 [
                     tensor
                     for tensor in (
-                        #self._robot.data.root_quat_w,
-                        self._robot.data.joint_pos[:, self._ids_joints_order],
-                        self._robot.data.joint_vel[:, self._ids_joints_order],
-                        self._robot.data.root_lin_vel_b,
-                        self._robot.data.root_ang_vel_b,
+                        #self._robot.data.root_quat_w.torch,
+                        self._robot.data.joint_pos.torch[:, self._ids_joints_order],
+                        self._robot.data.joint_vel.torch[:, self._ids_joints_order],
+                        self._robot.data.root_lin_vel_b.torch,
+                        self._robot.data.root_ang_vel_b.torch,
                     )
                     if tensor is not None
                 ],
@@ -460,7 +454,7 @@ class LocomotionEnv(DirectRLEnv):
 
     def _get_dones(self) -> tuple[torch.Tensor, torch.Tensor]:
         time_out = self.episode_length_buf >= self.max_episode_length - 1
-        net_contact_forces = self._contact_sensor.data.net_forces_w_history
+        net_contact_forces = self._contact_sensor.data.net_forces_w_history.torch
         died_check_base = torch.any(torch.max(torch.norm(net_contact_forces[:, :, self._base_contact_sensor_id], dim=-1), dim=1)[0] > 1.0, dim=1)
         died_check_hips = torch.any(torch.max(torch.norm(net_contact_forces[:, :, self._hip_contact_sensor_ids], dim=-1), dim=1)[0] > 1.0, dim=1) 
         died = torch.logical_or(died_check_base, died_check_hips)
@@ -469,11 +463,11 @@ class LocomotionEnv(DirectRLEnv):
 
     def _reset_idx(self, env_ids: torch.Tensor | None):
         if env_ids is None or len(env_ids) == self.num_envs:
-            env_ids = self._robot._ALL_INDICES
+            env_ids = torch.arange(self.num_envs, device=self.device)
 
         if(self._terrain.cfg.terrain_generator is not None and self._terrain.cfg.terrain_generator.curriculum == True):
             # Curriculum based on the distance the robot walked
-            distance = torch.norm(self._robot.data.root_state_w[env_ids, :2] - self._terrain.env_origins[env_ids, :2], dim=1)
+            distance = torch.norm(self._robot.data.root_state_w.torch[env_ids, :2] - self._terrain.env_origins[env_ids, :2], dim=1)
             # robots that walked far enough progress to harder terrains
             move_up = distance > self._terrain.cfg.terrain_generator.size[0] / 2
             # robots that walked less than half of their required distance go to simpler terrains
@@ -520,10 +514,10 @@ class LocomotionEnv(DirectRLEnv):
                 self._observation_noise_model_rma.reset(env_ids)
 
         # Reset robot state
-        joint_pos = self._robot.data.default_joint_pos[env_ids]
+        joint_pos = self._robot.data.default_joint_pos.torch[env_ids]
         joint_pos += torch.zeros_like(joint_pos).uniform_(-0.2, 0.2)
-        joint_vel = self._robot.data.default_joint_vel[env_ids]
-        default_root_state = self._robot.data.default_root_state[env_ids]
+        joint_vel = self._robot.data.default_joint_vel.torch[env_ids]
+        default_root_state = self._robot.data.default_root_state.torch[env_ids]
         default_root_state[:, :3] += self._terrain.env_origins[env_ids]
         default_root_state[:, 3:7] = math_utils.random_yaw_orientation(env_ids.shape[0], device=self.device)
         self._robot.write_root_pose_to_sim(default_root_state[:, :7], env_ids)

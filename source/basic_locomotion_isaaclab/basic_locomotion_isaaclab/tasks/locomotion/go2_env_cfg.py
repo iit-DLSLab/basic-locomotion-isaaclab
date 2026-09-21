@@ -14,7 +14,8 @@ from isaaclab.sensors import (
     TiledCameraCfg,
     patterns,
 )
-from isaaclab.sim import SimulationCfg, PhysxCfg
+from isaaclab.sim import SimulationCfg
+from isaaclab_physx.physics import PhysxCfg
 from isaaclab.envs import ViewerCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.sensors import ImuCfg
@@ -228,6 +229,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     sim: SimulationCfg = SimulationCfg(
         dt=1 / 200,
         render_interval=decimation,
+        use_newton_actuators=False,  # Execute the repository's custom actuator models in Python.
         #disable_contact_processing=True,
         physics_material=sim_utils.RigidBodyMaterialCfg(
             friction_combine_mode="multiply",
@@ -236,7 +238,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
             dynamic_friction=1.0,
             restitution=0.0,
         ),
-        physx=PhysxCfg(
+        physics=PhysxCfg(
             gpu_max_rigid_patch_count=2**23,
             #gpu_max_rigid_patch_count= 5 * 2 ** 16,
         ),

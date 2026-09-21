@@ -12,12 +12,12 @@ def _get_concurrent_state_estimation(self):
         [
             tensor
             for tensor in (
-                self._imu.data.lin_acc_b,
-                self._imu.data.ang_vel_b,
-                self._imu.data.projected_gravity_b,
+                self._imu.data.lin_acc_b.torch,
+                self._imu.data.ang_vel_b.torch,
+                self._imu.data.projected_gravity_b.torch,
                 self._commands,
-                self._robot.data.joint_pos[:, self._ids_joints_order] - self._robot.data.default_joint_pos[:, self._ids_joints_order],
-                self._robot.data.joint_vel[:, self._ids_joints_order],
+                self._robot.data.joint_pos.torch[:, self._ids_joints_order] - self._robot.data.default_joint_pos.torch[:, self._ids_joints_order],
+                self._robot.data.joint_vel.torch[:, self._ids_joints_order],
                 self._actions,
             )
             if tensor is not None
@@ -36,7 +36,7 @@ def _get_concurrent_state_estimation(self):
         obs_concurrent_state_est = self._observation_noise_model_concurrent_state_est(obs_concurrent_state_est)
 
     # Saving data
-    output_concurrent_state_est = self._robot.data.root_lin_vel_b
+    output_concurrent_state_est = self._robot.data.root_lin_vel_b.torch
     self._concurrent_state_est_network.dataset.add_sample(obs_concurrent_state_est, output_concurrent_state_est)
 
     # Prediction
@@ -47,7 +47,7 @@ def _get_concurrent_state_estimation(self):
             prediction_concurrent_state_est = self._concurrent_state_est_network(obs_concurrent_state_est)
         linear_velocity_b = prediction_concurrent_state_est[:, :3]
     else:
-        linear_velocity_b = self._robot.data.root_lin_vel_b
+        linear_velocity_b = self._robot.data.root_lin_vel_b.torch
 
     # Train at some interval
     if (num_episode_from_start % self.cfg.concurrent_state_est_ep_saving_interval == 0 and
@@ -68,12 +68,12 @@ def _get_rma(self):
         [
             tensor
             for tensor in (
-                self._imu.data.lin_acc_b,
-                self._imu.data.ang_vel_b,
-                self._robot.data.projected_gravity_b,
+                self._imu.data.lin_acc_b.torch,
+                self._imu.data.ang_vel_b.torch,
+                self._robot.data.projected_gravity_b.torch,
                 self._commands,
-                self._robot.data.joint_pos[:, self._ids_joints_order] - self._robot.data.default_joint_pos[:, self._ids_joints_order],
-                self._robot.data.joint_vel[:, self._ids_joints_order],
+                self._robot.data.joint_pos.torch[:, self._ids_joints_order] - self._robot.data.default_joint_pos.torch[:, self._ids_joints_order],
+                self._robot.data.joint_vel.torch[:, self._ids_joints_order],
                 self._actions,
             )
             if tensor is not None
@@ -136,15 +136,13 @@ def _get_privileged_observation_asymmetric(self):
     thigh_damping = asset.actuators["thigh"].damping
     calf_damping = asset.actuators["calf"].damping
 
-    default_stiffness = asset.data.default_joint_stiffness[0][0]
-    default_damping = asset.data.default_joint_damping[0][0]
 
     # height error
-    height_data_scanner = self._pose_height_scanner.data.ray_hits_w[..., 2]
+    height_data_scanner = self._pose_height_scanner.data.ray_hits_w.torch[..., 2]
     height_data_scanner = torch.nan_to_num(height_data_scanner, nan=0.0, posinf=1.0, neginf=-1.0)
     height_data_scanner = torch.clip(height_data_scanner, min=-5, max=5) # Handle inf values
     mean_height_ray = torch.mean(height_data_scanner, dim=1)
-    height_error = torch.abs(self.cfg.desired_base_height + mean_height_ray - self._robot.data.root_state_w[:, 2])
+    height_error = torch.abs(self.cfg.desired_base_height + mean_height_ray - self._robot.data.root_state_w.torch[:, 2])
 
     # terrain orientation
     height_map_resolution = self._pose_height_scanner.cfg.pattern_cfg.resolution
@@ -166,13 +164,13 @@ def _get_privileged_observation_asymmetric(self):
     delta_s = torch.tensor(distance_between_front_and_back).to(self.device)
     terrain_pitch = -torch.atan2(delta_z, delta_s)
 
-    contacts_foot = self._contact_sensor.data.net_forces_w_history[:, :, self._feet_contact_sensor_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
+    contacts_foot = self._contact_sensor.data.net_forces_w_history.torch[:, :, self._feet_contact_sensor_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
   
 
     obs_privileged = torch.cat((
-                        hip_stiffness/default_stiffness, thigh_stiffness/default_stiffness, calf_stiffness/default_stiffness, #P gain
-                        hip_damping/default_damping, thigh_damping/default_damping, calf_damping/default_damping, #D gain
-                        self._robot.data.root_lin_vel_b,
+                        hip_stiffness/self._nominal_actuator_stiffness["hip"], thigh_stiffness/self._nominal_actuator_stiffness["thigh"], calf_stiffness/self._nominal_actuator_stiffness["calf"], #P gain
+                        hip_damping/self._nominal_actuator_damping["hip"], thigh_damping/self._nominal_actuator_damping["thigh"], calf_damping/self._nominal_actuator_damping["calf"], #D gain
+                        self._robot.data.root_lin_vel_b.torch,
                         height_error.unsqueeze(1),
                         terrain_pitch.unsqueeze(1),
                         contacts_foot,
@@ -180,8 +178,8 @@ def _get_privileged_observation_asymmetric(self):
                     , dim=-1)
 
     """height_data = (
-        self._pose_height_scanner.data.pos_w[:, 2].unsqueeze(1)
-        - self._pose_height_scanner.data.ray_hits_w[..., 2]
+        self._pose_height_scanner.data.pos_w.torch[:, 2].unsqueeze(1)
+        - self._pose_height_scanner.data.ray_hits_w.torch[..., 2]
         - 0.5
     )
     height_data = torch.nan_to_num(height_data, nan=0.0, posinf=1.0, neginf=-1.0)
@@ -204,21 +202,19 @@ def _get_privileged_observation_rma(self):
     thigh_damping = asset.actuators["thigh"].damping
     calf_damping = asset.actuators["calf"].damping
 
-    default_stiffness = asset.data.default_joint_stiffness[0][0]
-    default_damping = asset.data.default_joint_damping[0][0]
 
     # Friction of joints
-    static_friction = asset.data.joint_friction_coeff
-    viscous_friction = asset.data.joint_viscous_friction_coeff
+    static_friction = asset.data.joint_friction_coeff.torch
+    viscous_friction = asset.data.joint_viscous_friction_coeff.torch
     
-    default_static_friction = asset.data.default_joint_friction_coeff
-    default_viscous_friction = asset.data.default_joint_viscous_friction_coeff
+    default_static_friction = asset.data.default_joint_friction_coeff.torch
+    default_viscous_friction = asset.data.default_joint_viscous_friction_coeff.torch
 
 
 
     obs_rma = torch.cat((
-                        hip_stiffness/default_stiffness, thigh_stiffness/default_stiffness, calf_stiffness/default_stiffness, #P gain
-                        hip_damping/default_damping, thigh_damping/default_damping, calf_damping/default_damping, #D gain
+                        hip_stiffness/self._nominal_actuator_stiffness["hip"], thigh_stiffness/self._nominal_actuator_stiffness["thigh"], calf_stiffness/self._nominal_actuator_stiffness["calf"], #P gain
+                        hip_damping/self._nominal_actuator_damping["hip"], thigh_damping/self._nominal_actuator_damping["thigh"], calf_damping/self._nominal_actuator_damping["calf"], #D gain
                         static_friction/default_static_friction, viscous_friction/default_viscous_friction # friction
                         )
                     , dim=-1)

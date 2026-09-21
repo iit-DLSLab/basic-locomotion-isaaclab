@@ -79,4 +79,6 @@ def update_rsl_rl_cfg(agent_cfg: RslRlOnPolicyRunnerCfg, args_cli: argparse.Name
         agent_cfg.wandb_project = args_cli.log_project_name
         agent_cfg.neptune_project = args_cli.log_project_name
 
-    return agent_cfg
+    from isaaclab_rl.rsl_rl import check_rsl_rl_version, handle_deprecated_rsl_rl_cfg
+
+    return handle_deprecated_rsl_rl_cfg(agent_cfg, check_rsl_rl_version())

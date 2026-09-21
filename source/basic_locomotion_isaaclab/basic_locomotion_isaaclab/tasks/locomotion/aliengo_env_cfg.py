@@ -8,7 +8,8 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, MultiMeshRayCasterCameraCfg, TiledCameraCfg, patterns
 from isaaclab.sensors.ray_caster.patterns import PinholeCameraPatternCfg
-from isaaclab.sim import SimulationCfg, PhysxCfg
+from isaaclab.sim import SimulationCfg
+from isaaclab_physx.physics import PhysxCfg
 from isaaclab.envs import ViewerCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.sensors import ImuCfg
@@ -228,7 +229,9 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
     # simulation
     sim: SimulationCfg = SimulationCfg(
         dt=1 / 200,
+        physics=PhysxCfg(),
         render_interval=decimation,
+        use_newton_actuators=False,  # Execute the repository's custom actuator models in Python.
         #disable_contact_processing=True,
         physics_material=sim_utils.RigidBodyMaterialCfg(
             friction_combine_mode="multiply",

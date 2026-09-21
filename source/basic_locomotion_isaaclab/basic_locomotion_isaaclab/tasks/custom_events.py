@@ -51,7 +51,7 @@ def randomize_joint_parameters(
     # joint friction coefficient
     if friction_distribution_params is not None:
         friction_coeff = _randomize_prop_by_op(
-            asset.data.default_joint_friction_coeff.clone(),
+            asset.data.default_joint_friction_coeff.torch.clone(),
             friction_distribution_params,
             env_ids,
             joint_ids,
@@ -67,7 +67,7 @@ def randomize_joint_parameters(
 
         # Randomize raw tensors
         #dynamic_friction_coeff = _randomize_prop_by_op(
-        #    asset.data.default_joint_dynamic_friction_coeff.clone(),
+        #    asset.data.default_joint_dynamic_friction_coeff.torch.clone(),
         #    friction_distribution_params,
         #    env_ids,
         #    joint_ids,
@@ -75,7 +75,7 @@ def randomize_joint_parameters(
         #    distribution=distribution,
         #)
         viscous_friction_coeff = _randomize_prop_by_op(
-            asset.data.default_joint_viscous_friction_coeff.clone(),
+            asset.data.default_joint_viscous_friction_coeff.torch.clone(),
             friction_distribution_params,
             env_ids,
             joint_ids,
@@ -107,7 +107,7 @@ def randomize_joint_parameters(
     # joint armature
     if armature_distribution_params is not None:
         armature = _randomize_prop_by_op(
-            asset.data.default_joint_armature.clone(),
+            asset.data.default_joint_armature.torch.clone(),
             armature_distribution_params,
             env_ids,
             joint_ids,

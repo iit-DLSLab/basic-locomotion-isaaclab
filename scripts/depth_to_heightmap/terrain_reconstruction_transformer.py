@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import math
 from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
 
 import torch
 import torch.nn.functional as F
@@ -465,6 +468,7 @@ def train_terrain_reconstructor(
     learning_rate: float = 3e-4,
     weight_decay: float = 1e-4,
     device: str | torch.device = "cpu",
+    training_evaluation_loader: DataLoader | None = None,
 ) -> list[dict[str, float]]:
     device = torch.device(device)
     model.to(device)
@@ -480,14 +484,16 @@ def train_terrain_reconstructor(
             "train_refined_loss": train_metrics["refined_loss"],
         }
 
-        if validation_loader is not None:
+        for prefix, evaluation_loader in (("train_eval", training_evaluation_loader), ("val", validation_loader)):
+            if evaluation_loader is None:
+                continue
             with torch.no_grad():
-                validation_metrics = _run_epoch(model=model, data_loader=validation_loader, device=device, optimizer=None)
+                evaluation_metrics = _run_epoch(model=model, data_loader=evaluation_loader, device=device, optimizer=None)
             epoch_metrics.update(
                 {
-                    "val_loss": validation_metrics["loss"],
-                    "val_rough_loss": validation_metrics["rough_loss"],
-                    "val_refined_loss": validation_metrics["refined_loss"],
+                    f"{prefix}_loss": evaluation_metrics["loss"],
+                    f"{prefix}_rough_loss": evaluation_metrics["rough_loss"],
+                    f"{prefix}_refined_loss": evaluation_metrics["refined_loss"],
                 }
             )
 
@@ -499,6 +505,8 @@ def train_terrain_reconstructor(
             f"rough={epoch_metrics['train_rough_loss']:.4f}, "
             f"refined={epoch_metrics['train_refined_loss']:.4f}"
         )
+        if training_evaluation_loader is not None:
+            summary += f" | train eval MAE={epoch_metrics['train_eval_refined_loss']:.6f}"
         if validation_loader is not None:
             summary += (
                 f" | val: total={epoch_metrics['val_loss']:.4f}, "
@@ -512,36 +520,86 @@ def train_terrain_reconstructor(
 
 def run_fake_data_smoke_test(
     device: str | torch.device | None = None,
-    num_samples: int = 96,
-    batch_size: int = 8,
-    num_epochs: int = 3,
+    num_samples: int = 512,
+    batch_size: int = 16,
+    num_epochs: int = 100,
+    overfit: bool = False,
+    learning_rate: float = 3e-4,
+    seed: int = 0,
+    target_mae: float = 0.01,
+    output_dir: str | None = None,
 ) -> None:
-    torch.manual_seed(0)
+    if num_samples < (1 if overfit else 2) or batch_size < 1 or num_epochs < 1:
+        raise ValueError("Use positive batch_size/epochs and at least 1 overfit sample or 2 split samples.")
+    if learning_rate <= 0 or target_mae <= 0:
+        raise ValueError("learning_rate and target_mae must be positive.")
+    torch.manual_seed(seed)
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = torch.device(device)
 
-    dataset = FakeTerrainReconstructionDataset(num_samples=num_samples)
-    train_size = int(0.8 * len(dataset))
-    val_size = len(dataset) - train_size
-    train_dataset, val_dataset = random_split(
-        dataset,
-        [train_size, val_size],
-        generator=torch.Generator().manual_seed(0),
+    dataset = FakeTerrainReconstructionDataset(num_samples=num_samples, seed=seed)
+    if overfit:
+        train_dataset, val_dataset = dataset, None
+    else:
+        train_size = int(0.8 * len(dataset))
+        train_dataset, val_dataset = random_split(
+            dataset,
+            [train_size, len(dataset) - train_size],
+            generator=torch.Generator().manual_seed(seed),
+        )
+
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, generator=torch.Generator().manual_seed(seed)
     )
+    train_eval_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False) if val_dataset is not None else None
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-
-    model = MultiModalTerrainReconstructor(proprio_dim=dataset.robot_info.shape[-1])
+    dropout = 0.0 if overfit else 0.1
+    weight_decay = 0.0 if overfit else 1e-4
+    model_config = {
+        "proprio_dim": dataset.robot_info.shape[-1],
+        "heightmap_size": tuple(dataset.heightmaps.shape[-2:]),
+        "dropout": dropout,
+    }
+    model = MultiModalTerrainReconstructor(**model_config).to(device)
+    with torch.no_grad():
+        initial_metrics = _run_epoch(model, train_eval_loader, device, optimizer=None)
+        initial_validation_metrics = (
+            _run_epoch(model, val_loader, device, optimizer=None) if val_loader is not None else None
+        )
+    train_targets = dataset.heightmaps if overfit else dataset.heightmaps[train_dataset.indices]
+    mean_map = train_targets.mean(dim=0, keepdim=True)
+    mean_map_mae = (train_targets - mean_map).abs().mean().item()
+    validation_baseline_mae = (
+        (dataset.heightmaps[val_dataset.indices] - mean_map).abs().mean().item()
+        if val_dataset is not None else None
+    )
+    print(
+        f"Mode={'overfit (evaluation on training samples)' if overfit else '80/20 train/validation split'} | "
+        f"device={device} | samples={num_samples} | updates={len(train_loader) * num_epochs} | "
+        f"dropout={dropout} | weight_decay={weight_decay}\n"
+        f"Initial train MAE={initial_metrics['refined_loss']:.6f} | mean-map baseline MAE={mean_map_mae:.6f}"
+    )
+    if initial_validation_metrics is not None:
+        print(
+            f"Initial validation MAE={initial_validation_metrics['refined_loss']:.6f} | "
+            f"validation mean-map baseline MAE={validation_baseline_mae:.6f} (map fitted on training only)"
+        )
     history = train_terrain_reconstructor(
         model=model,
         train_loader=train_loader,
         validation_loader=val_loader,
         num_epochs=num_epochs,
         device=device,
+        learning_rate=learning_rate,
+        weight_decay=weight_decay,
+        training_evaluation_loader=train_eval_loader,
     )
 
-    sample_depth, sample_robot_info, sample_target = next(iter(val_loader))
+    prediction_loader = val_loader if val_loader is not None else train_eval_loader
+    prediction_split = "validation" if val_loader is not None else "training"
+    sample_depth, sample_robot_info, sample_target = next(iter(prediction_loader))
     sample_depth = sample_depth.to(device)
     sample_robot_info = sample_robot_info.to(device)
     sample_target = sample_target.to(device)
@@ -552,23 +610,115 @@ def run_fake_data_smoke_test(
 
     assert sample_prediction.rough_heightmap.shape == sample_target.shape
     assert sample_prediction.refined_heightmap.shape == sample_target.shape
+    if not all(math.isfinite(value) for metrics in history for value in metrics.values()):
+        raise RuntimeError("Non-finite training/evaluation metrics; the diagnostic failed.")
 
     final_metrics = history[-1]
+    final_mae = final_metrics["train_eval_refined_loss"]
+    run_dir = (
+        Path(output_dir)
+        if output_dir
+        else Path("logs/depth_to_heightmap") / datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    )
+    run_dir.mkdir(parents=True, exist_ok=True)
+    report = {
+        "mode": "overfit" if overfit else "split",
+        "num_samples": num_samples,
+        "train_samples": len(train_dataset),
+        "validation_samples": len(val_dataset) if val_dataset is not None else 0,
+        "batch_size": batch_size,
+        "epochs": num_epochs,
+        "optimizer_updates": len(train_loader) * num_epochs,
+        "seed": seed,
+        "device": str(device),
+        "torch_version": str(torch.__version__),
+        "learning_rate": learning_rate,
+        "weight_decay": weight_decay,
+        "model_config": model_config,
+        "initial_train_metrics": initial_metrics,
+        "initial_validation_metrics": initial_validation_metrics,
+        "mean_map_baseline_mae": mean_map_mae,
+        "validation_mean_map_baseline_mae": validation_baseline_mae,
+        "prediction_split": prediction_split,
+        "target_mae": target_mae,
+        "overfit_target_reached": final_mae <= target_mae if overfit else None,
+        "history": history,
+    }
+    (run_dir / "metrics.json").write_text(json.dumps(report, indent=2) + "\n")
+    torch.save(
+        {"model_state_dict": {k: v.detach().cpu() for k, v in model.state_dict().items()}, "report": report},
+        run_dir / "model.pt",
+    )
+    _save_smoke_test_plots(run_dir, history, sample_target, sample_prediction.refined_heightmap, prediction_split)
     print(
-        "Smoke test passed | "
+        "Synthetic-data diagnostic completed | "
         f"depth={tuple(sample_depth.shape)}, "
         f"robot_info={tuple(sample_robot_info.shape)}, "
         f"heightmap={tuple(sample_prediction.refined_heightmap.shape)}, "
-        f"final_val_loss={final_metrics.get('val_loss', final_metrics['train_loss']):.4f}"
+        f"final_train_MAE={final_mae:.6f} | artifacts={run_dir}"
     )
+    if overfit:
+        print(f"Overfit target MAE <= {target_mae}: {'REACHED' if final_mae <= target_mae else 'NOT REACHED'}")
+    else:
+        print(f"Final validation MAE={final_metrics['val_refined_loss']:.6f}")
+
+
+def _save_smoke_test_plots(
+    run_dir: Path, history: list[dict[str, float]], targets: Tensor, predictions: Tensor,
+    prediction_split: str = "training",
+) -> None:
+    try:
+        import matplotlib
+    except ImportError:
+        print("[INFO] Install matplotlib to generate plots; metrics and model have been saved.")
+        return
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    epochs = [row["epoch"] for row in history]
+    ax.plot(epochs, [row["train_eval_refined_loss"] for row in history], label="Training samples (eval mode)")
+    if "val_refined_loss" in history[0]:
+        ax.plot(epochs, [row["val_refined_loss"] for row in history], label="Held-out validation")
+    ax.set(xlabel="Epoch", ylabel="Refined MAE (synthetic target units)", yscale="log")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(run_dir / "learning_curve.png", dpi=150)
+    plt.close(fig)
+
+    count = min(4, targets.shape[0])
+    fig, axes = plt.subplots(count, 3, figsize=(10, 3 * count), squeeze=False)
+    for index in range(count):
+        target = targets[index, 0].detach().cpu().numpy()
+        prediction = predictions[index, 0].detach().cpu().numpy()
+        low, high = min(target.min(), prediction.min()), max(target.max(), prediction.max())
+        panels = ((target, "Target"), (prediction, "Prediction"), (abs(prediction - target), "Absolute error"))
+        for column, (values, title) in enumerate(panels):
+            limits = {"vmin": low, "vmax": high} if column < 2 else {"vmin": 0}
+            plot = axes[index, column].imshow(values, **limits)
+            axes[index, column].set_title(title)
+            fig.colorbar(plot, ax=axes[index, column])
+    fig.tight_layout()
+    fig.savefig(run_dir / f"{prediction_split}_predictions.png", dpi=150)
+    plt.close(fig)
 
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Fake-data smoke test for the terrain reconstruction transformer.")
     parser.add_argument("--device", type=str, default=None, help="Training device. Defaults to cuda if available.")
-    parser.add_argument("--num_samples", type=int, default=96, help="Number of fake samples.")
-    parser.add_argument("--batch_size", type=int, default=8, help="Batch size for the fake-data smoke test.")
-    parser.add_argument("--epochs", type=int, default=3, help="Number of fake-data training epochs.")
+    parser.add_argument("--num_samples", type=int, default=512, help="Number of fixed synthetic samples.")
+    parser.add_argument("--batch_size", type=int, default=16, help="Training batch size.")
+    parser.add_argument("--epochs", type=int, default=100, help="Number of synthetic-data training epochs.")
+    parser.add_argument(
+        "--overfit", action="store_true",
+        help="Train/evaluate on all samples with dropout and weight decay disabled.",
+    )
+    parser.add_argument("--learning_rate", type=float, default=3e-4)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument(
+        "--target_mae", type=float, default=0.01, help="Overfit success threshold in synthetic target units."
+    )
+    parser.add_argument("--output_dir", type=str, default=None, help="Directory for metrics, checkpoint, and plots.")
     return parser.parse_args()
 
 
@@ -590,4 +740,9 @@ if __name__ == "__main__":
         num_samples=args.num_samples,
         batch_size=args.batch_size,
         num_epochs=args.epochs,
+        overfit=args.overfit,
+        learning_rate=args.learning_rate,
+        seed=args.seed,
+        target_mae=args.target_mae,
+        output_dir=args.output_dir,
     )

@@ -170,7 +170,7 @@ class TerrainReconstructionDatasetBuilder:
 
 
 def _sanitize_depth_data(env: RslRlVecEnvWrapper) -> torch.Tensor:
-    depth_data = env.unwrapped._depth_camera.data.output["distance_to_image_plane"]
+    depth_data = env.unwrapped._depth_camera.data.output["distance_to_image_plane"].torch
     depth_data = torch.nan_to_num(depth_data, nan=0.0, posinf=1.0, neginf=-1.0)
     depth_data = depth_data.clip(-2.0, 2.0)
     depth_data = depth_data.permute(0, 3, 1, 2)
@@ -195,8 +195,8 @@ def _get_heightmap_grid_shape(env: RslRlVecEnvWrapper, num_rays: int) -> tuple[i
 
 def _get_heightmap_targets(env: RslRlVecEnvWrapper) -> tuple[torch.Tensor, tuple[int, int]]:
     height_data = (
-        env.unwrapped._perceptive_height_scanner.data.pos_w[:, 2].unsqueeze(1)
-        - env.unwrapped._perceptive_height_scanner.data.ray_hits_w[..., 2]
+        env.unwrapped._perceptive_height_scanner.data.pos_w.torch[:, 2].unsqueeze(1)
+        - env.unwrapped._perceptive_height_scanner.data.ray_hits_w.torch[..., 2]
         - 0.5
     )
     height_data = torch.nan_to_num(height_data, nan=0.0, posinf=1.0, neginf=-1.0)
@@ -233,6 +233,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     agent_cfg = cli_args.update_rsl_rl_cfg(agent_cfg, args_cli)
     env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
 
+    env_cfg.use_depth_camera = True
     env_cfg.seed = agent_cfg.seed
     env_cfg.sim.device = args_cli.device if args_cli.device is not None else env_cfg.sim.device
 
@@ -322,6 +323,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         with torch.no_grad():
             actions = policy(obs)
             obs, _, dones, _ = env.step(actions)
+            policy.reset(dones)
             dones = dones.bool()
 
             current_depth = _sanitize_depth_data(env)
