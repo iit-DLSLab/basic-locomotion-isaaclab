@@ -1,5 +1,10 @@
 ## Installation Train
 
+This branch targets Python 3.12 with Isaac Sim 6.1.0. Its optional `wandb`
+extra pins the complete compatibility profile used for training, including the
+exact NVIDIA dependency versions that otherwise conflict with recent W&B and
+IPython releases.
+
 1. Install Isaac Lab by following the [installation guide](https://github.com/isaac-sim/IsaacLab). We recommend using the conda installation as it simplifies calling Python scripts from the terminal.
 
 2. Install git for very large file
@@ -10,11 +15,17 @@ sudo apt install git-lfs
 3. Clone the repository separately from the Isaac Lab installation (i.e. outside the `IsaacLab` directory)
 
 
-4. Using a python interpreter that has Isaac Lab installed, install the library
+4. Using the Python interpreter from the Isaac Lab environment, install the
+library and the pinned training dependencies, then verify the environment:
 
 ```bash
-python -m pip install -e source/basic_locomotion_isaaclab
+python -m pip install -e './source/basic_locomotion_isaaclab[wandb]'
+python -m pip check
 ```
+
+`pip check` must report `No broken requirements found.` Do not install a newer
+W&B, IPython, ONNX Runtime, NumPy, or Click on top of this profile: Isaac Sim
+6.1 pins versions of their shared dependencies.
 
 5. If you want to play with [Morphologycal Symmetries](https://arxiv.org/pdf/2403.17320), install the repo [morphosymm-rl](https://github.com/iit-DLSLab/morphosymm-rl)
 
@@ -31,11 +42,9 @@ python scripts/rsl_rl/train.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=
 
 ### Weights & Biases metrics
 
-Install the optional W&B dependency in the same Python environment as IsaacLab,
-then authenticate once:
+The pinned W&B dependency is installed by step 4. Authenticate once:
 
 ```bash
-python -m pip install -e './source/basic_locomotion_isaaclab[wandb]'
 wandb login
 ```
 
