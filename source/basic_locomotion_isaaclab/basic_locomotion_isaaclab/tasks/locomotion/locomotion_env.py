@@ -47,6 +47,7 @@ from .pegasus_env_cfg import PegasusFlatEnvCfg, PegasusRoughVisionEnvCfg, Pegasu
 
 from basic_locomotion_isaaclab.tasks import custom_observations, custom_rewards, custom_events
 from basic_locomotion_isaaclab.tasks.supervised_learning_networks import FrozenRandomMlpEncoder, create_supervised_network
+from basic_locomotion_isaaclab.tasks.training_metrics import locomotion_metrics
 
 class LocomotionEnv(DirectRLEnv):
 
@@ -56,6 +57,7 @@ class LocomotionEnv(DirectRLEnv):
 
         # Joint position command (deviation from default joint positions)
         self._actions = torch.zeros(self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device)
+        self._unclipped_actions = torch.zeros_like(self._actions)
         self._previous_actions = torch.zeros(
             self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device
         )
@@ -203,6 +205,13 @@ class LocomotionEnv(DirectRLEnv):
             self.set_debug_vis(True)
 
 
+    def step(self, actions: torch.Tensor):
+        # RSL-RL retains each log dictionary by reference. Start each step with
+        # a new object so completed-episode values are not emitted repeatedly.
+        self.extras["log"] = {}
+        return super().step(actions)
+
+
     def _setup_scene(self):
         self._robot = Articulation(self.cfg.robot)
         self.scene.articulations["robot"] = self._robot
@@ -279,11 +288,13 @@ class LocomotionEnv(DirectRLEnv):
     def _pre_physics_step(self, actions: torch.Tensor):
         self._previous_previous_actions = self._previous_actions.clone()
         self._previous_actions = self._actions.clone()
-        self._actions = actions.clone()
+        self._unclipped_actions = actions.clone()
         default_joint_pos_ordered = self._robot.data.default_joint_pos[:, self._ids_joints_order]
         
         # Clip the action
-        self._actions = torch.clamp(self._actions, -self.cfg.desired_clip_actions, self.cfg.desired_clip_actions)
+        self._actions = torch.clamp(
+            self._unclipped_actions, -self.cfg.desired_clip_actions, self.cfg.desired_clip_actions
+        )
 
         # Filter the action
         if(self.cfg.use_filter_actions):
@@ -507,6 +518,20 @@ class LocomotionEnv(DirectRLEnv):
         # Logging
         for key, value in rewards.items():
             self._episode_sums[key] += value
+        self.extras.setdefault("log", {}).update(
+            locomotion_metrics(
+                commands=self._commands,
+                linear_velocity=self._robot.data.root_lin_vel_b,
+                angular_velocity=self._robot.data.root_ang_vel_b,
+                projected_gravity=self._robot.data.projected_gravity_b,
+                actions=self._actions,
+                previous_actions=self._previous_actions,
+                joint_efforts=self._robot.data.applied_torque,
+                joint_velocities=self._robot.data.joint_vel,
+                action_limit=self.cfg.desired_clip_actions,
+                unclipped_actions=self._unclipped_actions,
+            )
+        )
         lin_vel_command_l1 = torch.sum(torch.abs(self._commands[:, :2]), dim=1)
         tracks_linear_command = lin_vel_command_l1 > 0.01
         lin_vel_l1_error = torch.sum(
@@ -569,6 +594,7 @@ class LocomotionEnv(DirectRLEnv):
         
         # Reset actions and action filtering
         self._actions[env_ids] = 0.0
+        self._unclipped_actions[env_ids] = 0.0
         self._previous_actions[env_ids] = 0.0
         self._previous_previous_actions[env_ids] = 0.0
         
@@ -615,14 +641,15 @@ class LocomotionEnv(DirectRLEnv):
             episodic_sum_avg = torch.mean(self._episode_sums[key][env_ids])
             extras["Episode_Reward/" + key] = episodic_sum_avg / self.max_episode_length_s
             self._episode_sums[key][env_ids] = 0.0
-        self.extras["log"] = dict()
-        self.extras["log"].update(extras)
+        self.extras.setdefault("log", {}).update(extras)
         extras = dict()
         extras["Episode_Metric/lin_vel_l1_error_percent"] = torch.sum(lin_vel_l1_error_percent) / torch.clamp(
             torch.count_nonzero(has_linear_velocity_commands), min=1
         )
-        extras["Episode_Termination/base_contact"] = torch.count_nonzero(self.reset_terminated[env_ids]).item()
-        extras["Episode_Termination/time_out"] = torch.count_nonzero(self.reset_time_outs[env_ids]).item()
+        # Vectors let the logger average over the environments that completed
+        # an episode instead of depending on the reset-batch size.
+        extras["Episode_Termination/contact_fraction"] = self.reset_terminated[env_ids].float().clone()
+        extras["Episode_Termination/timeout_fraction"] = self.reset_time_outs[env_ids].float().clone()
         
         if(self._terrain.cfg.terrain_generator is not None and self._terrain.cfg.terrain_generator.curriculum == True):
             extras["Episode_Curriculum/terrain_levels"] = torch.mean(self._terrain.terrain_levels.float())

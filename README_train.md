@@ -29,6 +29,35 @@ python scripts/rsl_rl/train.py --task=Locomotion-Aliengo-Flat --num_envs=4096
 python scripts/rsl_rl/train.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=4096
 ```
 
+### Weights & Biases metrics
+
+Install the optional W&B dependency in the same Python environment as IsaacLab,
+then authenticate once:
+
+```bash
+python -m pip install -e './source/basic_locomotion_isaaclab[wandb]'
+wandb login
+```
+
+RSL-RL already supports W&B through its logger. For example, a Go2 vision run
+with the additional locomotion diagnostics can be started with:
+
+```bash
+python scripts/rsl_rl/train.py \
+  --task Locomotion-Go2-Rough-Vision \
+  --num_envs 4096 \
+  --max_iterations 8000 \
+  --logger wandb \
+  --log_project_name go2-locomotion \
+  --run_name phase1_go2 \
+  --seed 42
+```
+
+The run reports command-tracking errors, body stability, action saturation and
+smoothness, joint effort, approximate mechanical power, episode rewards and
+termination fractions. These values describe the training rollouts; they are
+not held-out transformer reconstruction metrics.
+
 - To test the policy, you can press:
 ```bash
 python scripts/rsl_rl/play.py --task=Locomotion-Aliengo-Flat --num_envs=16 --visualizer newton
