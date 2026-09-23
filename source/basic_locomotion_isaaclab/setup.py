@@ -27,7 +27,8 @@ setup(
     description=EXTENSION_TOML_DATA["package"]["description"],
     keywords=EXTENSION_TOML_DATA["package"]["keywords"],
     install_requires=INSTALL_REQUIRES,
-    extras_require={"wandb": ["wandb>=0.19,<1"]},
+    # W&B 0.26+ requires Click >= 8.2, while Isaac Sim 6.1 pins Click 8.1.7.
+    extras_require={"wandb": ["wandb>=0.25,<0.26"]},
     license="Apache 2.0",
     include_package_data=True,
     python_requires=">=3.10",
