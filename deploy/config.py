@@ -47,7 +47,7 @@ elif(robot == "pegasus"):
     Kp_stand_up_and_down = 200.
     Kd_stand_up_and_down = 10.
 
-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/blind"
+    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_symm_blind"
 
 else:
     raise ValueError(f"Robot {robot} not supported")

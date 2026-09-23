@@ -96,6 +96,9 @@ class PlayMujoco:
                 imu_linear_acceleration = self.mjData.sensordata[0:3]
                 imu_angular_velocity = self.mjData.sensordata[3:6]
                 imu_orientation = self.mjData.sensordata[9:13]
+                if(config.robot == "pegasus"):
+                    # TEMPORARY FIX for pegasus
+                    imu_orientation = base_quat_wxyz
             else:
                 imu_linear_acceleration = np.zeros(3)
                 imu_angular_velocity = np.zeros(3)

@@ -296,6 +296,10 @@ class ControllerROS2(Node):
         self.mjData.qvel[0:3] = copy.deepcopy(self.linear_velocity)
 
         if(config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]):
+            if(config.robot == "pegasus"):
+                # TEMPORARY FIX for pegasus
+                self.imu_orientation = copy.deepcopy(self.orientation)
+            
             self.mjData.qpos[3:7] = copy.deepcopy(self.imu_orientation)
             self.mjData.qvel[3:6] = copy.deepcopy(self.imu_angular_velocity)
         else:

@@ -113,10 +113,15 @@ class SimulatorROS2(Node):
         self.last_render_time = time.time()
         self.step_num = 0
 
-        resolution_heightmap = config.training_env["perceptive_height_scanner"]["pattern_cfg"]["resolution"]
-        num_rows_heightmap = round(config.training_env["perceptive_height_scanner"]["pattern_cfg"]["size"][0]/resolution_heightmap) + 1
-        num_cols_heightmap = round(config.training_env["perceptive_height_scanner"]["pattern_cfg"]["size"][1]/resolution_heightmap) + 1
-        self.heightmap = HeightMap(num_rows=num_rows_heightmap, num_cols=num_cols_heightmap, dist_x=resolution_heightmap, dist_y=resolution_heightmap, mj_model=self.mjModel, mj_data=self.mjData)
+        try:
+            self.use_vision = config.training_env["use_vision"]
+        except:
+            self.use_vision = False
+        if(self.use_vision):
+            resolution_heightmap = config.training_env["perceptive_height_scanner"]["pattern_cfg"]["resolution"]
+            num_rows_heightmap = round(config.training_env["perceptive_height_scanner"]["pattern_cfg"]["size"][0]/resolution_heightmap) + 1
+            num_cols_heightmap = round(config.training_env["perceptive_height_scanner"]["pattern_cfg"]["size"][1]/resolution_heightmap) + 1
+            self.heightmap = HeightMap(num_rows=num_rows_heightmap, num_cols=num_cols_heightmap, dist_x=resolution_heightmap, dist_y=resolution_heightmap, mj_model=self.mjModel, mj_data=self.mjData)
 
         # Desired PD
         self.desired_joints_position = np.zeros(12)
@@ -153,7 +158,7 @@ class SimulatorROS2(Node):
         base_pos = mujoco_utils.base_pos(self.mjData)
 
         # Publish Height Map ------------------------------------------------
-        if self.step_num % round(SCHEDULER_FREQ/HEIGHTMAP_FREQ) == 0 and config.training_env["use_vision"]:
+        if self.step_num % round(SCHEDULER_FREQ/HEIGHTMAP_FREQ) == 0 and self.use_vision:
             base_ori_euler_xyz = mujoco_utils.base_ori_euler_xyz(self.mjData)
             heading_orientation_SO3 = mujoco_utils.heading_orientation_SO3(self.mjData)
             offset_world_frame = config.training_env["perceptive_height_scanner"]["offset"]["pos"] @ heading_orientation_SO3.T
@@ -273,7 +278,7 @@ class SimulatorROS2(Node):
         if time.time() - self.last_render_time > 1.0 / RENDER_FREQ:
             self.viewer.cam.lookat[:] = base_pos
 
-            if config.training_env["use_vision"] and self.heightmap.data is not None:
+            if self.use_vision and self.heightmap.data is not None:
                 for i in range(self.heightmap.data.shape[0]):
                     for j in range(self.heightmap.data.shape[1]):
                         self.heightmap.geom_ids[i, j] = mujoco_utils.render_sphere(
