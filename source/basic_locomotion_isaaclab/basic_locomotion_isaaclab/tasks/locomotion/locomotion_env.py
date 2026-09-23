@@ -20,6 +20,8 @@ from isaaclab.sensors import (
     ContactSensor,
     ContactSensorCfg,
     Imu,
+    Pva,
+    PvaCfg,
     MultiMeshRayCaster,
     MultiMeshRayCasterCamera,
     MultiMeshRayCasterCameraCfg,
@@ -252,6 +254,17 @@ class LocomotionEnv(DirectRLEnv):
         self._imu = Imu(self.cfg.imu)
         self.scene.sensors["imu"] = self._imu
 
+        # Report ideal projected gravity in the same frame as the IMU measurements.
+        self._pva = Pva(PvaCfg(
+            prim_path=self.cfg.imu.prim_path,
+            update_period=self.cfg.imu.update_period,
+            offset=PvaCfg.OffsetCfg(
+                pos=self.cfg.imu.offset.pos,
+                rot=self.cfg.imu.offset.rot,
+            ),
+        ))
+        self.scene.sensors["pva"] = self._pva
+
         self.cfg.terrain.num_envs = self.scene.cfg.num_envs
         self.cfg.terrain.env_spacing = self.scene.cfg.env_spacing
         self._terrain = self.cfg.terrain.class_type(self.cfg.terrain)
@@ -332,12 +345,12 @@ class LocomotionEnv(DirectRLEnv):
             # If concurrent SE/Learned State Estimator, we predict linear and angular vel from IMU
             base_linear = custom_observations._get_concurrent_state_estimation(self)
             base_ang_vel = self._imu.data.ang_vel_b
-            projected_gravity_b = self._robot.data.projected_gravity_b
+            projected_gravity_b = self._pva.data.projected_gravity_b
         elif(self.cfg.use_imu):
             # Using directly the IMU
             base_linear = self._imu.data.lin_acc_b
             base_ang_vel = self._imu.data.ang_vel_b
-            projected_gravity_b = self._robot.data.projected_gravity_b
+            projected_gravity_b = self._pva.data.projected_gravity_b
         else:
             #Using a model-based state estimation
             base_linear = self._robot.data.root_lin_vel_b
