@@ -97,7 +97,7 @@ simulation_app = app_launcher.app
 
 """Rest everything follows."""
 
-import importlib.metadata as metadata
+import importlib.metadata as importlib_metadata
 
 import gymnasium as gym
 import torch
@@ -233,7 +233,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     train_task_name = task_name.replace("-Play", "")
 
     agent_cfg = cli_args.update_rsl_rl_cfg(agent_cfg, args_cli)
-    agent_cfg = handle_deprecated_rsl_rl_cfg(agent_cfg, metadata.version("rsl-rl-lib"))
+    agent_cfg = handle_deprecated_rsl_rl_cfg(agent_cfg, importlib_metadata.version("rsl-rl-lib"))
     env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
 
     env_cfg.seed = agent_cfg.seed

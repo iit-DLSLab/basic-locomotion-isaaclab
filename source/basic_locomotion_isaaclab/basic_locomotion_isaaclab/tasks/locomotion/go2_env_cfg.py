@@ -543,7 +543,7 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
     depth_camera = MultiMeshRayCasterCameraCfg(
         prim_path="/World/envs/env_.*/Robot/base",
         update_period=1 / 60,
-        offset=MultiMeshRayCasterCameraCfg.OffsetCfg(pos=(0.33, 0.0, 0.08), rot=(-0.405579, 0.579228, -0.579228, 0.405579)),
+        offset=MultiMeshRayCasterCameraCfg.OffsetCfg(pos=(0.33, 0.0, 0.08), rot=(0.579228, -0.579228, 0.405579, -0.405579)),
         mesh_prim_paths=[
             "/World/ground",
             #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/base/visuals"),
