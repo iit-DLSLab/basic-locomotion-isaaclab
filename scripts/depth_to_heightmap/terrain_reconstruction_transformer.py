@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import bisect
 import math
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
 from torch.utils.data import DataLoader, Dataset, random_split
+from tqdm import tqdm
+
 
 
 def _make_group_norm(num_channels: int) -> nn.GroupNorm:
@@ -321,8 +326,17 @@ class MultiModalTerrainReconstructor(nn.Module):
         )
 
 
-def compute_reconstruction_losses(prediction: TerrainReconstructionOutput, target_heightmap: Tensor) -> dict[str, Tensor]:
-    rough_loss = F.mse_loss(prediction.rough_heightmap, target_heightmap)
+def compute_reconstruction_losses(
+    prediction: TerrainReconstructionOutput, target_heightmap: Tensor, rough_loss_type: str = "mse"
+) -> dict[str, Tensor]:
+    # With small-valued targets, MSE on the rough stage yields gradients far weaker than the L1 on the
+    # refined stage, so the rough decoder barely trains; "l1" gives both stages comparable gradients.
+    if rough_loss_type == "l1":
+        rough_loss = F.l1_loss(prediction.rough_heightmap, target_heightmap)
+    elif rough_loss_type == "mse":
+        rough_loss = F.mse_loss(prediction.rough_heightmap, target_heightmap)
+    else:
+        raise ValueError(f"Unknown rough_loss_type: {rough_loss_type}")
     refined_loss = F.l1_loss(prediction.refined_heightmap, target_heightmap)
     total_loss = rough_loss + refined_loss
     return {
@@ -387,21 +401,44 @@ class FakeTerrainReconstructionDataset(Dataset):
         return self.depth_data[index], self.robot_info[index], self.heightmaps[index]
 
 
+class _ConcatenatedRows:
+    """Rows of same-shaped tensors concatenated along dim 0 without copying them (they stay memory-mapped)."""
+
+    def __init__(self, tensors: list[Tensor]):
+        self.tensors = tensors
+        self.offsets = [0]
+        for tensor in tensors:
+            self.offsets.append(self.offsets[-1] + tensor.shape[0])
+        self.shape = torch.Size((self.offsets[-1], *tensors[0].shape[1:]))
+
+    def __getitem__(self, index: int) -> Tensor:
+        shard = bisect.bisect_right(self.offsets, index) - 1
+        return self.tensors[shard][index - self.offsets[shard]]
+
+
 class SavedTerrainReconstructionDataset(Dataset):
-    def __init__(self, dataset_path: str):
+    """One or more collected dataset files, read lazily.
+
+    The files are memory-mapped: depth and robot info stay on disk (cached by the OS) and each sample is read and
+    converted to float32 when accessed, so datasets larger than RAM work. Only the small targets are kept in RAM.
+    """
+
+    def __init__(self, dataset_path: str | Sequence[str], target_key: str = "heightmaps"):
         super().__init__()
-        dataset = torch.load(dataset_path, map_location="cpu")
+        dataset_paths = [dataset_path] if isinstance(dataset_path, (str, Path)) else list(dataset_path)
+        shards = [torch.load(str(path), map_location="cpu", mmap=True) for path in dataset_paths]
 
-        required_keys = {"depth_data", "robot_info", "heightmaps"}
-        missing_keys = required_keys.difference(dataset)
-        if missing_keys:
-            missing = ", ".join(sorted(missing_keys))
-            raise KeyError(f"Dataset at {dataset_path} is missing required keys: {missing}")
+        required_keys = {"depth_data", "robot_info", target_key}
+        for path, shard in zip(dataset_paths, shards):
+            missing_keys = required_keys.difference(shard)
+            if missing_keys:
+                missing = ", ".join(sorted(missing_keys))
+                raise KeyError(f"Dataset at {path} is missing required keys: {missing}")
 
-        self.depth_data = dataset["depth_data"].float()
-        self.robot_info = dataset["robot_info"].float()
-        self.heightmaps = dataset["heightmaps"].float()
-        self.metadata = dataset.get("metadata", {})
+        self.depth_data = _ConcatenatedRows([shard["depth_data"] for shard in shards])
+        self.robot_info = _ConcatenatedRows([shard["robot_info"] for shard in shards])
+        self.heightmaps = torch.cat([shard[target_key].float() for shard in shards])
+        self.metadata = shards[0].get("metadata", {})
 
         dataset_size = self.depth_data.shape[0]
         if self.robot_info.shape[0] != dataset_size or self.heightmaps.shape[0] != dataset_size:
@@ -411,7 +448,7 @@ class SavedTerrainReconstructionDataset(Dataset):
         return self.depth_data.shape[0]
 
     def __getitem__(self, index: int) -> tuple[Tensor, Tensor, Tensor]:
-        return self.depth_data[index], self.robot_info[index], self.heightmaps[index]
+        return self.depth_data[index].float(), self.robot_info[index].float(), self.heightmaps[index]
 
 
 def _run_epoch(
@@ -419,7 +456,12 @@ def _run_epoch(
     data_loader: DataLoader,
     device: torch.device,
     optimizer: torch.optim.Optimizer | None,
+    target_mean: float = 0.0,
+    target_std: float = 1.0,
+    rough_loss_type: str = "mse",
 ) -> dict[str, float]:
+    """Run one epoch. Losses are computed on normalized targets ``(target - target_mean) / target_std``;
+    ``refined_mae_m`` reports the refined error back in metres."""
     is_training = optimizer is not None
     model.train(mode=is_training)
 
@@ -428,17 +470,20 @@ def _run_epoch(
     total_refined_loss = 0.0
     total_samples = 0
 
-    for depth_data, robot_info, target_heightmap in data_loader:
+    progress = tqdm(data_loader, desc="train" if is_training else "val", leave=False, dynamic_ncols=True)
+    for depth_data, robot_info, target_heightmap in progress:
         depth_data = depth_data.to(device)
         robot_info = robot_info.to(device)
-        target_heightmap = target_heightmap.to(device)
+        target_heightmap = (target_heightmap.to(device) - target_mean) / target_std
 
         if is_training:
             optimizer.zero_grad(set_to_none=True)
 
         with torch.set_grad_enabled(is_training):
             prediction = model(depth_data=depth_data, robot_info=robot_info)
-            losses = compute_reconstruction_losses(prediction=prediction, target_heightmap=target_heightmap)
+            losses = compute_reconstruction_losses(
+                prediction=prediction, target_heightmap=target_heightmap, rough_loss_type=rough_loss_type
+            )
 
         if is_training:
             losses["loss"].backward()
@@ -449,11 +494,13 @@ def _run_epoch(
         total_loss += losses["loss"].item() * batch_size
         total_rough_loss += losses["rough_loss"].item() * batch_size
         total_refined_loss += losses["refined_loss"].item() * batch_size
+        progress.set_postfix(loss=f"{total_loss / total_samples:.4f}")
 
     return {
         "loss": total_loss / max(total_samples, 1),
         "rough_loss": total_rough_loss / max(total_samples, 1),
         "refined_loss": total_refined_loss / max(total_samples, 1),
+        "refined_mae_m": total_refined_loss / max(total_samples, 1) * target_std,
     }
 
 
@@ -465,33 +512,63 @@ def train_terrain_reconstructor(
     learning_rate: float = 3e-4,
     weight_decay: float = 1e-4,
     device: str | torch.device = "cpu",
+    epoch_callback: Callable[[dict[str, float]], None] | None = None,
+    target_mean: float = 0.0,
+    target_std: float = 1.0,
+    rough_loss_type: str = "mse",
+    lr_schedule: str = "constant",
+    restore_best: bool = False,
 ) -> list[dict[str, float]]:
+    """Train the reconstructor. With ``restore_best`` and a validation loader, the model ends with the weights
+    of the epoch with the lowest validation refined loss instead of the last epoch."""
     device = torch.device(device)
     model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    if lr_schedule == "cosine":
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=0.01 * learning_rate)
+    elif lr_schedule == "constant":
+        scheduler = None
+    else:
+        raise ValueError(f"Unknown lr_schedule: {lr_schedule}")
+    epoch_kwargs = dict(target_mean=target_mean, target_std=target_std, rough_loss_type=rough_loss_type)
 
+    best_val_loss = float("inf")
+    best_state: dict[str, Tensor] | None = None
     history: list[dict[str, float]] = []
-    for epoch in range(num_epochs):
-        train_metrics = _run_epoch(model=model, data_loader=train_loader, device=device, optimizer=optimizer)
+    for epoch in tqdm(range(num_epochs), desc="epochs", dynamic_ncols=True):
+        current_lr = optimizer.param_groups[0]["lr"]
+        train_metrics = _run_epoch(model=model, data_loader=train_loader, device=device, optimizer=optimizer, **epoch_kwargs)
+        if scheduler is not None:
+            scheduler.step()
         epoch_metrics = {
             "epoch": float(epoch + 1),
+            "lr": current_lr,
             "train_loss": train_metrics["loss"],
             "train_rough_loss": train_metrics["rough_loss"],
             "train_refined_loss": train_metrics["refined_loss"],
+            "train_refined_mae_m": train_metrics["refined_mae_m"],
         }
 
         if validation_loader is not None:
             with torch.no_grad():
-                validation_metrics = _run_epoch(model=model, data_loader=validation_loader, device=device, optimizer=None)
+                validation_metrics = _run_epoch(
+                    model=model, data_loader=validation_loader, device=device, optimizer=None, **epoch_kwargs
+                )
             epoch_metrics.update(
                 {
                     "val_loss": validation_metrics["loss"],
                     "val_rough_loss": validation_metrics["rough_loss"],
                     "val_refined_loss": validation_metrics["refined_loss"],
+                    "val_refined_mae_m": validation_metrics["refined_mae_m"],
                 }
             )
+            if restore_best and validation_metrics["refined_loss"] < best_val_loss:
+                best_val_loss = validation_metrics["refined_loss"]
+                best_state = {name: value.detach().cpu().clone() for name, value in model.state_dict().items()}
 
         history.append(epoch_metrics)
+        if epoch_callback is not None:
+            epoch_callback(epoch_metrics)
 
         summary = (
             f"Epoch {epoch + 1}/{num_epochs} | "
@@ -503,11 +580,257 @@ def train_terrain_reconstructor(
             summary += (
                 f" | val: total={epoch_metrics['val_loss']:.4f}, "
                 f"rough={epoch_metrics['val_rough_loss']:.4f}, "
-                f"refined={epoch_metrics['val_refined_loss']:.4f}"
+                f"refined={epoch_metrics['val_refined_loss']:.4f}, "
+                f"MAE={epoch_metrics['val_refined_mae_m'] * 1000:.2f} mm"
             )
-        print(summary)
+        tqdm.write(summary)
+
+    if best_state is not None:
+        model.load_state_dict(best_state)
+        best_epoch = min(history, key=lambda metrics: metrics["val_refined_loss"])["epoch"]
+        tqdm.write(f"[INFO] Restored best weights from epoch {int(best_epoch)} (val refined loss {best_val_loss:.4f}).")
 
     return history
+
+
+
+def run_terrain_reconstruction(
+    path: str | Sequence[str],
+    device: str | torch.device | None = None,
+    batch_size: int = 32,
+    num_epochs: int = 50,
+    model_path: str | None = None,
+    use_wandb: bool = False,
+    wandb_project: str = "go2-locomotion",
+    run_name: str | None = None,
+    target_key: str = "heightmaps",
+    num_workers: int = 0,
+) -> None:
+    dataset_paths = [Path(p).expanduser().resolve() for p in ([path] if isinstance(path, (str, Path)) else path)]
+    for dataset_path in dataset_paths:
+        if not dataset_path.is_file():
+            raise FileNotFoundError(f"Path not found: {dataset_path}")
+    # the first file sets the default output location; several files are trained on as one dataset
+    dataset_path = dataset_paths[0]
+    dataset_path_record = str(dataset_path) if len(dataset_paths) == 1 else [str(p) for p in dataset_paths]
+
+    torch.manual_seed(0)
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+    dataset = SavedTerrainReconstructionDataset(dataset_path=[str(p) for p in dataset_paths], target_key=target_key)
+    train_size = int(0.8 * len(dataset))
+    val_size = int(len(dataset) - train_size)
+    train_dataset, valid_dataset = random_split(
+        dataset=dataset,
+        lengths=[train_size, val_size],
+        generator=torch.Generator().manual_seed(0)
+    )
+    loader_kwargs = {"num_workers": num_workers, "persistent_workers": num_workers > 0}
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, **loader_kwargs)
+    valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, **loader_kwargs)
+
+    model_config = {
+        "proprio_dim": dataset.robot_info.shape[-1],
+        "depth_channels": dataset.depth_data.shape[-3],
+        "heightmap_size": tuple(dataset.heightmaps.shape[-2:]),
+    }
+    model = MultiModalTerrainReconstructor(**model_config)
+
+    # Heights are in metres with millimetre-to-centimetre variations: train on standardized targets so the
+    # losses and their gradients have a sensible scale. The model predicts normalized heights.
+    train_heightmaps = dataset.heightmaps[train_dataset.indices]
+    target_normalization = {
+        "mean": train_heightmaps.mean().item(),
+        "std": max(train_heightmaps.std().item(), 1e-6),
+    }
+    # MAE of always predicting the per-cell train mean: the model must beat this to be useful.
+    baseline_mae = (dataset.heightmaps[valid_dataset.indices] - train_heightmaps.mean(dim=0, keepdim=True)).abs().mean().item()
+    print(
+        f"[INFO] Target normalization: mean={target_normalization['mean']:.4f} m, std={target_normalization['std']:.4f} m | "
+        f"constant-prediction baseline val MAE: {baseline_mae * 1000:.2f} mm"
+    )
+    train_settings = {"rough_loss_type": "l1", "lr_schedule": "cosine", "restore_best": True}
+
+    wandb_run = None
+    epoch_callback = None
+    if use_wandb:
+        import wandb
+
+        wandb_run = wandb.init(
+            project=wandb_project,
+            name=run_name,
+            job_type="terrain_reconstruction",
+            config={
+                **model_config,
+                "model": "transformer",
+                "batch_size": batch_size,
+                "num_epochs": num_epochs,
+                "num_samples": len(dataset),
+                "train_samples": train_size,
+                "val_samples": val_size,
+                "dataset_path": dataset_path_record,
+                "target_key": target_key,
+                "target_mean": target_normalization["mean"],
+                "target_std": target_normalization["std"],
+                **train_settings,
+                **{f"dataset/{key}": value for key, value in dataset.metadata.items()},
+            },
+        )
+        wandb_run.summary["val/constant_baseline_mae_m"] = baseline_mae
+
+        def epoch_callback(metrics: dict[str, float]) -> None:
+            # "train_rough_loss" -> "train/rough_loss", "val_loss" -> "val/loss"
+            logged = {key.replace("_", "/", 1): value for key, value in metrics.items() if key != "epoch"}
+            if "val_refined_mae_m" in metrics:
+                logged["val/refined_mae_over_baseline"] = metrics["val_refined_mae_m"] / max(baseline_mae, 1e-12)
+            wandb_run.log(logged, step=int(metrics["epoch"]))
+
+    history = train_terrain_reconstructor(
+        model=model,
+        train_loader=train_loader,
+        validation_loader=valid_loader,
+        num_epochs=num_epochs,
+        device=device,
+        epoch_callback=epoch_callback,
+        target_mean=target_normalization["mean"],
+        target_std=target_normalization["std"],
+        **train_settings,
+    )
+    best_metrics = min(history, key=lambda metrics: metrics["val_refined_loss"])
+
+    output_path = Path(model_path) if model_path else dataset_path.with_name("transformer_terrain_reconstructor.pt")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "model_state_dict": {name: parameter.detach().cpu() for name, parameter in model.state_dict().items()},
+            "model_config": model_config,
+            # The model predicts normalized heights: heightmap_m = prediction * std + mean.
+            "target_normalization": target_normalization,
+            "train_settings": train_settings,
+            "best_epoch": int(best_metrics["epoch"]),
+            "dataset_path": dataset_path_record,
+            "target_key": target_key,
+            "dataset_metadata": dataset.metadata,
+            "history": history,
+        },
+        output_path,
+    )
+    print(
+        f"[INFO] Saved transformer model checkpoint (best epoch {int(best_metrics['epoch'])}, "
+        f"val MAE {best_metrics['val_refined_mae_m'] * 1000:.2f} mm vs baseline {baseline_mae * 1000:.2f} mm) to: {output_path}"
+    )
+
+    # Split the validation error by terrain type: flat samples dominate the dataset and hide how the model
+    # does on actual terrain.
+    val_target, val_prediction = _predict_heightmaps(model, valid_loader, device, target_normalization)
+    non_flat = val_target.flatten(1).std(dim=1) >= NON_FLAT_STD_THRESHOLD_M
+    constant_prediction = train_heightmaps.mean(dim=0, keepdim=True)
+    split_metrics = {}
+    for split_name, mask in (("flat", ~non_flat), ("non_flat", non_flat)):
+        if mask.any():
+            split_metrics[f"val/{split_name}_mae_m"] = (val_prediction[mask] - val_target[mask]).abs().mean().item()
+            split_metrics[f"val/{split_name}_constant_baseline_mae_m"] = (
+                (constant_prediction - val_target[mask]).abs().mean().item()
+            )
+        split_metrics[f"val/{split_name}_samples"] = int(mask.sum().item())
+    print(
+        "[INFO] Val MAE by terrain | "
+        + " | ".join(
+            f"{split_name}: {split_metrics[f'val/{split_name}_mae_m'] * 1000:.2f} mm "
+            f"(constant {split_metrics[f'val/{split_name}_constant_baseline_mae_m'] * 1000:.2f} mm, "
+            f"n={split_metrics[f'val/{split_name}_samples']})"
+            for split_name in ("flat", "non_flat")
+            if f"val/{split_name}_mae_m" in split_metrics
+        )
+    )
+
+    if wandb_run is not None:
+        wandb_run.summary["best_epoch"] = int(best_metrics["epoch"])
+        wandb_run.summary["best/val_refined_mae_m"] = best_metrics["val_refined_mae_m"]
+        wandb_run.summary.update(split_metrics)
+        wandb_run.log({"heightmaps": _heightmap_comparison_figure(val_target, val_prediction, non_flat)}, step=num_epochs)
+        wandb_run.summary["model_path"] = str(output_path)
+        wandb_run.finish()
+
+
+# A heightmap whose cell heights vary by at least this much (standard deviation) counts as actual terrain.
+NON_FLAT_STD_THRESHOLD_M = 0.01
+
+
+def _predict_heightmaps(
+    model: nn.Module,
+    data_loader: DataLoader,
+    device: str | torch.device,
+    target_normalization: dict[str, float],
+) -> tuple[Tensor, Tensor]:
+    """Return (target, refined prediction) in metres for every sample of the loader, shaped (N, H, W)."""
+    model.eval()
+    targets, predictions = [], []
+    with torch.no_grad():
+        for depth_data, robot_info, target in data_loader:
+            prediction = model(depth_data=depth_data.to(device), robot_info=robot_info.to(device)).refined_heightmap
+            predictions.append(prediction.cpu()[:, 0] * target_normalization["std"] + target_normalization["mean"])
+            targets.append(target[:, 0])
+    return torch.cat(targets), torch.cat(predictions)
+
+
+def _heightmap_comparison_figure(
+    target: Tensor,
+    prediction: Tensor,
+    non_flat: Tensor,
+    num_non_flat: int = 3,
+    num_flat: int = 1,
+    error_scale_mm: float = 30.0,
+    min_height_span_mm: float = 20.0,
+):
+    """Plot target / prediction / |error| in millimetres for a few non-flat samples plus a flat reference.
+
+    Target and prediction share a colour scale per row, spanning at least ``min_height_span_mm``; the error uses
+    the same fixed scale in every row, so rows can be compared at a glance.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import wandb
+
+    generator = torch.Generator().manual_seed(0)
+    non_flat_ids = non_flat.nonzero().flatten()
+    flat_ids = (~non_flat).nonzero().flatten()
+    sample_ids = torch.cat(
+        (
+            non_flat_ids[torch.randperm(len(non_flat_ids), generator=generator)[:num_non_flat]],
+            flat_ids[torch.randperm(len(flat_ids), generator=generator)[:num_flat]],
+        )
+    ).tolist()
+
+    figure, axes = plt.subplots(len(sample_ids), 3, figsize=(7.5, 2.6 * len(sample_ids)), squeeze=False)
+    for row, sample_id in enumerate(sample_ids):
+        target_map, predicted_map = target[sample_id] * 1000, prediction[sample_id] * 1000
+        vmin = min(target_map.min().item(), predicted_map.min().item())
+        vmax = max(target_map.max().item(), predicted_map.max().item())
+        # Enforce a minimum colour span: otherwise sub-millimetre noise on flat samples is stretched over the
+        # whole colormap and looks like real terrain.
+        if vmax - vmin < min_height_span_mm:
+            center = 0.5 * (vmax + vmin)
+            vmin, vmax = center - 0.5 * min_height_span_mm, center + 0.5 * min_height_span_mm
+        kind = "non-flat" if non_flat[sample_id] else "flat"
+        panels = (
+            (target_map, f"target [mm] ({kind})", dict(vmin=vmin, vmax=vmax)),
+            (predicted_map, "prediction [mm]", dict(vmin=vmin, vmax=vmax)),
+            ((predicted_map - target_map).abs(), "|error| [mm]", dict(cmap="magma", vmin=0.0, vmax=error_scale_mm)),
+        )
+        for column, (image, title, kwargs) in enumerate(panels):
+            axis = axes[row, column]
+            figure.colorbar(axis.imshow(image.numpy(), **kwargs), ax=axis, fraction=0.046)
+            axis.set_title(title, fontsize=9)
+            axis.set_xticks([])
+            axis.set_yticks([])
+    figure.tight_layout()
+    image = wandb.Image(figure)
+    plt.close(figure)
+    return image
+
 
 
 def run_fake_data_smoke_test(
@@ -564,11 +887,49 @@ def run_fake_data_smoke_test(
 
 
 def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Fake-data smoke test for the terrain reconstruction transformer.")
+    parser = argparse.ArgumentParser(description="Train the terrain reconstruction transformer.")
+    parser.add_argument(
+        "--dataset_path",
+        type=str,
+        nargs="+",
+        default="logs/rsl_rl/rough_direct/2026-09-23_11-00-59_phase1_go2/terrain_reconstruction_dataset.pt",
+        help=(
+            "Path to a collected terrain_reconstruction_dataset.pt file, or several files trained on as one dataset."
+            " If omitted, runs a fake-data smoke test."
+        ),
+    )
     parser.add_argument("--device", type=str, default=None, help="Training device. Defaults to cuda if available.")
     parser.add_argument("--num_samples", type=int, default=96, help="Number of fake samples.")
-    parser.add_argument("--batch_size", type=int, default=8, help="Batch size for the fake-data smoke test.")
-    parser.add_argument("--epochs", type=int, default=3, help="Number of fake-data training epochs.")
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=None,
+        help="Training batch size. Defaults to 32 for saved datasets and 8 for fake-data smoke tests.",
+    )
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=None,
+        help="Number of training epochs. Defaults to 50 for saved datasets and 3 for fake-data smoke tests.",
+    )
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        default=None,
+        help="Where to save the trained model. Defaults to <dataset_dir>/transformer_terrain_reconstructor.pt.",
+    )
+    parser.add_argument("--wandb", action="store_true", help="Log training metrics to Weights & Biases.")
+    parser.add_argument("--wandb_project", type=str, default="go2-locomotion", help="W&B project name.")
+    parser.add_argument("--run_name", type=str, default=None, help="W&B run name.")
+    parser.add_argument(
+        "--target_key",
+        type=str,
+        default="heightmaps",
+        help="Dataset key of the target heightmaps, e.g. 'heightmaps_shifted' for the grid moved toward the camera.",
+    )
+    parser.add_argument(
+        "--num_workers", type=int, default=0, help="DataLoader worker processes that read samples from disk."
+    )
     return parser.parse_args()
 
 
@@ -579,15 +940,30 @@ __all__ = [
     "TerrainReconstructionOutput",
     "compute_reconstruction_losses",
     "run_fake_data_smoke_test",
+    "run_terrain_reconstruction",
     "train_terrain_reconstructor",
 ]
 
 
 if __name__ == "__main__":
     args = _parse_args()
-    run_fake_data_smoke_test(
-        device=args.device,
-        num_samples=args.num_samples,
-        batch_size=args.batch_size,
-        num_epochs=args.epochs,
-    )
+    if args.dataset_path:
+        run_terrain_reconstruction(
+            path=args.dataset_path,
+            device=args.device,
+            batch_size=args.batch_size if args.batch_size is not None else 32,
+            num_epochs=args.epochs if args.epochs is not None else 50,
+            model_path=args.model_path,
+            use_wandb=args.wandb,
+            wandb_project=args.wandb_project,
+            run_name=args.run_name,
+            target_key=args.target_key,
+            num_workers=args.num_workers,
+        )
+    else:
+        run_fake_data_smoke_test(
+            device=args.device,
+            num_samples=args.num_samples,
+            batch_size=args.batch_size if args.batch_size is not None else 8,
+            num_epochs=args.epochs if args.epochs is not None else 3,
+        )

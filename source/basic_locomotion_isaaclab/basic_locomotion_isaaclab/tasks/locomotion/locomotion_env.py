@@ -245,6 +245,11 @@ class LocomotionEnv(DirectRLEnv):
             self._edge_height_scanner = RayCaster(self.cfg.edge_height_scanner)
             self.scene.sensors["edge_height_scanner"] = self._edge_height_scanner
 
+        # Optional target-only scanner, used when collecting terrain reconstruction datasets.
+        if getattr(self.cfg, "reconstruction_target_scanner", None) is not None:
+            self._reconstruction_target_scanner = RayCaster(self.cfg.reconstruction_target_scanner)
+            self.scene.sensors["reconstruction_target_scanner"] = self._reconstruction_target_scanner
+
         # we add a depth camera if needed for vision-based locomotion
         if(getattr(self.cfg, "use_depth_camera", False)):
             self._depth_camera = MultiMeshRayCasterCamera(self.cfg.depth_camera)
