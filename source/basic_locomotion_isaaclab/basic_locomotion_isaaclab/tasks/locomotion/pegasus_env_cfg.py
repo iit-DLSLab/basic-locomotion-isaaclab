@@ -195,7 +195,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         debug_vis=False)
 
     
-    use_concurrent_state_est = False
+    use_concurrent_state_est = True
     if(use_concurrent_state_est):
         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
         
@@ -404,7 +404,8 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     
     feet_to_hip_distance_reward_scale = 1.5
     # This is used in loocmotion_env.py for the above reward
-    desired_hip_offset = 0.095
+    desired_hip_offset_y = 0.148
+    desired_hip_offset_x = 0.112
 
     feet_edge_reward_scale = 0.0
     feet_edge_height_threshold = 0.05

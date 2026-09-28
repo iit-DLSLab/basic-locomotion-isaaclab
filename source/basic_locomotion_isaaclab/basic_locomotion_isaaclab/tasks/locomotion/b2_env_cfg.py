@@ -397,7 +397,8 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
 
     feet_to_hip_distance_reward_scale = 1.5
     # This is used in loocmotion_env.py for the above reward
-    desired_hip_offset = 0.12
+    desired_hip_offset_y = 0.12
+    desired_hip_offset_x = 0.0
 
     feet_edge_reward_scale = 0.0
     feet_edge_height_threshold = 0.05

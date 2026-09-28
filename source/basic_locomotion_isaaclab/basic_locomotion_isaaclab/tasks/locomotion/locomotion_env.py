@@ -73,7 +73,8 @@ class LocomotionEnv(DirectRLEnv):
         self._swing_peak_periodic = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device).repeat(self.num_envs,1)
         
         # Desired Hip Offset
-        self._desired_hip_offset = torch.tensor([-self.cfg.desired_hip_offset, self.cfg.desired_hip_offset, -self.cfg.desired_hip_offset, self.cfg.desired_hip_offset], device=self.device)
+        self._desired_hip_offset_y = torch.tensor([-self.cfg.desired_hip_offset_y, self.cfg.desired_hip_offset_y, -self.cfg.desired_hip_offset_y, self.cfg.desired_hip_offset_y], device=self.device)
+        self._desired_hip_offset_x = torch.tensor([-self.cfg.desired_hip_offset_x, -self.cfg.desired_hip_offset_x, self.cfg.desired_hip_offset_x, self.cfg.desired_hip_offset_x], device=self.device)
         
         # Periodic gait
         # Step frequency ramps linearly with the commanded xy linear velocity norm, from

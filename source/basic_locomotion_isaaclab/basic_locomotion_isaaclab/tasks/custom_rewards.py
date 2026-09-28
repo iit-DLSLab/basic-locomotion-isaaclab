@@ -412,9 +412,10 @@ def feet_to_hip_distance_l2(self) -> torch.Tensor:
     ].unsqueeze(1)
     hip_to_base_h = torch.matmul(rot_w2h.transpose(1, 2), hip_to_base_w.transpose(1, 2))
 
-    desired_hip_offset = self._desired_hip_offset
-    feet_to_hip_distance_x = torch.square(feet_to_base_h[:, 0] - hip_to_base_h[:, 0])
-    feet_to_hip_distance_y = torch.square(feet_to_base_h[:, 1] + desired_hip_offset.unsqueeze(0) - hip_to_base_h[:, 1])
+    desired_hip_offset_y = self._desired_hip_offset_y
+    desired_hip_offset_x = self._desired_hip_offset_x
+    feet_to_hip_distance_x = torch.square(feet_to_base_h[:, 0] + desired_hip_offset_x.unsqueeze(0) - hip_to_base_h[:, 0])
+    feet_to_hip_distance_y = torch.square(feet_to_base_h[:, 1] + desired_hip_offset_y.unsqueeze(0) - hip_to_base_h[:, 1])
     feet_to_hip_distance = -torch.mean(torch.sqrt(feet_to_hip_distance_x + feet_to_hip_distance_y), dim=1)
     feet_to_hip_distance = feet_to_hip_distance * torch.where(
         should_move, torch.ones_like(feet_to_hip_distance), torch.full_like(feet_to_hip_distance, 3.0)
