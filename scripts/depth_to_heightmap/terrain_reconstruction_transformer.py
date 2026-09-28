@@ -96,20 +96,21 @@ class DepthTokenEncoder(nn.Module):
     def forward(self, depth_sequence: Tensor) -> tuple[Tensor, Tensor]:
         batch_size, depth_steps, channels, _, _ = depth_sequence.shape
         token_grid_h, token_grid_w = self.token_grid_size
+        #T: num of depth frame, D: embed_dim, H/W: frame size.
 
         encoded = self.encoder(depth_sequence.reshape(batch_size * depth_steps, channels, *depth_sequence.shape[-2:]))
         token_maps = self.token_projection(self.token_pool(encoded))
-        token_maps = token_maps.reshape(batch_size, depth_steps, -1, token_grid_h, token_grid_w)
+        token_maps = token_maps.reshape(batch_size, depth_steps, -1, token_grid_h, token_grid_w)  #(B, T, D, H, W)
 
-        depth_tokens = token_maps.permute(0, 1, 3, 4, 2).reshape(batch_size, depth_steps, token_grid_h * token_grid_w, -1)
+        depth_tokens = token_maps.permute(0, 1, 3, 4, 2).reshape(batch_size, depth_steps, token_grid_h * token_grid_w, -1)  # (B, T, H*W, D)
         time_pos = _sinusoidal_position_embedding(depth_steps, depth_tokens.shape[-1], depth_tokens.device, depth_tokens.dtype)
         spatial_pos = _sinusoidal_position_embedding(
             token_grid_h * token_grid_w, depth_tokens.shape[-1], depth_tokens.device, depth_tokens.dtype
         )
         depth_tokens = depth_tokens + time_pos.view(1, depth_steps, 1, -1) + spatial_pos.view(1, 1, token_grid_h * token_grid_w, -1)
-        depth_tokens = self.token_norm(depth_tokens).reshape(batch_size, depth_steps * token_grid_h * token_grid_w, -1)
-
-        depth_context = self.context_projection(token_maps.mean(dim=1))
+        depth_tokens = self.token_norm(depth_tokens).reshape(batch_size, depth_steps * token_grid_h * token_grid_w, -1)  # (B, T*H*W, D)
+        # Mean along dim=1 (B, T, D, H, W) -> (B, D, H, W).
+        depth_context = self.context_projection(token_maps.mean(dim=1))  #(B, context_channels, H, W)
         return depth_tokens, depth_context
 
 
@@ -230,9 +231,13 @@ class MultiModalTerrainReconstructor(nn.Module):
         refinement_context_channels: int = 32,
         refinement_base_channels: int = 32,
         dropout: float = 0.1,
+        align_refiner_context: bool = False,
     ):
         super().__init__()
         self.heightmap_size = heightmap_size
+        # Turn the image-space depth context into the heightmap layout before the refiner (see forward).
+        # False keeps the original behaviour, so checkpoints trained without it still load and evaluate the same.
+        self.align_refiner_context = align_refiner_context
 
         self.depth_encoder = DepthTokenEncoder(
             depth_channels=depth_channels,
@@ -310,11 +315,20 @@ class MultiModalTerrainReconstructor(nn.Module):
             fused_tokens = block(fused_tokens, depth_tokens)
 
         memory_tokens, hidden_state = self.memory(fused_tokens, hidden_state)
-        rough_heightmap = self.rough_decoder(memory_tokens[:, -1]).view(-1, 1, *self.heightmap_size)
-
-        depth_context = self.refinement_context_projection(depth_context)
-        depth_context = F.interpolate(depth_context, size=self.heightmap_size, mode="bilinear", align_corners=False)
-
+        rough_heightmap = self.rough_decoder(memory_tokens[:, -1]).view(-1, 1, *self.heightmap_size)#(B, 1, ?, ?)
+        depth_context = self.refinement_context_projection(depth_context) ##(B, context_channels, H, W)
+        #print(f"[FORWARD]: {rough_heightmap.shape=}", flush=True)
+        #print(f"[FORWARD]: {depth_context.shape=}", flush=True)
+        if self.align_refiner_context:
+            # image rows = distance (top = far), image cols = lateral (left -> right); heightmap rows = lateral
+            # (y from -0.4 = right to +0.4 = left), heightmap cols = distance (x from near to far)
+            n_y, n_x = self.heightmap_size
+            depth_context = F.interpolate(depth_context, size=(n_x, n_y), mode="bilinear", align_corners=False)
+            depth_context = depth_context.transpose(-1, -2).flip(-2, -1)  # (B, C, n_y, n_x), same layout as the heightmap
+        else:
+            depth_context = F.interpolate(depth_context, size=self.heightmap_size, mode="bilinear", align_corners=False)
+        #print(f"[FORWARD]: {depth_context.shape=}", flush=True)
+        #exit(0)
         refinement_input = torch.cat((rough_heightmap, depth_context), dim=1)
         refinement_residual = self.refiner(refinement_input)
         refined_heightmap = rough_heightmap + refinement_residual
@@ -417,11 +431,6 @@ class _ConcatenatedRows:
 
 
 class SavedTerrainReconstructionDataset(Dataset):
-    """One or more collected dataset files, read lazily.
-
-    The files are memory-mapped: depth and robot info stay on disk (cached by the OS) and each sample is read and
-    converted to float32 when accessed, so datasets larger than RAM work. Only the small targets are kept in RAM.
-    """
 
     def __init__(self, dataset_path: str | Sequence[str], target_key: str = "heightmaps"):
         super().__init__()
@@ -605,6 +614,8 @@ def run_terrain_reconstruction(
     run_name: str | None = None,
     target_key: str = "heightmaps",
     num_workers: int = 0,
+    align_refiner_context: bool = False,
+    test_dataset_path: str | Sequence[str] | None = None,
 ) -> None:
     dataset_paths = [Path(p).expanduser().resolve() for p in ([path] if isinstance(path, (str, Path)) else path)]
     for dataset_path in dataset_paths:
@@ -633,6 +644,7 @@ def run_terrain_reconstruction(
         "proprio_dim": dataset.robot_info.shape[-1],
         "depth_channels": dataset.depth_data.shape[-3],
         "heightmap_size": tuple(dataset.heightmaps.shape[-2:]),
+        "align_refiner_context": align_refiner_context,
     }
     model = MultiModalTerrainReconstructor(**model_config)
 
@@ -698,6 +710,24 @@ def run_terrain_reconstruction(
     )
     best_metrics = min(history, key=lambda metrics: metrics["val_refined_loss"])
 
+    # Independent test set (other seed: new terrain and trajectories). The random validation split shares nearby
+    # timesteps with training and is optimistic, the refiner even more so.
+    test_metrics = {}
+    if test_dataset_path:
+        test_dataset = SavedTerrainReconstructionDataset(dataset_path=test_dataset_path, target_key=target_key)
+        train_stride = dataset.metadata.get("depth_history_stride")
+        test_stride = test_dataset.metadata.get("depth_history_stride")
+        if train_stride != test_stride:
+            raise ValueError(f"Test set depth stride {test_stride} differs from the training set stride {train_stride}.")
+        test_loader = DataLoader(test_dataset, batch_size=4 * batch_size, shuffle=False, num_workers=num_workers)
+        test_metrics = _evaluate_refiner_breakdown(model, test_loader, device, target_normalization)
+        print(
+            f"[INFO] Test MAE {test_metrics['test/mae_m'] * 1000:.2f} mm (non-flat {test_metrics['test/non_flat_mae_m'] * 1000:.2f}, "
+            f"flat {test_metrics['test/flat_mae_m'] * 1000:.2f}, n={len(test_dataset)}) | refiner: rough alone "
+            f"{test_metrics['test/rough_mae_m'] * 1000:.2f} mm, gain {test_metrics['test/refiner_gain_m'] * 1000:+.2f} mm, "
+            f"of which from the image {test_metrics['test/refiner_image_gain_m'] * 1000:+.2f} mm"
+        )
+
     output_path = Path(model_path) if model_path else dataset_path.with_name("transformer_terrain_reconstructor.pt")
     output_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
@@ -712,6 +742,8 @@ def run_terrain_reconstruction(
             "target_key": target_key,
             "dataset_metadata": dataset.metadata,
             "history": history,
+            "test_dataset_path": test_dataset_path,
+            "test_metrics": test_metrics,
         },
         output_path,
     )
@@ -749,12 +781,74 @@ def run_terrain_reconstruction(
         wandb_run.summary["best/val_refined_mae_m"] = best_metrics["val_refined_mae_m"]
         wandb_run.summary.update(split_metrics)
         wandb_run.log({"heightmaps": _heightmap_comparison_figure(val_target, val_prediction, non_flat)}, step=num_epochs)
+        wandb_run.summary.update(test_metrics)
         wandb_run.summary["model_path"] = str(output_path)
         wandb_run.finish()
 
 
 # A heightmap whose cell heights vary by at least this much (standard deviation) counts as actual terrain.
 NON_FLAT_STD_THRESHOLD_M = 0.01
+
+
+def _evaluate_refiner_breakdown(
+    model: MultiModalTerrainReconstructor,
+    data_loader: DataLoader,
+    device: str | torch.device,
+    target_normalization: dict[str, float],
+) -> dict[str, float]:
+    """Test metrics in metres, plus how much the refiner adds and how much of it comes from the depth image.
+
+    Two passes: the model as trained (collecting the mean image context), then again with the image context of every
+    sample replaced by that mean, so the refiner keeps its input statistics but loses the sample-specific image.
+    """
+    mean, std = target_normalization["mean"], target_normalization["std"]
+    state = {"use_mean": False, "sum": 0.0, "count": 0}
+
+    def context_hook(module, inputs, output):
+        if state["use_mean"]:
+            return (state["sum"] / state["count"]).expand_as(output)
+        state["sum"] = state["sum"] + output.sum(dim=0, keepdim=True)
+        state["count"] += output.shape[0]
+        return output
+
+    def predict() -> tuple[Tensor, Tensor, Tensor]:
+        rough, refined, targets = [], [], []
+        with torch.no_grad():
+            for depth_data, robot_info, target in data_loader:
+                prediction = model(depth_data=depth_data.to(device), robot_info=robot_info.to(device))
+                rough.append(prediction.rough_heightmap.cpu()[:, 0] * std + mean)
+                refined.append(prediction.refined_heightmap.cpu()[:, 0] * std + mean)
+                targets.append(target[:, 0])
+        return torch.cat(rough), torch.cat(refined), torch.cat(targets)
+
+    model.eval()
+    handle = model.refinement_context_projection.register_forward_hook(context_hook)
+    try:
+        rough, refined, target = predict()
+        state["use_mean"] = True
+        _, refined_mean_context, _ = predict()
+    finally:
+        handle.remove()
+
+    error = (refined - target).abs()
+    non_flat = target.flatten(1).std(dim=1) >= NON_FLAT_STD_THRESHOLD_M
+    rough_mae = (rough - target).abs().mean().item()
+    mean_context_mae = (refined_mean_context - target).abs().mean().item()
+    metrics = {
+        "test/mae_m": error.mean().item(),
+        "test/non_flat_mae_m": error[non_flat].mean().item() if non_flat.any() else float("nan"),
+        "test/flat_mae_m": error[~non_flat].mean().item() if (~non_flat).any() else float("nan"),
+        "test/rough_mae_m": rough_mae,
+        "test/mean_image_context_mae_m": mean_context_mae,
+        "test/refiner_gain_m": rough_mae - error.mean().item(),
+        "test/refiner_image_gain_m": mean_context_mae - error.mean().item(),
+        "test/samples": int(len(target)),
+    }
+    # non-flat error per heightmap column (x ahead of the base); the near columns are the ones the camera cannot see
+    if non_flat.any():
+        for column, column_error in enumerate(error[non_flat].mean(dim=(0, 1)).tolist()):
+            metrics[f"test/non_flat_mae_col{column}_m"] = column_error
+    return metrics
 
 
 def _predict_heightmaps(
@@ -930,6 +1024,18 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--num_workers", type=int, default=0, help="DataLoader worker processes that read samples from disk."
     )
+    parser.add_argument(
+        "--align_refiner_context",
+        action="store_true",
+        help="Rotate the depth context into the heightmap layout (rows = lateral, cols = distance) before the refiner.",
+    )
+    parser.add_argument(
+        "--test_dataset_path",
+        type=str,
+        nargs="+",
+        default=None,
+        help="Independent test set(s), collected with another seed and the same depth stride, scored after training.",
+    )
     return parser.parse_args()
 
 
@@ -947,6 +1053,8 @@ __all__ = [
 
 if __name__ == "__main__":
     args = _parse_args()
+    if isinstance(args.dataset_path, list):
+        args.dataset_path = [path for path in args.dataset_path if path]  # --dataset_path "" runs the smoke test
     if args.dataset_path:
         run_terrain_reconstruction(
             path=args.dataset_path,
@@ -959,6 +1067,8 @@ if __name__ == "__main__":
             run_name=args.run_name,
             target_key=args.target_key,
             num_workers=args.num_workers,
+            align_refiner_context=args.align_refiner_context,
+            test_dataset_path=args.test_dataset_path,
         )
     else:
         run_fake_data_smoke_test(

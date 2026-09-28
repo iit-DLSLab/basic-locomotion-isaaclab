@@ -410,9 +410,6 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         "camera_offset_convention": depth_camera_cfg.offset.convention,
         "camera_focal_length": depth_camera_cfg.pattern_cfg.focal_length,
         "camera_horizontal_aperture": depth_camera_cfg.pattern_cfg.horizontal_aperture,
-        # per-sample camera_intrinsics / camera_rotations / camera_positions use the camera frame (x forward, y left,
-        # z up) expressed in the current yaw-aligned frame of the policy heightmap scanner. Its origin is the base
-        # (RayCaster bakes the offset into the ray starts), so cell (i, j) is centred at (center_x + x_j, y_i).
         "heightmap_grid": {
             "size": tuple(grid_cfg.pattern_cfg.size),
             "resolution": grid_cfg.pattern_cfg.resolution,
