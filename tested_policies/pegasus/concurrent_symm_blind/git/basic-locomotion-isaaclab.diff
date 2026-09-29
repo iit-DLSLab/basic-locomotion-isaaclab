@@ -1,0 +1,15 @@
+--- git commit ---
+26d472cb2fd56f5ee27bda421acc376917d2943c
+
+
+--- git status ---
+HEAD detached from dffc687
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	concurrent_state_estimator.pth
+	deploy/rosbag/
+
+nothing added to commit but untracked files present (use "git add" to track) 
+
+
+--- git diff ---
