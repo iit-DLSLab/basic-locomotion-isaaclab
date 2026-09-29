@@ -48,6 +48,7 @@ import numpy as np
 np.set_printoptions(precision=3, suppress=True)
 import threading
 import copy
+from scipy.spatial.transform import Rotation
 
 # Simulation related imports
 import mujoco
@@ -75,7 +76,6 @@ os.system("echo -20 > /proc/" + str(pid) + "/autogroup")
 
 # Global variables
 USE_MUJOCO_RENDER = False
-
 
 class ControllerROS2(Node):
     def __init__(self):
@@ -297,8 +297,13 @@ class ControllerROS2(Node):
 
         if(config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]):
             if(config.robot == "pegasus"):
-                # TEMPORARY FIX for pegasus
-                self.imu_orientation = copy.deepcopy(self.orientation)
+                # TEMPORARY FIX for Pegasus: emulate the IMU orientation from
+                # the base-state orientation, including the fixed -90 deg Z
+                # base-to-IMU rotation used by the Pegasus model.
+                base_rotation = Rotation.from_quat(np.roll(self.orientation, -1))
+                base_to_imu_rotation = Rotation.from_euler("z", -90.0, degrees=True)
+                imu_rotation = base_rotation * base_to_imu_rotation
+                self.imu_orientation = np.roll(imu_rotation.as_quat(), 1)
             
             self.mjData.qpos[3:7] = copy.deepcopy(self.imu_orientation)
             self.mjData.qvel[3:6] = copy.deepcopy(self.imu_angular_velocity)
