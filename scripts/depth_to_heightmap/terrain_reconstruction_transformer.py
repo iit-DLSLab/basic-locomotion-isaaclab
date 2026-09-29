@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import bisect
+import glob
 import math
+import os
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,7 +12,7 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
-from torch.utils.data import DataLoader, Dataset, random_split
+from torch.utils.data import DataLoader, Dataset, RandomSampler, Subset, random_split
 from tqdm import tqdm
 
 
@@ -75,9 +77,11 @@ class DepthTokenEncoder(nn.Module):
         embed_dim: int,
         token_grid_size: tuple[int, int],
         context_channels: int,
+        context_from_newest_frame: bool = False,
     ):
         super().__init__()
         self.token_grid_size = token_grid_size
+        self.context_from_newest_frame = context_from_newest_frame
 
         self.encoder = nn.Sequential(
             ConvNormAct(depth_channels, 32, kernel_size=5, stride=2, padding=2),
@@ -93,14 +97,20 @@ class DepthTokenEncoder(nn.Module):
         )
         self.token_norm = nn.LayerNorm(embed_dim)
 
-    def forward(self, depth_sequence: Tensor) -> tuple[Tensor, Tensor]:
-        batch_size, depth_steps, channels, _, _ = depth_sequence.shape
-        token_grid_h, token_grid_w = self.token_grid_size
-        #T: num of depth frame, D: embed_dim, H/W: frame size.
+    def encode_frames(self, frames: Tensor) -> Tensor:
+        """(N, C, H, W) -> token maps (N, D, h, w). Each frame is encoded on its own, so a frame shared by several
+        windows can be encoded once."""
+        return self.token_projection(self.token_pool(self.encoder(frames)))
 
-        encoded = self.encoder(depth_sequence.reshape(batch_size * depth_steps, channels, *depth_sequence.shape[-2:]))
-        token_maps = self.token_projection(self.token_pool(encoded))
-        token_maps = token_maps.reshape(batch_size, depth_steps, -1, token_grid_h, token_grid_w)  #(B, T, D, H, W)
+    def forward(self, depth_sequence: Tensor) -> tuple[Tensor, Tensor]:
+        batch_size, depth_steps = depth_sequence.shape[:2]
+        token_maps = self.encode_frames(depth_sequence.flatten(0, 1)).unflatten(0, (batch_size, depth_steps))
+        return self.tokens_from_maps(token_maps)
+
+    def tokens_from_maps(self, token_maps: Tensor) -> tuple[Tensor, Tensor]:
+        batch_size, depth_steps = token_maps.shape[:2]
+        token_grid_h, token_grid_w = self.token_grid_size
+        #T: num of depth frame, D: embed_dim, H/W: frame size. token_maps: (B, T, D, H, W)
 
         depth_tokens = token_maps.permute(0, 1, 3, 4, 2).reshape(batch_size, depth_steps, token_grid_h * token_grid_w, -1)  # (B, T, H*W, D)
         time_pos = _sinusoidal_position_embedding(depth_steps, depth_tokens.shape[-1], depth_tokens.device, depth_tokens.dtype)
@@ -109,8 +119,10 @@ class DepthTokenEncoder(nn.Module):
         )
         depth_tokens = depth_tokens + time_pos.view(1, depth_steps, 1, -1) + spatial_pos.view(1, 1, token_grid_h * token_grid_w, -1)
         depth_tokens = self.token_norm(depth_tokens).reshape(batch_size, depth_steps * token_grid_h * token_grid_w, -1)  # (B, T*H*W, D)
-        # Mean along dim=1 (B, T, D, H, W) -> (B, D, H, W).
-        depth_context = self.context_projection(token_maps.mean(dim=1))  #(B, context_channels, H, W)
+        # Mean along dim=1 (B, T, D, H, W) -> (B, D, H, W). With a long depth stride the frames are far apart in time
+        # and their mean is blurred, so the context can come from the newest frame alone (the last one).
+        context_maps = token_maps[:, -1] if self.context_from_newest_frame else token_maps.mean(dim=1)
+        depth_context = self.context_projection(context_maps)  #(B, context_channels, H, W)
         return depth_tokens, depth_context
 
 
@@ -211,9 +223,6 @@ class MultiModalTerrainReconstructor(nn.Module):
     Expected inputs:
     - depth_data: `(B, T_depth, C, H, W)` or `(B, C, H, W)`
     - robot_info: `(B, T_prop, F)` or `(B, F)`
-
-    The model assumes the depth images are already valid and preprocessed. It does
-    not implement the paper's synthetic-depth corruption pipeline.
     """
 
     def __init__(
@@ -232,18 +241,22 @@ class MultiModalTerrainReconstructor(nn.Module):
         refinement_base_channels: int = 32,
         dropout: float = 0.1,
         align_refiner_context: bool = False,
+        recurrent_steps: bool = False,
+        refiner_context_newest_frame: bool = False,
     ):
         super().__init__()
         self.heightmap_size = heightmap_size
         # Turn the image-space depth context into the heightmap layout before the refiner (see forward).
         # False keeps the original behaviour, so checkpoints trained without it still load and evaluate the same.
         self.align_refiner_context = align_refiner_context
+        self.recurrent_steps = recurrent_steps
 
         self.depth_encoder = DepthTokenEncoder(
             depth_channels=depth_channels,
             embed_dim=embed_dim,
             token_grid_size=token_grid_size,
             context_channels=refinement_context_channels,
+            context_from_newest_frame=refiner_context_newest_frame,
         )
         self.proprio_encoder = ProprioceptiveHistoryEncoder(
             proprio_dim=proprio_dim,
@@ -263,6 +276,11 @@ class MultiModalTerrainReconstructor(nn.Module):
             batch_first=True,
             dropout=dropout if recurrent_layers > 1 else 0.0,
         )
+        if recurrent_steps:
+            self.step_memory = nn.GRU(input_size=recurrent_hidden_dim, hidden_size=recurrent_hidden_dim, batch_first=True)
+            self.step_memory_projection = nn.Linear(recurrent_hidden_dim, recurrent_hidden_dim)
+            nn.init.zeros_(self.step_memory_projection.weight)
+            nn.init.zeros_(self.step_memory_projection.bias)
         self.rough_decoder = nn.Sequential(
             nn.LayerNorm(recurrent_hidden_dim),
             nn.Linear(recurrent_hidden_dim, recurrent_hidden_dim * 2),
@@ -303,19 +321,36 @@ class MultiModalTerrainReconstructor(nn.Module):
         depth_data: Tensor,
         robot_info: Tensor,
         hidden_state: Tensor | None = None,
+        depth_index: Tensor | None = None,
     ) -> TerrainReconstructionOutput:
-        depth_sequence = self._prepare_depth_sequence(depth_data)
-        proprio_history = self._prepare_proprio_history(robot_info)
+        """depth_data `(B, N, C, H, W)` holds the frames the windows share, depth_index `(L, T_depth)` picks each step's window
+        and robot_info is `(B, L, T_prop, F)`; the outputs are then `(B, L, 1, h, w)`."""
+        if depth_index is not None:
+            batch_size, segment_length = robot_info.shape[:2]
+            token_maps = self.depth_encoder.encode_frames(depth_data.flatten(0, 1)).unflatten(0, depth_data.shape[:2])
+            token_maps = token_maps[:, depth_index].flatten(0, 1)  # (B * L, T_depth, D, h, w)
+            proprio_history = robot_info.flatten(0, 1)
+        else:
+            depth_sequence = self._prepare_depth_sequence(depth_data)
+            proprio_history = self._prepare_proprio_history(robot_info)
+            batch_size, segment_length = depth_sequence.shape[0], 1
+            token_maps = self.depth_encoder.encode_frames(depth_sequence.flatten(0, 1)).unflatten(0, depth_sequence.shape[:2])
 
-        depth_tokens, depth_context = self.depth_encoder(depth_sequence)
+        depth_tokens, depth_context = self.depth_encoder.tokens_from_maps(token_maps)
         proprio_tokens = self.proprio_encoder(proprio_history)
 
         fused_tokens = proprio_tokens
         for block in self.cross_attention_blocks:
             fused_tokens = block(fused_tokens, depth_tokens)
 
-        memory_tokens, hidden_state = self.memory(fused_tokens, hidden_state)
-        rough_heightmap = self.rough_decoder(memory_tokens[:, -1]).view(-1, 1, *self.heightmap_size)#(B, 1, ?, ?)
+        memory_tokens, _ = self.memory(fused_tokens)
+        step_feature = memory_tokens[:, -1]  # (B * L, recurrent_hidden_dim)
+        if self.recurrent_steps:
+            step_memory, hidden_state = self.step_memory(step_feature.view(batch_size, segment_length, -1), hidden_state)
+            step_feature = step_feature + self.step_memory_projection(step_memory.flatten(0, 1))
+        else:
+            hidden_state = None
+        rough_heightmap = self.rough_decoder(step_feature).view(-1, 1, *self.heightmap_size)#(B, 1, ?, ?)
         depth_context = self.refinement_context_projection(depth_context) ##(B, context_channels, H, W)
         #print(f"[FORWARD]: {rough_heightmap.shape=}", flush=True)
         #print(f"[FORWARD]: {depth_context.shape=}", flush=True)
@@ -332,6 +367,9 @@ class MultiModalTerrainReconstructor(nn.Module):
         refinement_input = torch.cat((rough_heightmap, depth_context), dim=1)
         refinement_residual = self.refiner(refinement_input)
         refined_heightmap = rough_heightmap + refinement_residual
+        if depth_index is not None:
+            rough_heightmap = rough_heightmap.unflatten(0, (batch_size, segment_length))
+            refined_heightmap = refined_heightmap.unflatten(0, (batch_size, segment_length))
 
         return TerrainReconstructionOutput(
             rough_heightmap=rough_heightmap,
@@ -460,6 +498,162 @@ class SavedTerrainReconstructionDataset(Dataset):
         return self.depth_data[index].float(), self.robot_info[index].float(), self.heightmaps[index]
 
 
+class SequenceTerrainReconstructionDataset(Dataset):
+    """Windows cut from the sequences of collect_depth_to_heightmap.py (one directory of chunk files per run).
+
+    The chunks hold every step of every env once, time-major ``(steps, envs, ...)``, memory-mapped. A sample ending
+    at step t of env e is built on access: depth frames t - (L_d - 1) * S, ..., t (length L_d, stride S), the last P
+    'common' observations and the target at t, with the same shapes as ``SavedTerrainReconstructionDataset``. With
+    ``segment_length`` L > 1 a sample is L consecutive steps of one env, for a memory carried across steps: the frames
+    the L windows share ``(L + (L_d - 1) * S, C, H, W)``, the robot_info windows ``(L, P, F)``, the targets
+    ``(L, 1, h, w)`` and ``depth_index`` ``(L, L_d)``, which picks each step's frames. No window crosses a reset: every
+    step in t - K .. t + L - 1, with K = max((L_d - 1) * S, P - 1), must have ``dones`` False, which also drops the
+    reset step itself.
+    """
+
+    def __init__(
+        self,
+        dataset_path: str | Sequence[str],
+        target_key: str = "heightmaps",
+        depth_history_length: int = 5,
+        depth_history_stride: int = 1,
+        proprio_history_length: int = 50,
+        segment_length: int = 1,
+    ):
+        super().__init__()
+        directories = [dataset_path] if isinstance(dataset_path, (str, Path)) else list(dataset_path)
+        self.target_key = target_key
+        self.segment_length = segment_length
+        # window offsets relative to the sample step, oldest first
+        self.depth_offsets = (torch.arange(depth_history_length) - (depth_history_length - 1)) * depth_history_stride
+        self.proprio_offsets = torch.arange(proprio_history_length) - (proprio_history_length - 1)
+        self.history = history = max(-int(self.depth_offsets[0]), -int(self.proprio_offsets[0]))
+        # frames of each step's window, counted from the first frame the segment reads
+        self.depth_index = torch.arange(segment_length).unsqueeze(1) + self.depth_offsets - int(self.depth_offsets[0])
+
+        required_keys = {"depth_data", "robot_info", target_key, "dones"}
+        self.runs: list[dict] = []
+        index, targets = [], []
+        for run, directory in enumerate(directories):
+            paths = sorted(glob.glob(os.path.join(str(directory), "chunk_*.pt")))
+            if not paths:
+                raise FileNotFoundError(f"No chunk_*.pt files in {directory}")
+            chunks = [torch.load(path, map_location="cpu", mmap=True, weights_only=True) for path in paths]
+            for path, chunk in zip(paths, chunks):
+                missing_keys = required_keys.difference(chunk)
+                if missing_keys:
+                    raise KeyError(f"Chunk {path} is missing required keys: {', '.join(sorted(missing_keys))}")
+            starts = [0]
+            for chunk in chunks:
+                if chunk["metadata"]["first_step"] != starts[-1]:
+                    raise ValueError(f"Chunks in {directory} are not consecutive: {paths}")
+                starts.append(starts[-1] + chunk["dones"].shape[0])
+
+            # resets[i] = number of resets in steps 0 .. i-1, so steps a .. b are clean if resets[b + 1] == resets[a]
+            dones = torch.cat([chunk["dones"] for chunk in chunks])
+            resets = torch.cat([torch.zeros(1, dones.shape[1], dtype=torch.long), dones.long().cumsum(dim=0)])
+            first = torch.arange(history, dones.shape[0] - segment_length + 1)
+            clean = resets[first + segment_length] == resets[first - history]
+            sample_steps, sample_envs = clean.nonzero(as_tuple=True)
+            sample_steps = first[sample_steps]
+            index.append(torch.stack((torch.full_like(sample_steps, run), sample_steps, sample_envs), dim=1))
+            # target at the last step of each sample: target statistics and baselines
+            all_targets = torch.cat([chunk[target_key] for chunk in chunks])
+            targets.append(all_targets[sample_steps + segment_length - 1, sample_envs].float())
+            self.runs.append({"chunks": chunks, "starts": starts, "resets": resets})
+
+        self.index = torch.cat(index)
+        self.heightmaps = torch.cat(targets)
+        # one id per (run, env): consecutive steps are near duplicates, so hold out whole envs for validation
+        self.env_ids = self.index[:, 0] * 1_000_000 + self.index[:, 2]
+        metadata = self.runs[0]["chunks"][0]["metadata"]
+        self.metadata = {
+            **{key: value for key, value in metadata.items()
+               if not torch.is_tensor(value) and key not in ("chunk_index", "first_step", "num_steps")},
+            "dataset_directories": [str(directory) for directory in directories],
+            "depth_history_length": depth_history_length,
+            "depth_history_stride": depth_history_stride,
+            "proprio_history_length": proprio_history_length,
+            "segment_length": segment_length,
+        }
+
+    def _rows(self, run: int, name: str, start: int, stop: int, env: int) -> Tensor:
+        """Steps start .. stop-1 of one env, across chunk boundaries."""
+        chunks, starts = self.runs[run]["chunks"], self.runs[run]["starts"]
+        parts = []
+        chunk = bisect.bisect_right(starts, start) - 1
+        while start < stop:
+            end = min(stop, starts[chunk + 1])
+            parts.append(chunks[chunk][name][start - starts[chunk] : end - starts[chunk], env])
+            start, chunk = end, chunk + 1
+        return parts[0] if len(parts) == 1 else torch.cat(parts)
+
+    def step_rows(self, run: int, name: str, step: int) -> Tensor:
+        """One step of every env of a run: (envs, ...)."""
+        chunks, starts = self.runs[run]["chunks"], self.runs[run]["starts"]
+        chunk = bisect.bisect_right(starts, step) - 1
+        return chunks[chunk][name][step - starts[chunk]]
+
+    def __len__(self) -> int:
+        return self.index.shape[0]
+
+    def __getitem__(self, index: int) -> tuple[Tensor, ...]:
+        run, first, env = self.index[index].tolist()
+        stop = first + self.segment_length
+        depth_start = first + int(self.depth_offsets[0])
+        proprio_start = first + int(self.proprio_offsets[0])
+        if self.segment_length == 1:  # only the L_d frames of the window, not the whole span between them
+            depth = torch.stack([self._rows(run, "depth_data", first + offset, first + offset + 1, env)[0]
+                                 for offset in self.depth_offsets.tolist()]).float()
+        else:
+            depth = self._rows(run, "depth_data", depth_start, stop, env).float()
+        robot_info = self._rows(run, "robot_info", proprio_start, stop, env).float()
+        target = self._rows(run, self.target_key, first, stop, env).float()
+        # (L, window) row indices into the rows read above
+        steps = torch.arange(self.segment_length).unsqueeze(1)
+        robot_info = robot_info[steps + self.proprio_offsets - int(self.proprio_offsets[0])]
+        if self.segment_length == 1:
+            return depth, robot_info[0], target[0]
+        return depth, robot_info, target, self.depth_index
+
+
+def _load_dataset(
+    path: str | Sequence[str], target_key: str, depth_history_stride: int, segment_length: int = 1
+) -> Dataset:
+    """Sequence directories -> SequenceTerrainReconstructionDataset, dataset files -> SavedTerrainReconstructionDataset."""
+    paths = [path] if isinstance(path, (str, Path)) else list(path)
+    if all(os.path.isdir(p) for p in paths):
+        return SequenceTerrainReconstructionDataset(
+            dataset_path=paths,
+            target_key=target_key,
+            depth_history_stride=depth_history_stride,
+            segment_length=segment_length,
+        )
+    return SavedTerrainReconstructionDataset(dataset_path=paths, target_key=target_key)
+
+
+def _segment_prediction(
+    model: MultiModalTerrainReconstructor, depth_data: Tensor, robot_info: Tensor, depth_index: Tensor, burn_in: int
+) -> TerrainReconstructionOutput:
+    """Outputs on steps burn_in .. L-1 of a batch of segments. The burn-in steps only warm up the memory across steps
+    (no loss, no gradient); a model without that memory skips them."""
+    hidden_state = None
+    if burn_in > 0 and model.recurrent_steps:
+        with torch.no_grad():
+            hidden_state = model(
+                depth_data=depth_data[:, : int(depth_index[burn_in - 1, -1]) + 1],
+                robot_info=robot_info[:, :burn_in],
+                depth_index=depth_index[:burn_in],
+            ).hidden_state
+    # step s reads frames s + depth_index[0], so dropping the first burn_in frames shifts the index by burn_in
+    return model(
+        depth_data=depth_data[:, burn_in:],
+        robot_info=robot_info[:, burn_in:],
+        hidden_state=hidden_state,
+        depth_index=depth_index[burn_in:] - burn_in,
+    )
+
+
 def _run_epoch(
     model: nn.Module,
     data_loader: DataLoader,
@@ -468,9 +662,12 @@ def _run_epoch(
     target_mean: float = 0.0,
     target_std: float = 1.0,
     rough_loss_type: str = "mse",
+    burn_in: int = 0,
+    max_grad_norm: float | None = None,
 ) -> dict[str, float]:
     """Run one epoch. Losses are computed on normalized targets ``(target - target_mean) / target_std``;
-    ``refined_mae_m`` reports the refined error back in metres."""
+    ``refined_mae_m`` reports the refined error back in metres. Batches of segments (a 4th element, depth_index) are
+    scored on the steps after ``burn_in``, with truncated backpropagation through time over those steps."""
     is_training = optimizer is not None
     model.train(mode=is_training)
 
@@ -480,25 +677,32 @@ def _run_epoch(
     total_samples = 0
 
     progress = tqdm(data_loader, desc="train" if is_training else "val", leave=False, dynamic_ncols=True)
-    for depth_data, robot_info, target_heightmap in progress:
-        depth_data = depth_data.to(device)
-        robot_info = robot_info.to(device)
-        target_heightmap = (target_heightmap.to(device) - target_mean) / target_std
+    for batch in progress:
+        depth_data = batch[0].to(device)
+        robot_info = batch[1].to(device)
+        target_heightmap = (batch[2].to(device) - target_mean) / target_std
 
         if is_training:
             optimizer.zero_grad(set_to_none=True)
 
         with torch.set_grad_enabled(is_training):
-            prediction = model(depth_data=depth_data, robot_info=robot_info)
+            if len(batch) == 4:
+                depth_index = batch[3][0].to(device)  # the same for every segment
+                prediction = _segment_prediction(model, depth_data, robot_info, depth_index, burn_in)
+                target_heightmap = target_heightmap[:, burn_in:]
+            else:
+                prediction = model(depth_data=depth_data, robot_info=robot_info)
             losses = compute_reconstruction_losses(
                 prediction=prediction, target_heightmap=target_heightmap, rough_loss_type=rough_loss_type
             )
 
         if is_training:
             losses["loss"].backward()
+            if max_grad_norm is not None:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
             optimizer.step()
 
-        batch_size = depth_data.shape[0]
+        batch_size = target_heightmap.numel() // target_heightmap.shape[-3:].numel()  # heightmaps scored
         total_samples += batch_size
         total_loss += losses["loss"].item() * batch_size
         total_rough_loss += losses["rough_loss"].item() * batch_size
@@ -527,9 +731,14 @@ def train_terrain_reconstructor(
     rough_loss_type: str = "mse",
     lr_schedule: str = "constant",
     restore_best: bool = False,
+    burn_in: int = 0,
+    max_grad_norm: float | None = None,
+    resume_path: str | Path | None = None,
+    resume_info: dict | None = None,
 ) -> list[dict[str, float]]:
     """Train the reconstructor. With ``restore_best`` and a validation loader, the model ends with the weights
-    of the epoch with the lowest validation refined loss instead of the last epoch."""
+    of the epoch with the lowest validation refined loss instead of the last epoch. With ``resume_path`` the training
+    state is saved there after every epoch (with ``resume_info``), and an existing file is continued from."""
     device = torch.device(device)
     model.to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -539,12 +748,28 @@ def train_terrain_reconstructor(
         scheduler = None
     else:
         raise ValueError(f"Unknown lr_schedule: {lr_schedule}")
-    epoch_kwargs = dict(target_mean=target_mean, target_std=target_std, rough_loss_type=rough_loss_type)
+    epoch_kwargs = dict(
+        target_mean=target_mean,
+        target_std=target_std,
+        rough_loss_type=rough_loss_type,
+        burn_in=burn_in,
+        max_grad_norm=max_grad_norm,
+    )
 
     best_val_loss = float("inf")
     best_state: dict[str, Tensor] | None = None
     history: list[dict[str, float]] = []
-    for epoch in tqdm(range(num_epochs), desc="epochs", dynamic_ncols=True):
+    if resume_path is not None and os.path.exists(resume_path):
+        # an interrupted training: continue after its last finished epoch
+        resume = torch.load(resume_path, map_location="cpu", weights_only=False)
+        model.load_state_dict(resume["model"])
+        optimizer.load_state_dict(resume["optimizer"])
+        if scheduler is not None:
+            scheduler.load_state_dict(resume["scheduler"])
+        history, best_val_loss, best_state = resume["history"], resume["best_val_loss"], resume["best_state"]
+        tqdm.write(f"[INFO] Resuming from {resume_path} after epoch {len(history)}/{num_epochs}.")
+    first_epoch = len(history)
+    for epoch in tqdm(range(first_epoch, num_epochs), desc="epochs", initial=first_epoch, total=num_epochs, dynamic_ncols=True):
         current_lr = optimizer.param_groups[0]["lr"]
         train_metrics = _run_epoch(model=model, data_loader=train_loader, device=device, optimizer=optimizer, **epoch_kwargs)
         if scheduler is not None:
@@ -593,6 +818,18 @@ def train_terrain_reconstructor(
                 f"MAE={epoch_metrics['val_refined_mae_m'] * 1000:.2f} mm"
             )
         tqdm.write(summary)
+        if resume_path is not None:
+            state = {
+                "model": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "scheduler": scheduler.state_dict() if scheduler is not None else None,
+                "history": history,
+                "best_val_loss": best_val_loss,
+                "best_state": best_state,
+                "info": resume_info,
+            }
+            torch.save(state, f"{resume_path}.tmp")
+            os.replace(f"{resume_path}.tmp", resume_path)  # never leave a half-written file
 
     if best_state is not None:
         model.load_state_dict(best_state)
@@ -616,10 +853,19 @@ def run_terrain_reconstruction(
     num_workers: int = 0,
     align_refiner_context: bool = False,
     test_dataset_path: str | Sequence[str] | None = None,
+    depth_history_stride: int = 1,
+    segment_length: int = 1,
+    burn_in: int = 0,
+    recurrent_steps: bool = False,
+    samples_per_epoch: int | None = None,
+    max_val_samples: int | None = None,
+    refiner_context_newest_frame: bool = False,
+    init_checkpoint: str | None = None,
+    learning_rate: float = 3e-4,
 ) -> None:
     dataset_paths = [Path(p).expanduser().resolve() for p in ([path] if isinstance(path, (str, Path)) else path)]
     for dataset_path in dataset_paths:
-        if not dataset_path.is_file():
+        if not dataset_path.exists():
             raise FileNotFoundError(f"Path not found: {dataset_path}")
     # the first file sets the default output location; several files are trained on as one dataset
     dataset_path = dataset_paths[0]
@@ -628,40 +874,82 @@ def run_terrain_reconstruction(
     torch.manual_seed(0)
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    dataset = SavedTerrainReconstructionDataset(dataset_path=[str(p) for p in dataset_paths], target_key=target_key)
-    train_size = int(0.8 * len(dataset))
-    val_size = int(len(dataset) - train_size)
-    train_dataset, valid_dataset = random_split(
-        dataset=dataset,
-        lengths=[train_size, val_size],
-        generator=torch.Generator().manual_seed(0)
-    )
+    dataset = _load_dataset([str(p) for p in dataset_paths], target_key, depth_history_stride, segment_length)
+    if isinstance(dataset, SequenceTerrainReconstructionDataset):
+        # consecutive steps are near duplicates: validate on whole envs never seen in training
+        is_valid = dataset.env_ids % 5 == 4
+        train_ids, valid_ids = (~is_valid).nonzero().flatten(), is_valid.nonzero().flatten()
+        if max_val_samples is not None and len(valid_ids) > max_val_samples:
+            # overlapping windows of the same envs: a fixed random subset ranks the epochs just as well
+            subset = torch.randperm(len(valid_ids), generator=torch.Generator().manual_seed(0))[:max_val_samples]
+            valid_ids = valid_ids[subset.sort().values]
+        train_dataset = Subset(dataset, train_ids.tolist())
+        valid_dataset = Subset(dataset, valid_ids.tolist())
+    else:
+        train_size = int(0.8 * len(dataset))
+        train_dataset, valid_dataset = random_split(
+            dataset=dataset,
+            lengths=[train_size, len(dataset) - train_size],
+            generator=torch.Generator().manual_seed(0)
+        )
+    train_size, val_size = len(train_dataset), len(valid_dataset)
     loader_kwargs = {"num_workers": num_workers, "persistent_workers": num_workers > 0}
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, **loader_kwargs)
+    # an epoch of samples_per_epoch random samples (all of them if None), different ones every epoch
+    train_sampler = RandomSampler(train_dataset, num_samples=samples_per_epoch) if samples_per_epoch else None
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=train_sampler is None, sampler=train_sampler, **loader_kwargs
+    )
     valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False, **loader_kwargs)
 
+    sample_depth, sample_robot_info, sample_target = dataset[0][:3]
     model_config = {
-        "proprio_dim": dataset.robot_info.shape[-1],
-        "depth_channels": dataset.depth_data.shape[-3],
-        "heightmap_size": tuple(dataset.heightmaps.shape[-2:]),
+        "proprio_dim": sample_robot_info.shape[-1],
+        "depth_channels": sample_depth.shape[-3],
+        "heightmap_size": tuple(sample_target.shape[-2:]),
         "align_refiner_context": align_refiner_context,
+        "recurrent_steps": recurrent_steps,
+        "refiner_context_newest_frame": refiner_context_newest_frame,
     }
-    model = MultiModalTerrainReconstructor(**model_config)
 
-    # Heights are in metres with millimetre-to-centimetre variations: train on standardized targets so the
-    # losses and their gradients have a sensible scale. The model predicts normalized heights.
     train_heightmaps = dataset.heightmaps[train_dataset.indices]
     target_normalization = {
         "mean": train_heightmaps.mean().item(),
         "std": max(train_heightmaps.std().item(), 1e-6),
     }
+    if init_checkpoint:
+        # continue from a trained model, e.g. one without memory to add it: its architecture flags and weights (a new
+        # memory across steps starts at zero), and its normalization, so its outputs keep their meaning
+        init = torch.load(init_checkpoint, map_location="cpu", weights_only=False)
+        model_config = {**init["model_config"], "recurrent_steps": recurrent_steps}
+        target_normalization = init["target_normalization"]
+    model = MultiModalTerrainReconstructor(**model_config)
+    if init_checkpoint:
+        missing, unexpected = model.load_state_dict(init["model_state_dict"], strict=False)
+        if unexpected or any(not key.startswith("step_memory") for key in missing):
+            raise ValueError(f"{init_checkpoint} does not match the model: missing {missing}, unexpected {unexpected}")
+        print(f"[INFO] Initialised from {init_checkpoint}" + (f", new memory across steps ({len(missing)} tensors)" if missing else ""))
     # MAE of always predicting the per-cell train mean: the model must beat this to be useful.
     baseline_mae = (dataset.heightmaps[valid_dataset.indices] - train_heightmaps.mean(dim=0, keepdim=True)).abs().mean().item()
     print(
         f"[INFO] Target normalization: mean={target_normalization['mean']:.4f} m, std={target_normalization['std']:.4f} m | "
         f"constant-prediction baseline val MAE: {baseline_mae * 1000:.2f} mm"
     )
-    train_settings = {"rough_loss_type": "l1", "lr_schedule": "cosine", "restore_best": True}
+    train_settings = {"rough_loss_type": "l1", "lr_schedule": "cosine", "restore_best": True, "learning_rate": learning_rate}
+    if segment_length > 1:
+        train_settings.update(burn_in=burn_in, max_grad_norm=1.0)
+
+    output_path = Path(model_path) if model_path else dataset_path.with_name("transformer_terrain_reconstructor.pt")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    # training state after every epoch: rerunning the same command after an interruption continues from it
+    resume_path = output_path.with_suffix(".resume.pt")
+    run_setup = {"model_config": model_config, "train_settings": train_settings, "num_epochs": num_epochs,
+                 "batch_size": batch_size, "samples_per_epoch": samples_per_epoch, "dataset_path": dataset_path_record}
+    resume_info = {"setup": run_setup}
+    if resume_path.exists():
+        previous = torch.load(resume_path, map_location="cpu", weights_only=False)["info"]
+        if previous["setup"] != run_setup:
+            raise ValueError(f"{resume_path} is from a different setup: delete it to start over.")
+        resume_info = previous
 
     wandb_run = None
     epoch_callback = None
@@ -672,6 +960,8 @@ def run_terrain_reconstruction(
             project=wandb_project,
             name=run_name,
             job_type="terrain_reconstruction",
+            id=resume_info.get("wandb_id"),
+            resume="allow",
             config={
                 **model_config,
                 "model": "transformer",
@@ -680,6 +970,8 @@ def run_terrain_reconstruction(
                 "num_samples": len(dataset),
                 "train_samples": train_size,
                 "val_samples": val_size,
+                "samples_per_epoch": samples_per_epoch or train_size,
+                "init_checkpoint": init_checkpoint,
                 "dataset_path": dataset_path_record,
                 "target_key": target_key,
                 "target_mean": target_normalization["mean"],
@@ -689,6 +981,7 @@ def run_terrain_reconstruction(
             },
         )
         wandb_run.summary["val/constant_baseline_mae_m"] = baseline_mae
+        resume_info["wandb_id"] = wandb_run.id
 
         def epoch_callback(metrics: dict[str, float]) -> None:
             # "train_rough_loss" -> "train/rough_loss", "val_loss" -> "val/loss"
@@ -706,6 +999,8 @@ def run_terrain_reconstruction(
         epoch_callback=epoch_callback,
         target_mean=target_normalization["mean"],
         target_std=target_normalization["std"],
+        resume_path=resume_path,
+        resume_info=resume_info,
         **train_settings,
     )
     best_metrics = min(history, key=lambda metrics: metrics["val_refined_loss"])
@@ -714,22 +1009,32 @@ def run_terrain_reconstruction(
     # timesteps with training and is optimistic, the refiner even more so.
     test_metrics = {}
     if test_dataset_path:
-        test_dataset = SavedTerrainReconstructionDataset(dataset_path=test_dataset_path, target_key=target_key)
+        test_dataset = _load_dataset(test_dataset_path, target_key, depth_history_stride)
         train_stride = dataset.metadata.get("depth_history_stride")
         test_stride = test_dataset.metadata.get("depth_history_stride")
         if train_stride != test_stride:
             raise ValueError(f"Test set depth stride {test_stride} differs from the training set stride {train_stride}.")
-        test_loader = DataLoader(test_dataset, batch_size=4 * batch_size, shuffle=False, num_workers=num_workers)
-        test_metrics = _evaluate_refiner_breakdown(model, test_loader, device, target_normalization)
+        if isinstance(test_dataset, SequenceTerrainReconstructionDataset):
+            # step by step through the recorded episodes, as on the robot, carrying the memory across steps
+            def predict_test() -> dict[str, Tensor]:
+                return _predict_rollouts(model, test_dataset, device, target_normalization)
+        else:
+            test_loader = DataLoader(test_dataset, batch_size=4 * batch_size, shuffle=False, num_workers=num_workers)
+
+            def predict_test() -> dict[str, Tensor]:
+                return _predict(model, test_loader, device, target_normalization)
+        test_metrics = _evaluate_refiner_breakdown(model, predict_test)
         print(
             f"[INFO] Test MAE {test_metrics['test/mae_m'] * 1000:.2f} mm (non-flat {test_metrics['test/non_flat_mae_m'] * 1000:.2f}, "
             f"flat {test_metrics['test/flat_mae_m'] * 1000:.2f}, n={len(test_dataset)}) | refiner: rough alone "
             f"{test_metrics['test/rough_mae_m'] * 1000:.2f} mm, gain {test_metrics['test/refiner_gain_m'] * 1000:+.2f} mm, "
             f"of which from the image {test_metrics['test/refiner_image_gain_m'] * 1000:+.2f} mm"
         )
+        age_metrics = [(key, value) for key, value in test_metrics.items() if key.startswith("test/mae_age")]
+        if age_metrics:
+            print("[INFO] Test MAE by memory age (steps) | " + " | ".join(
+                f"{key[len('test/mae_age'):-2]}: {value * 1000:.2f} mm" for key, value in age_metrics))
 
-    output_path = Path(model_path) if model_path else dataset_path.with_name("transformer_terrain_reconstructor.pt")
-    output_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
         {
             "model_state_dict": {name: parameter.detach().cpu() for name, parameter in model.state_dict().items()},
@@ -743,10 +1048,12 @@ def run_terrain_reconstruction(
             "dataset_metadata": dataset.metadata,
             "history": history,
             "test_dataset_path": test_dataset_path,
+            "init_checkpoint": init_checkpoint,
             "test_metrics": test_metrics,
         },
         output_path,
     )
+    resume_path.unlink(missing_ok=True)  # the training is complete: a rerun must start over, not resume
     print(
         f"[INFO] Saved transformer model checkpoint (best epoch {int(best_metrics['epoch'])}, "
         f"val MAE {best_metrics['val_refined_mae_m'] * 1000:.2f} mm vs baseline {baseline_mae * 1000:.2f} mm) to: {output_path}"
@@ -754,7 +1061,8 @@ def run_terrain_reconstruction(
 
     # Split the validation error by terrain type: flat samples dominate the dataset and hide how the model
     # does on actual terrain.
-    val_target, val_prediction = _predict_heightmaps(model, valid_loader, device, target_normalization)
+    val_predictions = _predict(model, valid_loader, device, target_normalization, train_settings.get("burn_in", 0))
+    val_target, val_prediction = val_predictions["target"], val_predictions["refined"]
     non_flat = val_target.flatten(1).std(dim=1) >= NON_FLAT_STD_THRESHOLD_M
     constant_prediction = train_heightmaps.mean(dim=0, keepdim=True)
     split_metrics = {}
@@ -790,18 +1098,39 @@ def run_terrain_reconstruction(
 NON_FLAT_STD_THRESHOLD_M = 0.01
 
 
+def heightmap_error_summary(ground_error: Tensor) -> dict[str, float]:
+    """A few numbers for a set of predicted heightmaps. ``ground_error`` is (steps, rows, cols): predicted minus true
+    ground height in metres (> 0 = ground drawn too high, a drop that is missed). Columns run along x ahead of the base;
+    the first three (x <= 0.3 m) are not in the current image of the D435 camera."""
+    error = ground_error.abs()
+    per_step_off = (error > 0.05).flatten(1).any(dim=1)
+    return {
+        "steps": int(error.shape[0]),
+        "mae_mm": error.mean().item() * 1000,
+        "mae_near_x_le_0.3m_mm": error[..., :3].mean().item() * 1000,
+        "mae_far_x_ge_0.4m_mm": error[..., 3:].mean().item() * 1000,
+        "cells_within_1cm_pct": (error < 0.01).float().mean().item() * 100,
+        "cells_within_3cm_pct": (error < 0.03).float().mean().item() * 100,
+        "cells_too_high_5cm_pct": (ground_error > 0.05).float().mean().item() * 100,
+        "cells_too_low_5cm_pct": (ground_error < -0.05).float().mean().item() * 100,
+        "steps_with_a_cell_off_5cm_pct": per_step_off.float().mean().item() * 100,
+    }
+
+
+# memory age bins (steps the memory across steps had already seen) for the rollout test metrics
+MEMORY_AGE_BINS = ((0, 10), (10, 25), (25, 50), (50, 100), (100, 200), (200, 100_000))
+
+
 def _evaluate_refiner_breakdown(
-    model: MultiModalTerrainReconstructor,
-    data_loader: DataLoader,
-    device: str | torch.device,
-    target_normalization: dict[str, float],
+    model: MultiModalTerrainReconstructor, predict: Callable[[], dict[str, Tensor]]
 ) -> dict[str, float]:
     """Test metrics in metres, plus how much the refiner adds and how much of it comes from the depth image.
 
-    Two passes: the model as trained (collecting the mean image context), then again with the image context of every
-    sample replaced by that mean, so the refiner keeps its input statistics but loses the sample-specific image.
+    ``predict`` returns the rough and refined predictions and the targets in metres (``_predict`` or
+    ``_predict_rollouts``). Two passes: the model as trained (collecting the mean image context), then again with the
+    image context of every sample replaced by that mean, so the refiner keeps its input statistics but loses the
+    sample-specific image.
     """
-    mean, std = target_normalization["mean"], target_normalization["std"]
     state = {"use_mean": False, "sum": 0.0, "count": 0}
 
     def context_hook(module, inputs, output):
@@ -811,24 +1140,14 @@ def _evaluate_refiner_breakdown(
         state["count"] += output.shape[0]
         return output
 
-    def predict() -> tuple[Tensor, Tensor, Tensor]:
-        rough, refined, targets = [], [], []
-        with torch.no_grad():
-            for depth_data, robot_info, target in data_loader:
-                prediction = model(depth_data=depth_data.to(device), robot_info=robot_info.to(device))
-                rough.append(prediction.rough_heightmap.cpu()[:, 0] * std + mean)
-                refined.append(prediction.refined_heightmap.cpu()[:, 0] * std + mean)
-                targets.append(target[:, 0])
-        return torch.cat(rough), torch.cat(refined), torch.cat(targets)
-
-    model.eval()
     handle = model.refinement_context_projection.register_forward_hook(context_hook)
     try:
-        rough, refined, target = predict()
+        result = predict()
         state["use_mean"] = True
-        _, refined_mean_context, _ = predict()
+        refined_mean_context = predict()["refined"]
     finally:
         handle.remove()
+    rough, refined, target = result["rough"], result["refined"], result["target"]
 
     error = (refined - target).abs()
     non_flat = target.flatten(1).std(dim=1) >= NON_FLAT_STD_THRESHOLD_M
@@ -848,7 +1167,39 @@ def _evaluate_refiner_breakdown(
     if non_flat.any():
         for column, column_error in enumerate(error[non_flat].mean(dim=(0, 1)).tolist()):
             metrics[f"test/non_flat_mae_col{column}_m"] = column_error
+    if "age" in result:
+        for low, high in MEMORY_AGE_BINS:
+            in_bin = (result["age"] >= low) & (result["age"] < high)
+            if in_bin.any():
+                metrics[f"test/mae_age{low}-{high if high < 100_000 else 'inf'}_m"] = error[in_bin].mean().item()
     return metrics
+
+
+def _predict(
+    model: MultiModalTerrainReconstructor,
+    data_loader: DataLoader,
+    device: str | torch.device,
+    target_normalization: dict[str, float],
+    burn_in: int = 0,
+) -> dict[str, Tensor]:
+    """Rough and refined predictions and targets in metres, (N, h, w), for every sample of the loader (for batches of
+    segments, every step after ``burn_in``)."""
+    mean, std = target_normalization["mean"], target_normalization["std"]
+    outputs = {"rough": [], "refined": [], "target": []}
+    model.eval()
+    with torch.no_grad():
+        for batch in data_loader:
+            depth_data, robot_info, target = batch[0].to(device), batch[1].to(device), batch[2]
+            if len(batch) == 4:
+                prediction = _segment_prediction(model, depth_data, robot_info, batch[3][0].to(device), burn_in)
+                target = target[:, burn_in:]
+            else:
+                prediction = model(depth_data=depth_data, robot_info=robot_info)
+            heightmap_size = target.shape[-2:]
+            outputs["rough"].append(prediction.rough_heightmap.cpu().reshape(-1, *heightmap_size) * std + mean)
+            outputs["refined"].append(prediction.refined_heightmap.cpu().reshape(-1, *heightmap_size) * std + mean)
+            outputs["target"].append(target.reshape(-1, *heightmap_size))
+    return {key: torch.cat(value) for key, value in outputs.items()}
 
 
 def _predict_heightmaps(
@@ -858,14 +1209,61 @@ def _predict_heightmaps(
     target_normalization: dict[str, float],
 ) -> tuple[Tensor, Tensor]:
     """Return (target, refined prediction) in metres for every sample of the loader, shaped (N, H, W)."""
+    outputs = _predict(model, data_loader, device, target_normalization)
+    return outputs["target"], outputs["refined"]
+
+
+def _predict_rollouts(
+    model: MultiModalTerrainReconstructor,
+    dataset: SequenceTerrainReconstructionDataset,
+    device: str | torch.device,
+    target_normalization: dict[str, float],
+) -> dict[str, Tensor]:
+    """Predictions through every recorded step in order, as on the robot: all envs of a run at once, the memory across
+    steps carried from one step to the next and restarted at the first clean window after a reset.
+
+    Returns rough, refined and target in metres (N, h, w) on the steps with a clean window, with their run, step, env
+    and memory age (N,): the number of steps the memory had already seen, 0 at its restart.
+    """
+    mean, std = target_normalization["mean"], target_normalization["std"]
+    outputs = {key: [] for key in ("rough", "refined", "target", "run", "step", "env", "age")}
     model.eval()
-    targets, predictions = [], []
     with torch.no_grad():
-        for depth_data, robot_info, target in data_loader:
-            prediction = model(depth_data=depth_data.to(device), robot_info=robot_info.to(device)).refined_heightmap
-            predictions.append(prediction.cpu()[:, 0] * target_normalization["std"] + target_normalization["mean"])
-            targets.append(target[:, 0])
-    return torch.cat(targets), torch.cat(predictions)
+        for run, record in enumerate(dataset.runs):
+            resets = record["resets"]
+            robot_info = torch.cat([chunk["robot_info"] for chunk in record["chunks"]]).to(device)  # (steps, envs, F)
+            frames: dict[int, Tensor] = {}  # depth frames on the device, kept while a window still needs them
+            age = torch.full((resets.shape[1],), -1)
+            hidden_state = None
+            for step in range(dataset.history, resets.shape[0] - 1):
+                clean = resets[step + 1] == resets[step - dataset.history]
+                age = torch.where(clean, age + 1, -1)
+                if hidden_state is not None:
+                    restart = (age == 0).to(device).view(1, -1, 1)
+                    hidden_state = torch.where(restart, torch.zeros_like(hidden_state), hidden_state)
+
+                depth_steps = (step + dataset.depth_offsets).tolist()
+                for old_step in [s for s in frames if s < depth_steps[0]]:
+                    del frames[old_step]
+                for depth_step in depth_steps:
+                    if depth_step not in frames:
+                        frames[depth_step] = dataset.step_rows(run, "depth_data", depth_step).to(device)
+                prediction = model(
+                    depth_data=torch.stack([frames[s] for s in depth_steps], dim=1).float(),
+                    robot_info=robot_info[step + dataset.proprio_offsets].transpose(0, 1).float(),
+                    hidden_state=hidden_state,
+                )
+                hidden_state = prediction.hidden_state
+
+                envs = clean.nonzero().flatten()
+                outputs["rough"].append(prediction.rough_heightmap[envs.to(device), 0].cpu() * std + mean)
+                outputs["refined"].append(prediction.refined_heightmap[envs.to(device), 0].cpu() * std + mean)
+                outputs["target"].append(dataset.step_rows(run, dataset.target_key, step)[envs, 0].float())
+                outputs["run"].append(torch.full_like(envs, run))
+                outputs["step"].append(torch.full_like(envs, step))
+                outputs["env"].append(envs)
+                outputs["age"].append(age[envs])
+    return {key: torch.cat(value) for key, value in outputs.items()}
 
 
 def _heightmap_comparison_figure(
@@ -1030,6 +1428,42 @@ def _parse_args() -> argparse.Namespace:
         help="Rotate the depth context into the heightmap layout (rows = lateral, cols = distance) before the refiner.",
     )
     parser.add_argument(
+        "--depth_history_stride",
+        type=int,
+        default=1,
+        help="Sequence datasets only: steps between the 5 depth frames of a sample (1 -> 80 ms, 10 -> 0.8 s).",
+    )
+    parser.add_argument(
+        "--segment_length",
+        type=int,
+        default=1,
+        help="Sequence datasets only: train on segments of this many consecutive steps of one env (> 1 for --recurrent_steps).",
+    )
+    parser.add_argument(
+        "--burn_in", type=int, default=0, help="First steps of each segment: memory warm-up only, no loss and no gradient."
+    )
+    parser.add_argument(
+        "--recurrent_steps", action="store_true", help="Add the memory carried across control steps (a second GRU)."
+    )
+    parser.add_argument(
+        "--samples_per_epoch", type=int, default=None, help="Random training samples (segments) per epoch; default all."
+    )
+    parser.add_argument(
+        "--max_val_samples", type=int, default=None, help="Sequence datasets only: fixed random subset of validation samples."
+    )
+    parser.add_argument(
+        "--refiner_context_newest_frame",
+        action="store_true",
+        help="Refiner image context from the newest depth frame instead of the mean of all frames.",
+    )
+    parser.add_argument(
+        "--init_checkpoint",
+        type=str,
+        default=None,
+        help="Start from this trained checkpoint (its architecture, weights and normalization); with --recurrent_steps the memory is added.",
+    )
+    parser.add_argument("--learning_rate", type=float, default=3e-4, help="Peak learning rate (cosine schedule).")
+    parser.add_argument(
         "--test_dataset_path",
         type=str,
         nargs="+",
@@ -1069,6 +1503,15 @@ if __name__ == "__main__":
             num_workers=args.num_workers,
             align_refiner_context=args.align_refiner_context,
             test_dataset_path=args.test_dataset_path,
+            depth_history_stride=args.depth_history_stride,
+            segment_length=args.segment_length,
+            burn_in=args.burn_in,
+            recurrent_steps=args.recurrent_steps,
+            samples_per_epoch=args.samples_per_epoch,
+            max_val_samples=args.max_val_samples,
+            refiner_context_newest_frame=args.refiner_context_newest_frame,
+            init_checkpoint=args.init_checkpoint,
+            learning_rate=args.learning_rate,
         )
     else:
         run_fake_data_smoke_test(

@@ -3,14 +3,18 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Collect a depth-to-heightmap dataset using a trained locomotion policy."""
+"""Collect terrain reconstruction sequences with a trained locomotion policy.
+
+Every step of every env is recorded (one depth frame, the 'common' observation, the heightmap target, the reset flag
+and the camera/scanner poses) and written time-major, ``(steps, envs, ...)``, to chunk files in ``--dataset_path``.
+History windows and depth strides are built at training time from these sequences.
+"""
 
 """Launch Isaac Sim Simulator first."""
 
 import argparse
 import os
 import sys
-from collections import deque
 
 from isaaclab.app import AppLauncher
 
@@ -18,12 +22,9 @@ from isaaclab.app import AppLauncher
 import cli_args  # isort: skip
 
 # add argparse arguments
-parser = argparse.ArgumentParser(description="Collect a terrain reconstruction dataset with a trained RSL-RL policy.")
+parser = argparse.ArgumentParser(description="Collect terrain reconstruction sequences with a trained RSL-RL policy.")
 parser.add_argument("--video", action="store_true", default=False, help="Record videos during collection.")
 parser.add_argument("--video_length", type=int, default=200, help="Length of the recorded video (in steps).")
-parser.add_argument(
-    "--disable_fabric", action="store_true", default=False, help="Disable fabric and use USD I/O operations."
-)
 parser.add_argument("--num_envs", type=int, default=None, help="Number of environments to simulate.")
 parser.add_argument("--task", type=str, default=None, help="Name of the task.")
 parser.add_argument(
@@ -35,60 +36,18 @@ parser.add_argument(
     action="store_true",
     help="Use the pre-trained checkpoint from Nucleus.",
 )
-parser.add_argument("--real-time", action="store_true", default=False, help="Run in real-time, if possible.")
 parser.add_argument(
     "--dataset_path",
     type=str,
     default=None,
-    help="Where to save the collected dataset. Defaults to <checkpoint_dir>/terrain_reconstruction_dataset.pt.",
+    help="Directory for the chunk files. Defaults to <checkpoint_dir>/terrain_reconstruction_sequences.",
 )
+parser.add_argument("--num_steps", type=int, default=1200, help="Steps to record; every env is recorded at every step.")
 parser.add_argument(
-    "--num_collection_rollouts",
+    "--steps_per_chunk",
     type=int,
-    default=25,
-    help="Number of rollout windows to collect before saving the dataset.",
-)
-parser.add_argument(
-    "--rollout_horizon",
-    type=int,
-    default=None,
-    help="Optional fixed rollout length. Defaults to the environment max episode length when available.",
-)
-parser.add_argument(
-    "--depth_history_length",
-    type=int,
-    default=5,
-    help="Number of depth frames per saved training sample.",
-)
-parser.add_argument(
-    "--depth_history_stride",
-    type=int,
-    default=1,
-    help=(
-        "Simulation steps between consecutive saved depth frames. With stride S and length L, a sample covers the"
-        " last (L - 1) * S steps (always including the newest frame) at the cost of L frames."
-    ),
-)
-parser.add_argument(
-    "--proprio_history_length",
-    type=int,
-    default=50,
-    help="Number of robot-info frames per saved training sample.",
-)
-parser.add_argument(
-    "--max_dataset_samples",
-    type=int,
-    default=10000,
-    help="Maximum number of training samples to keep in the saved dataset.",
-)
-parser.add_argument(
-    "--samples_per_step",
-    type=int,
-    default=None,
-    help=(
-        "Maximum number of randomly chosen environments added to the dataset per simulation step. Spreads the"
-        " sample budget over whole episodes instead of filling it within a few steps. Defaults to all valid ones."
-    ),
+    default=100,
+    help="Steps per chunk file (all envs). With 256 envs a step of fp16 depth is about 13 MB.",
 )
 parser.add_argument(
     "--depth_dtype",
@@ -96,21 +55,6 @@ parser.add_argument(
     choices=("float16", "float32"),
     default="float16",
     help="Storage dtype for depth frames. float16 halves the dataset memory (~1 mm precision in the 0-2 m range).",
-)
-parser.add_argument(
-    "--save_every_rollouts",
-    type=int,
-    default=5,
-    help="Save an intermediate dataset checkpoint every N rollout windows.",
-)
-parser.add_argument(
-    "--shifted_heightmap_center_x",
-    type=float,
-    default=None,
-    help=(
-        "Also save 'heightmaps_shifted': the policy's heightmap grid with its centre moved to this x in the base frame"
-        " [m], ray-cast by a separate target-only scanner. The policy keeps reading its own heightmap."
-    ),
 )
 # append RSL-RL cli arguments
 cli_args.add_rsl_rl_args(parser)
@@ -158,50 +102,48 @@ from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
 
-class TerrainReconstructionDatasetBuilder:
-    def __init__(self, max_samples: int, depth_dtype: torch.dtype = torch.float32):
-        self.max_samples = max_samples
+class SequenceChunkWriter:
+    """Every step of every env, time-major ``(steps, envs, ...)``, written to disk in chunks so RAM stays bounded.
+
+    Each step is copied to the CPU right away: Isaac Lab reuses its observation and sensor buffers in place, so
+    keeping references would store the same buffer many times.
+    """
+
+    def __init__(self, directory: str, steps_per_chunk: int, depth_dtype: torch.dtype, metadata: dict):
+        self.directory = directory
+        self.steps_per_chunk = steps_per_chunk
         self.depth_dtype = depth_dtype
-        self.batches: dict[str, list[torch.Tensor]] = {}
-        self.num_samples = 0
+        self.metadata = metadata
+        self.steps: dict[str, list[torch.Tensor]] = {}
+        self.num_steps = 0
+        self.chunk_index = 0
+        self.chunk_first_step = 0
+        os.makedirs(directory, exist_ok=True)
 
-    def add_batch(self, **tensors: torch.Tensor) -> int:
-        """Add per-sample tensors (same leading batch size); ``depth_data`` is stored with ``depth_dtype``."""
-        if self.num_samples >= self.max_samples:
-            return 0
-
-        remaining = self.max_samples - self.num_samples
-        batch_size = next(iter(tensors.values())).shape[0]
-        if batch_size > remaining:
-            selected_indices = torch.randperm(batch_size, device=tensors["depth_data"].device)[:remaining]
-            tensors = {name: tensor[selected_indices] for name, tensor in tensors.items()}
-            batch_size = remaining
-
+    def add_step(self, **tensors: torch.Tensor) -> None:
         for name, tensor in tensors.items():
             tensor = tensor.detach().to(self.depth_dtype) if name == "depth_data" else tensor.detach()
-            self.batches.setdefault(name, []).append(tensor.cpu())
-        self.num_samples += batch_size
-        return batch_size
+            self.steps.setdefault(name, []).append(tensor.to("cpu", copy=True))
+        self.num_steps += 1
+        if self.num_steps - self.chunk_first_step == self.steps_per_chunk:
+            self.flush()
 
-    def save(self, dataset_path: str, metadata: dict) -> None:
-        if self.num_samples == 0:
-            raise RuntimeError("No dataset samples were collected, so nothing can be saved.")
-
-        dataset_dir = os.path.dirname(dataset_path)
-        if dataset_dir:
-            os.makedirs(dataset_dir, exist_ok=True)
-        # merge one key at a time and keep only the merged tensor, so the peak is one extra copy of the largest key
-        for name, batches in self.batches.items():
-            self.batches[name] = [torch.cat(batches, dim=0)]
-        dataset = {
-            **{name: batches[0] for name, batches in self.batches.items()},
-            "metadata": {
-                **metadata,
-                "num_samples": self.num_samples,
-            },
+    def flush(self) -> None:
+        if not self.steps:
+            return
+        chunk = {name: torch.stack(steps) for name, steps in self.steps.items()}
+        chunk["metadata"] = {
+            **self.metadata,
+            "chunk_index": self.chunk_index,
+            "first_step": self.chunk_first_step,
+            "num_steps": self.num_steps - self.chunk_first_step,
         }
-        torch.save(dataset, dataset_path)
-        print(f"[INFO] Saved terrain reconstruction dataset to: {dataset_path}")
+        path = os.path.join(self.directory, f"chunk_{self.chunk_index:03d}.pt")
+        torch.save(chunk, path)
+        print(f"[INFO] Saved steps {self.chunk_first_step}-{self.num_steps - 1} to: {path}")
+        self.steps = {}
+        self.chunk_index += 1
+        self.chunk_first_step = self.num_steps
 
 
 # heightmap values are (sensor origin z - terrain z - HEIGHTMAP_HEIGHT_OFFSET), as in the policy observation
@@ -241,24 +183,6 @@ def _get_camera_poses(env: RslRlVecEnvWrapper) -> tuple[torch.Tensor, torch.Tens
     return _as_torch(camera_data.pos_w).clone(), _matrix_from_quat_xyzw(_as_torch(camera_data.quat_w_world))
 
 
-def _camera_poses_in_heightmap_frame(
-    camera_positions: torch.Tensor, camera_rotations: torch.Tensor, scanner, env_ids: torch.Tensor
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Express camera poses (B, T, 3) / (B, T, 3, 3) in the current yaw-aligned heightmap frame of ``scanner``.
-
-    In that frame, a terrain point p has heightmap value ``-p_z - HEIGHTMAP_HEIGHT_OFFSET`` at the cell under it.
-    """
-    origin = _as_torch(scanner.data.pos_w)[env_ids]
-    x, y, z, w = _as_torch(scanner.data.quat_w)[env_ids].unbind(-1)
-    yaw = torch.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z))
-    cos_yaw, sin_yaw, zeros, ones = yaw.cos(), yaw.sin(), torch.zeros_like(yaw), torch.ones_like(yaw)
-    world_to_heightmap = torch.stack(
-        (cos_yaw, sin_yaw, zeros, -sin_yaw, cos_yaw, zeros, zeros, zeros, ones), dim=-1
-    ).view(-1, 1, 3, 3)
-    positions = (world_to_heightmap @ (camera_positions - origin.unsqueeze(1)).unsqueeze(-1)).squeeze(-1)
-    return positions, world_to_heightmap @ camera_rotations
-
-
 def _get_heightmap_grid_shape(env: RslRlVecEnvWrapper, num_rays: int) -> tuple[int, int]:
     pattern_cfg = env.unwrapped.cfg.perceptive_height_scanner.pattern_cfg
     heightmap_cols = int(round(pattern_cfg.size[0] / pattern_cfg.resolution)) + 1
@@ -275,37 +199,28 @@ def _get_heightmap_grid_shape(env: RslRlVecEnvWrapper, num_rays: int) -> tuple[i
     return heightmap_rows, heightmap_cols
 
 
-def _get_heightmap_targets(env: RslRlVecEnvWrapper, scanner=None) -> tuple[torch.Tensor, tuple[int, int]]:
-    scanner = env.unwrapped._perceptive_height_scanner if scanner is None else scanner
+def _get_heightmap_targets(env: RslRlVecEnvWrapper) -> torch.Tensor:
+    """Policy heightmap as (num_envs, 1, rows, cols): rows along y (lateral), cols along x (forward)."""
+    scanner = env.unwrapped._perceptive_height_scanner
     height_data = scanner.data.pos_w[:, 2].unsqueeze(1) - scanner.data.ray_hits_w[..., 2] - HEIGHTMAP_HEIGHT_OFFSET
     height_data = torch.nan_to_num(height_data, nan=0.0, posinf=1.0, neginf=-1.0)
     height_data = height_data.clip(-1.0, 1.0)
 
     heightmap_rows, heightmap_cols = _get_heightmap_grid_shape(env=env, num_rays=height_data.shape[1])
-    heightmaps = height_data.view(height_data.shape[0], 1, heightmap_rows, heightmap_cols)
-    return heightmaps, (heightmap_rows, heightmap_cols)
-
-
-def _default_dataset_path(log_dir: str) -> str:
-    return os.path.join(log_dir, "terrain_reconstruction_dataset.pt")
-
-
-def _maybe_save_checkpoint(
-    dataset_builder: TerrainReconstructionDatasetBuilder,
-    dataset_path: str,
-    metadata: dict,
-    collected_rollouts: int,
-) -> None:
-    if dataset_builder.num_samples == 0:
-        return
-
-    checkpoint_path = dataset_path.replace(".pt", f"_rollouts_{collected_rollouts}.pt")
-    dataset_builder.save(checkpoint_path, metadata)
+    return height_data.view(height_data.shape[0], 1, heightmap_rows, heightmap_cols)
 
 
 @hydra_task_config(args_cli.task, args_cli.agent)
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
-    """Collect depth/robot-state/heightmap tuples for terrain reconstruction training."""
+    """Record every step of every env for ``--num_steps`` steps.
+
+    Per step and env: ``depth_data`` (1, H, W), ``robot_info`` (the 'common' observation), ``heightmaps`` (1, rows,
+    cols), ``dones`` (the episode ended at this step: Isaac Lab has already reset the env, so this step belongs to
+    the next episode), and the world pose of the camera and of the heightmap scanner (to rebuild relative poses
+    later). A training window over steps t-K..t is valid only if none of them has ``dones``: this also drops the
+    reset step itself, whose sensor data may still show the previous episode. Episodes shorter than K+1 steps give
+    no windows.
+    """
     task_name = args_cli.task.split(":")[-1]
     train_task_name = task_name.replace("-Play", "")
 
@@ -330,16 +245,12 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         resume_path = get_checkpoint_path(log_root_path, agent_cfg.load_run, agent_cfg.load_checkpoint)
 
     log_dir = os.path.dirname(resume_path)
-    dataset_path = os.path.abspath(args_cli.dataset_path) if args_cli.dataset_path else _default_dataset_path(log_dir)
+    if args_cli.dataset_path:
+        dataset_dir = os.path.abspath(args_cli.dataset_path)
+    else:
+        dataset_dir = os.path.join(log_dir, "terrain_reconstruction_sequences")
     env_cfg.log_dir = log_dir
     env_cfg.use_depth_camera = True
-    if args_cli.shifted_heightmap_center_x is not None:
-        # target-only copy of the policy's height scanner, moved along x: the policy keeps its own observation
-        scanner_cfg = env_cfg.perceptive_height_scanner
-        env_cfg.reconstruction_target_scanner = scanner_cfg.replace(
-            offset=scanner_cfg.offset.replace(pos=(args_cli.shifted_heightmap_center_x, *scanner_cfg.offset.pos[1:])),
-            visualizer_cfg=scanner_cfg.visualizer_cfg.replace(prim_path="/Visuals/ReconstructionTargetScanner"),
-        )
 
     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
 
@@ -369,144 +280,67 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     runner.load(resume_path)
 
     policy = runner.get_inference_policy(device=env.unwrapped.device)
-
     obs = env.get_observations()
-    current_depth = _sanitize_depth_data(env)
-    current_heightmaps, heightmap_size = _get_heightmap_targets(env)
-
-    num_envs = current_depth.shape[0]
-    rollout_horizon = args_cli.rollout_horizon
-    if rollout_horizon is None:
-        rollout_horizon = int(getattr(env.unwrapped, "max_episode_length", 200))
-
-    if args_cli.depth_history_stride < 1:
-        raise ValueError(f"--depth_history_stride must be >= 1, got {args_cli.depth_history_stride}.")
-    # every frame of the window is kept on the GPU; only every stride-th one is saved per sample
-    depth_window_length = (args_cli.depth_history_length - 1) * args_cli.depth_history_stride + 1
-    max_history_length = max(depth_window_length, args_cli.proprio_history_length)
-    valid_history_lengths = torch.ones(num_envs, dtype=torch.long, device=env.unwrapped.device)
-    depth_dtype = getattr(torch, args_cli.depth_dtype)
-
-    depth_history: deque[torch.Tensor] = deque(maxlen=depth_window_length)
-    camera_history: deque[tuple[torch.Tensor, torch.Tensor]] = deque(maxlen=depth_window_length)
-    robot_history: deque[torch.Tensor] = deque(maxlen=args_cli.proprio_history_length)
-    depth_history.append(current_depth.to(depth_dtype, copy=True))
-    camera_history.append(_get_camera_poses(env))
-    robot_history.append(obs["common"].clone())
-    policy_scanner = env.unwrapped._perceptive_height_scanner
-    shifted_scanner = getattr(env.unwrapped, "_reconstruction_target_scanner", None)
-
-    dataset_builder = TerrainReconstructionDatasetBuilder(
-        max_samples=args_cli.max_dataset_samples, depth_dtype=depth_dtype
-    )
-    collected_rollouts = 0
-    rollout_step = 0
 
     depth_camera_cfg = env.unwrapped.cfg.depth_camera
     grid_cfg = env.unwrapped.cfg.perceptive_height_scanner
+    scanner = env.unwrapped._perceptive_height_scanner
     metadata = {
+        "format": "sequence",
         "camera_offset_pos": tuple(depth_camera_cfg.offset.pos),
         "camera_offset_rot_xyzw": tuple(depth_camera_cfg.offset.rot),
         "camera_offset_convention": depth_camera_cfg.offset.convention,
         "camera_focal_length": depth_camera_cfg.pattern_cfg.focal_length,
         "camera_horizontal_aperture": depth_camera_cfg.pattern_cfg.horizontal_aperture,
+        # the same for every env and step
+        "camera_intrinsics": _as_torch(env.unwrapped._depth_camera.data.intrinsic_matrices)[0].cpu(),
         "heightmap_grid": {
             "size": tuple(grid_cfg.pattern_cfg.size),
             "resolution": grid_cfg.pattern_cfg.resolution,
             "ordering": grid_cfg.pattern_cfg.ordering,
             "center_x": grid_cfg.offset.pos[0],
         },
-        "shifted_heightmap_center_x": args_cli.shifted_heightmap_center_x,
         "heightmap_height_offset": HEIGHTMAP_HEIGHT_OFFSET,
         "depth_max_range": DEPTH_MAX_RANGE,
         "step_dt": env.unwrapped.step_dt,
         "task": args_cli.task,
         "checkpoint_path": resume_path,
+        "seed": agent_cfg.seed,
         "robot_obs_key": "common",
-        "depth_history_length": args_cli.depth_history_length,
-        "depth_history_stride": args_cli.depth_history_stride,
-        "depth_history_span_steps": depth_window_length - 1,
-        "proprio_history_length": args_cli.proprio_history_length,
-        "depth_image_size": tuple(current_depth.shape[-2:]),
-        "heightmap_size": heightmap_size,
-        "num_envs": num_envs,
-        "samples_per_step": args_cli.samples_per_step,
+        "depth_image_size": tuple(_sanitize_depth_data(env).shape[-2:]),
+        "heightmap_size": tuple(_get_heightmap_targets(env).shape[-2:]),
+        "num_envs": env.unwrapped.num_envs,
+        "sequence_steps": args_cli.num_steps,
+        "steps_per_chunk": args_cli.steps_per_chunk,
         "depth_dtype": args_cli.depth_dtype,
     }
+    writer = SequenceChunkWriter(
+        directory=dataset_dir,
+        steps_per_chunk=args_cli.steps_per_chunk,
+        depth_dtype=getattr(torch, args_cli.depth_dtype),
+        metadata=metadata,
+    )
 
-    while (
-        simulation_app.is_running()
-        and collected_rollouts < args_cli.num_collection_rollouts
-        and dataset_builder.num_samples < args_cli.max_dataset_samples
-    ):
+    while simulation_app.is_running() and writer.num_steps < args_cli.num_steps:
         with torch.no_grad():
             actions = policy(obs)
             obs, _, dones, _ = env.step(actions)
-            dones = dones.bool()
-
-            current_depth = _sanitize_depth_data(env)
-            current_heightmaps, _ = _get_heightmap_targets(env)
-            current_robot_info = obs["common"].clone()
-
-        valid_history_lengths[dones] = 0
-        depth_history.append(current_depth.to(depth_dtype, copy=True))
-        camera_history.append(_get_camera_poses(env))
-        robot_history.append(current_robot_info)
-        valid_history_lengths = torch.clamp(valid_history_lengths + 1, max=max_history_length)
-
-        if len(depth_history) >= depth_window_length and len(robot_history) >= args_cli.proprio_history_length:
-            valid_ids = (valid_history_lengths >= max_history_length).nonzero().flatten()
-            if args_cli.samples_per_step is not None and valid_ids.numel() > args_cli.samples_per_step:
-                valid_ids = valid_ids[torch.randperm(valid_ids.numel(), device=valid_ids.device)[: args_cli.samples_per_step]]
-            if valid_ids.numel() > 0:
-                # stack the history only for the selected envs instead of all of them
-                # newest frame last; walk back from it in steps of the stride
-                strided_frames = list(depth_history)[::-args_cli.depth_history_stride][::-1]
-                strided_cameras = list(camera_history)[::-args_cli.depth_history_stride][::-1]
-                depth_sequence = torch.stack([frame[valid_ids] for frame in strided_frames], dim=1)
-                robot_sequence = torch.stack([frame[valid_ids] for frame in robot_history], dim=1)
-                camera_positions, camera_rotations = _camera_poses_in_heightmap_frame(
-                    camera_positions=torch.stack([pos[valid_ids] for pos, _ in strided_cameras], dim=1),
-                    camera_rotations=torch.stack([rot[valid_ids] for _, rot in strided_cameras], dim=1),
-                    scanner=policy_scanner,
-                    env_ids=valid_ids,
-                )
-                sample = {
-                    "depth_data": depth_sequence,
-                    "robot_info": robot_sequence,
-                    "heightmaps": current_heightmaps[valid_ids],
-                    "camera_intrinsics": _as_torch(env.unwrapped._depth_camera.data.intrinsic_matrices)[valid_ids],
-                    "camera_positions": camera_positions,
-                    "camera_rotations": camera_rotations,
-                    "env_ids": valid_ids,
-                }
-                if shifted_scanner is not None:
-                    sample["heightmaps_shifted"] = _get_heightmap_targets(env, shifted_scanner)[0][valid_ids]
-                added_samples = dataset_builder.add_batch(**sample)
-                if added_samples > 0 and dataset_builder.num_samples % 1000 < added_samples:
-                    print(f"[INFO] Collected {dataset_builder.num_samples} / {args_cli.max_dataset_samples} samples.")
-
-        rollout_step += 1
-        if rollout_step >= rollout_horizon:
-            collected_rollouts += 1
-            rollout_step = 0
-            print(
-                f"[INFO] Completed rollout {collected_rollouts}/{args_cli.num_collection_rollouts} "
-                f"with {dataset_builder.num_samples} saved samples."
+            camera_positions, camera_rotations = _get_camera_poses(env)
+            writer.add_step(
+                depth_data=_sanitize_depth_data(env),
+                robot_info=obs["common"],
+                heightmaps=_get_heightmap_targets(env),
+                dones=dones.bool(),
+                camera_positions_w=camera_positions,
+                camera_rotations_w=camera_rotations,
+                scanner_positions_w=_as_torch(scanner.data.pos_w),
+                scanner_quats_w=_as_torch(scanner.data.quat_w),
             )
+        if writer.num_steps % 100 == 0:
+            print(f"[INFO] Recorded {writer.num_steps} / {args_cli.num_steps} steps.")
 
-            if args_cli.save_every_rollouts > 0 and collected_rollouts % args_cli.save_every_rollouts == 0:
-                _maybe_save_checkpoint(
-                    dataset_builder=dataset_builder,
-                    dataset_path=dataset_path,
-                    metadata=metadata,
-                    collected_rollouts=collected_rollouts,
-                )
-
-    if dataset_builder.num_samples == 0:
-        raise RuntimeError("No terrain reconstruction samples were collected. Try increasing rollout count or lowering history lengths.")
-
-    dataset_builder.save(dataset_path, metadata)
+    writer.flush()
+    print(f"[INFO] Saved {writer.num_steps} steps x {metadata['num_envs']} envs in {writer.chunk_index} chunks to: {dataset_dir}")
     env.close()
 
 
