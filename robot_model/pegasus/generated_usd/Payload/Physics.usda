@@ -1,0 +1,951 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "MuJoCo USD Converter v0.2.0"
+    }
+    defaultPrim = "pegasus_description"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "pegasus_description"
+{
+    def Scope "Physics"
+    {
+        def Material "PhysicsMaterial" (
+            prepend apiSchemas = ["PhysicsMaterialAPI", "NewtonMaterialAPI", "MjcMaterialAPI"]
+        )
+        {
+            float newton:rollingFriction = 0.0001
+            float newton:torsionalFriction = 0.005
+            float physics:dynamicFriction = 1
+        }
+
+        def MjcActuator "FL_hip"
+        {
+            uniform double mjc:ctrlRange:max = 120
+            uniform double mjc:ctrlRange:min = -120
+            rel mjc:target = </pegasus_description/Geometry/base/FL_hip/FL_hip_joint>
+        }
+
+        def MjcActuator "FL_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 120
+            uniform double mjc:ctrlRange:min = -120
+            rel mjc:target = </pegasus_description/Geometry/base/FL_hip/FL_thigh/FL_thigh_joint>
+        }
+
+        def MjcActuator "FL_calf"
+        {
+            uniform double mjc:ctrlRange:max = 210
+            uniform double mjc:ctrlRange:min = -210
+            rel mjc:target = </pegasus_description/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_calf_joint>
+        }
+
+        def MjcActuator "FR_hip"
+        {
+            uniform double mjc:ctrlRange:max = 120
+            uniform double mjc:ctrlRange:min = -120
+            rel mjc:target = </pegasus_description/Geometry/base/FR_hip/FR_hip_joint>
+        }
+
+        def MjcActuator "FR_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 120
+            uniform double mjc:ctrlRange:min = -120
+            rel mjc:target = </pegasus_description/Geometry/base/FR_hip/FR_thigh/FR_thigh_joint>
+        }
+
+        def MjcActuator "FR_calf"
+        {
+            uniform double mjc:ctrlRange:max = 210
+            uniform double mjc:ctrlRange:min = -210
+            rel mjc:target = </pegasus_description/Geometry/base/FR_hip/FR_thigh/FR_calf/FR_calf_joint>
+        }
+
+        def MjcActuator "RL_hip"
+        {
+            uniform double mjc:ctrlRange:max = 120
+            uniform double mjc:ctrlRange:min = -120
+            rel mjc:target = </pegasus_description/Geometry/base/RL_hip/RL_hip_joint>
+        }
+
+        def MjcActuator "RL_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 120
+            uniform double mjc:ctrlRange:min = -120
+            rel mjc:target = </pegasus_description/Geometry/base/RL_hip/RL_thigh/RL_thigh_joint>
+        }
+
+        def MjcActuator "RL_calf"
+        {
+            uniform double mjc:ctrlRange:max = 210
+            uniform double mjc:ctrlRange:min = -210
+            rel mjc:target = </pegasus_description/Geometry/base/RL_hip/RL_thigh/RL_calf/RL_calf_joint>
+        }
+
+        def MjcActuator "RR_hip"
+        {
+            uniform double mjc:ctrlRange:max = 120
+            uniform double mjc:ctrlRange:min = -120
+            rel mjc:target = </pegasus_description/Geometry/base/RR_hip/RR_hip_joint>
+        }
+
+        def MjcActuator "RR_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 120
+            uniform double mjc:ctrlRange:min = -120
+            rel mjc:target = </pegasus_description/Geometry/base/RR_hip/RR_thigh/RR_thigh_joint>
+        }
+
+        def MjcActuator "RR_calf"
+        {
+            uniform double mjc:ctrlRange:max = 210
+            uniform double mjc:ctrlRange:min = -210
+            rel mjc:target = </pegasus_description/Geometry/base/RR_hip/RR_thigh/RR_calf/RR_calf_joint>
+        }
+    }
+
+    def "Geometry"
+    {
+        def "base" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysicsArticulationRootAPI", "NewtonArticulationRootAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0.00846406, 0.00404455, -0.000762916)
+            float3 physics:diagonalInertia = (3.892899, 3.367542, 1.153365)
+            float physics:mass = 49.344
+            quatf physics:principalAxes = (-0.000031262505, 0.70832103, 0.0024725401, 0.70588607)
+
+            over "Box" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                float newton:contactGap = 0
+                float physics:density = 1000
+            }
+
+            over "Capsule" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                float newton:contactGap = 0
+                float physics:density = 1000
+            }
+
+            over "Capsule_1" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                float newton:contactGap = 0
+                float physics:density = 1000
+            }
+
+            over "Capsule_2" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                float newton:contactGap = 0
+                float physics:density = 1000
+            }
+
+            over "Capsule_3" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                float newton:contactGap = 0
+                float physics:density = 1000
+            }
+
+            over "Capsule_4" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                float newton:contactGap = 0
+                float physics:density = 1000
+            }
+
+            over "Capsule_5" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                float newton:contactGap = 0
+                float physics:density = 1000
+            }
+
+            over "imu" (
+                prepend apiSchemas = ["MjcSiteAPI"]
+            )
+            {
+            }
+
+            def "FL_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0.000542, -0.02662, 0.10103)
+                float3 physics:diagonalInertia = (0.00675174, 0.00530183, 0.00343653)
+                float physics:mass = 2.871
+                quatf physics:principalAxes = (0.44833893, 0.46882695, 0.52629995, 0.54972893)
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                over "Capsule_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "FL_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.3
+                    uniform double mjc:damping = 0.1
+                    uniform double mjc:frictionloss = 3.5022
+                    uniform token physics:axis = "Z"
+                    rel physics:body0 = </pegasus_description/Geometry/base>
+                    rel physics:body1 = </pegasus_description/Geometry/base/FL_hip>
+                    point3f physics:localPos0 = (0.334, 0.163, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (0.7071068, 0, 0.7071067, 0)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                    float physics:lowerLimit = -35.00199
+                    float physics:upperLimit = 90.00021
+                }
+
+                def "FL_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.09529, 0.07115, -0.05348)
+                    float3 physics:diagonalInertia = (0.119485, 0.113691, 0.00911342)
+                    float physics:mass = 4.8923
+                    quatf physics:principalAxes = (0.26879004, 0.70650804, 0.24105401, 0.60868007)
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Sphere" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "FL_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.3416
+                        uniform double mjc:damping = 0.4826
+                        uniform double mjc:frictionloss = 2.1155
+                        uniform token physics:axis = "Z"
+                        rel physics:body0 = </pegasus_description/Geometry/base/FL_hip>
+                        rel physics:body1 = </pegasus_description/Geometry/base/FL_hip/FL_thigh>
+                        point3f physics:localPos0 = (0, 0.1485, 0.1045)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (0.7071068, -0.7071067, 5.551115e-17, 1.110223e-16)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = -168.00269
+                        float physics:upperLimit = 168.00269
+                    }
+
+                    def "FL_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.245582, 0.00121522, 0.000150716)
+                        float3 physics:diagonalInertia = (0.0173389, 0.0171665, 0.000549556)
+                        float physics:mass = 0.67
+                        quatf physics:principalAxes = (-0.0018218308, 0.70505226, 0.02685771, 0.7086442)
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Sphere" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            float newton:contactGap = 0
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "FL_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.6
+                            uniform double mjc:damping = 1.1445
+                            uniform double mjc:frictionloss = 4.7939
+                            uniform token physics:axis = "Z"
+                            rel physics:body0 = </pegasus_description/Geometry/base/FL_hip/FL_thigh>
+                            rel physics:body1 = </pegasus_description/Geometry/base/FL_hip/FL_thigh/FL_calf>
+                            point3f physics:localPos0 = (0.418, 0, 5.551115e-17)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -157.79831
+                            float physics:upperLimit = -37.798027
+                        }
+
+                        def "FL_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.00001345, 0.00001345, 0.00001345)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "FL" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                float newton:contactGap = 0
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </pegasus_description/Geometry/base/FL_hip/FL_thigh/FL_calf>
+                                rel physics:body1 = </pegasus_description/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot>
+                                point3f physics:localPos0 = (0.427146, 0, 5.551115e-17)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+
+            def "FR_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0.000542, 0.02662, 0.10103)
+                float3 physics:diagonalInertia = (0.00675174, 0.00530183, 0.00343653)
+                float physics:mass = 2.871
+                quatf physics:principalAxes = (0.54972893, 0.52629995, 0.46882695, 0.44833893)
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                over "Capsule_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "FR_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.3
+                    uniform double mjc:damping = 0.1
+                    uniform double mjc:frictionloss = 2.2686
+                    uniform token physics:axis = "Z"
+                    rel physics:body0 = </pegasus_description/Geometry/base>
+                    rel physics:body1 = </pegasus_description/Geometry/base/FR_hip>
+                    point3f physics:localPos0 = (0.334, -0.163, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (0, -0.7071068, 0, 0.7071067)
+                    quatf physics:localRot1 = (0, -1, 0, 0)
+                    float physics:lowerLimit = -35.00199
+                    float physics:upperLimit = 90.00021
+                }
+
+                def "FR_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.09529, 0.07115, 0.05348)
+                    float3 physics:diagonalInertia = (0.119485, 0.113691, 0.00911342)
+                    float physics:mass = 4.8923
+                    quatf physics:principalAxes = (-0.241054, 0.60868, -0.26879, 0.706508)
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Sphere" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "FR_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.314
+                        uniform double mjc:damping = 0.2063
+                        uniform double mjc:frictionloss = 2.9168
+                        uniform token physics:axis = "Z"
+                        rel physics:body0 = </pegasus_description/Geometry/base/FR_hip>
+                        rel physics:body1 = </pegasus_description/Geometry/base/FR_hip/FR_thigh>
+                        point3f physics:localPos0 = (0, -0.1485, 0.1045)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (0.7071068, -0.7071067, 5.551115e-17, 1.110223e-16)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = -168.00269
+                        float physics:upperLimit = 168.00269
+                    }
+
+                    def "FR_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.245582, 0.00121522, -0.000150716)
+                        float3 physics:diagonalInertia = (0.0173389, 0.0171665, 0.000549556)
+                        float physics:mass = 0.67
+                        quatf physics:principalAxes = (-0.02685771, 0.7086442, 0.0018218308, 0.70505226)
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Sphere" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            float newton:contactGap = 0
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "FR_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.6
+                            uniform double mjc:damping = 1.2399
+                            uniform double mjc:frictionloss = 5.5299
+                            uniform token physics:axis = "Z"
+                            rel physics:body0 = </pegasus_description/Geometry/base/FR_hip/FR_thigh>
+                            rel physics:body1 = </pegasus_description/Geometry/base/FR_hip/FR_thigh/FR_calf>
+                            point3f physics:localPos0 = (0.418, 0, 0)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -157.79831
+                            float physics:upperLimit = -37.798027
+                        }
+
+                        def "FR_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.00001345, 0.00001345, 0.00001345)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "FR" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                float newton:contactGap = 0
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </pegasus_description/Geometry/base/FR_hip/FR_thigh/FR_calf>
+                                rel physics:body1 = </pegasus_description/Geometry/base/FR_hip/FR_thigh/FR_calf/FR_foot>
+                                point3f physics:localPos0 = (0.427146, 0, 0)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+
+            def "RL_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0.000542, -0.02662, -0.10103)
+                float3 physics:diagonalInertia = (0.00675174, 0.00530183, 0.00343653)
+                float physics:mass = 2.871
+                quatf physics:principalAxes = (0.44833893, 0.46882695, 0.52629995, 0.54972893)
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                over "Capsule_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "RL_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.3099
+                    uniform double mjc:damping = 0.1
+                    uniform double mjc:frictionloss = 2.0989
+                    uniform token physics:axis = "Z"
+                    rel physics:body0 = </pegasus_description/Geometry/base>
+                    rel physics:body1 = </pegasus_description/Geometry/base/RL_hip>
+                    point3f physics:localPos0 = (-0.334, 0.163, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (0.7071068, 0, 0.7071067, 0)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                    float physics:lowerLimit = -35.00199
+                    float physics:upperLimit = 90.00021
+                }
+
+                def "RL_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.09529, 0.07115, -0.05348)
+                    float3 physics:diagonalInertia = (0.119485, 0.113691, 0.00911342)
+                    float physics:mass = 4.8923
+                    quatf physics:principalAxes = (0.26879004, 0.70650804, 0.24105401, 0.60868007)
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Sphere" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "RL_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.3173
+                        uniform double mjc:damping = 0.796
+                        uniform double mjc:frictionloss = 1.7164
+                        uniform token physics:axis = "Z"
+                        rel physics:body0 = </pegasus_description/Geometry/base/RL_hip>
+                        rel physics:body1 = </pegasus_description/Geometry/base/RL_hip/RL_thigh>
+                        point3f physics:localPos0 = (1.110223e-16, 0.1485, -0.1045)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (0.7071068, -0.7071067, 5.551115e-17, 1.110223e-16)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = -168.00269
+                        float physics:upperLimit = 168.00269
+                    }
+
+                    def "RL_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.245582, 0.00121522, 0.000150716)
+                        float3 physics:diagonalInertia = (0.0173389, 0.0171665, 0.000549556)
+                        float physics:mass = 0.67
+                        quatf physics:principalAxes = (-0.0018218308, 0.70505226, 0.02685771, 0.7086442)
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Sphere" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            float newton:contactGap = 0
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "RL_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.6
+                            uniform double mjc:damping = 1.7338
+                            uniform double mjc:frictionloss = 4.4496
+                            uniform token physics:axis = "Z"
+                            rel physics:body0 = </pegasus_description/Geometry/base/RL_hip/RL_thigh>
+                            rel physics:body1 = </pegasus_description/Geometry/base/RL_hip/RL_thigh/RL_calf>
+                            point3f physics:localPos0 = (0.418, 0, 5.551115e-17)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -157.79831
+                            float physics:upperLimit = -37.798027
+                        }
+
+                        def "RL_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.00001345, 0.00001345, 0.00001345)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "RL" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                float newton:contactGap = 0
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </pegasus_description/Geometry/base/RL_hip/RL_thigh/RL_calf>
+                                rel physics:body1 = </pegasus_description/Geometry/base/RL_hip/RL_thigh/RL_calf/RL_foot>
+                                point3f physics:localPos0 = (0.427146, 0, 5.551115e-17)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+
+            def "RR_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0.000542, 0.02662, -0.10103)
+                float3 physics:diagonalInertia = (0.00675174, 0.00530183, 0.00343653)
+                float physics:mass = 2.871
+                quatf physics:principalAxes = (0.54972893, 0.52629995, 0.46882695, 0.44833893)
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                over "Capsule_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "RR_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.3217
+                    uniform double mjc:damping = 0.1
+                    uniform double mjc:frictionloss = 2.3307
+                    uniform token physics:axis = "Z"
+                    rel physics:body0 = </pegasus_description/Geometry/base>
+                    rel physics:body1 = </pegasus_description/Geometry/base/RR_hip>
+                    point3f physics:localPos0 = (-0.334, -0.163, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (0, -0.7071068, 0, 0.7071067)
+                    quatf physics:localRot1 = (0, -1, 0, 0)
+                    float physics:lowerLimit = -35.00199
+                    float physics:upperLimit = 90.00021
+                }
+
+                def "RR_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.09529, 0.07115, 0.05348)
+                    float3 physics:diagonalInertia = (0.119485, 0.113691, 0.00911342)
+                    float physics:mass = 4.8923
+                    quatf physics:principalAxes = (-0.241054, 0.60868, -0.26879, 0.706508)
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Sphere" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "RR_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.3352
+                        uniform double mjc:damping = 0.5969
+                        uniform double mjc:frictionloss = 2.213
+                        uniform token physics:axis = "Z"
+                        rel physics:body0 = </pegasus_description/Geometry/base/RR_hip>
+                        rel physics:body1 = </pegasus_description/Geometry/base/RR_hip/RR_thigh>
+                        point3f physics:localPos0 = (1.110223e-16, -0.1485, -0.1045)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (0.7071068, -0.7071067, 5.551115e-17, 1.110223e-16)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = -168.00269
+                        float physics:upperLimit = 168.00269
+                    }
+
+                    def "RR_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.245582, 0.00121522, -0.000150716)
+                        float3 physics:diagonalInertia = (0.0173389, 0.0171665, 0.000549556)
+                        float physics:mass = 0.67
+                        quatf physics:principalAxes = (-0.02685771, 0.7086442, 0.0018218308, 0.70505226)
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Sphere" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            float newton:contactGap = 0
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "RR_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.6
+                            uniform double mjc:damping = 1.6016
+                            uniform double mjc:frictionloss = 3.6588
+                            uniform token physics:axis = "Z"
+                            rel physics:body0 = </pegasus_description/Geometry/base/RR_hip/RR_thigh>
+                            rel physics:body1 = </pegasus_description/Geometry/base/RR_hip/RR_thigh/RR_calf>
+                            point3f physics:localPos0 = (0.418, 0, 0)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -157.79831
+                            float physics:upperLimit = -37.798027
+                        }
+
+                        def "RR_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.00001345, 0.00001345, 0.00001345)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "RR" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </pegasus_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                float newton:contactGap = 0
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </pegasus_description/Geometry/base/RR_hip/RR_thigh/RR_calf>
+                                rel physics:body1 = </pegasus_description/Geometry/base/RR_hip/RR_thigh/RR_calf/RR_foot>
+                                point3f physics:localPos0 = (0.427146, 0, 0)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+def PhysicsScene "PhysicsScene" (
+    prepend apiSchemas = ["NewtonSceneAPI", "MjcSceneAPI"]
+)
+{
+    uniform token mjc:compiler:angle = "radian"
+    uniform bool mjc:flag:multiccd = 0
+    uniform int newton:maxSolverIterations = 100
+    uniform int newton:timeStepsPerSecond = 500
+    vector3f physics:gravityDirection = (0, 0, -1)
+    float physics:gravityMagnitude = 9.81
+}
+

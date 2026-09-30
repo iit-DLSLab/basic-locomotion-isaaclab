@@ -87,6 +87,7 @@
             <!--geom size="0.032" pos="0 0 -0.275" rgba="0.698039 0.698039 0.698039 1" class="foot"/-->
           
             <body name="FL_foot" pos="0 0 -0.275">
+                <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
                 <!-- FL_foot only collision -->
                 <geom name="FL" size="0.032" rgba="0.698039 0.698039 0.698039 1" class="foot"/>
             </body>
@@ -121,6 +122,7 @@
             <!--geom size="0.032" pos="0 0 -0.275" rgba="0.698039 0.698039 0.698039 1" class="foot"/-->
           
             <body name="FR_foot" pos="0 0 -0.275">
+                <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
                 <!-- FR_foot only collision -->
                 <geom name="FR" size="0.032" rgba="0.698039 0.698039 0.698039 1" class="foot"/>
             </body>
@@ -154,6 +156,7 @@
             <!--geom size="0.032" pos="0 0 -0.275" rgba="0.698039 0.698039 0.698039 1" class="foot"/-->
           
             <body name="RL_foot" pos="0 0 -0.275">
+                <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
                 <!-- RL_foot only collision -->
                 <geom name="RL" size="0.032" rgba="0.698039 0.698039 0.698039 1" class="foot"/>
             </body>
@@ -187,6 +190,7 @@
             <!--geom size="0.032" pos="0 0 -0.275" rgba="0.698039 0.698039 0.698039 1" class="foot"/-->
           
             <body name="RR_foot" pos="0 0 -0.275">
+                <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
                 <!-- RR_foot only collision -->
                 <geom name="RR" size="0.032" rgba="0.698039 0.698039 0.698039 1" class="foot"/>
             </body>

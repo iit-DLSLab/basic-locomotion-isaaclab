@@ -74,7 +74,7 @@ ALIENGO_CALF_ACTUATOR_CFG = PaceDCMotorCfg(
 ALIENGO_CFG = ArticulationCfg(
     prim_path=None,
     spawn=sim_utils.UsdFileCfg(
-        usd_path=f"{ISAAC_ASSET_DIR}/../../../../robot_model/aliengo/aliengo.usd",
+        usd_path=f"{ISAAC_ASSET_DIR}/../../../../robot_model/aliengo/generated_usd/aliengo.usda",
         activate_contact_sensors=True,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,
@@ -106,7 +106,7 @@ ALIENGO_CFG = ArticulationCfg(
 
 
 CAMERA_USD_CFG = AssetBaseCfg(
-    prim_path="/World/envs/env_.*/Robot/base/d435",
+    prim_path="/World/envs/env_.*/Robot/Geometry/base/d435",
     spawn=sim_utils.UsdFileCfg(usd_path=f"{ISAAC_ASSET_DIR}/d435.usd",),
     init_state=AssetBaseCfg.InitialStateCfg(
             pos=(0.33, 0.0, 0.08), 

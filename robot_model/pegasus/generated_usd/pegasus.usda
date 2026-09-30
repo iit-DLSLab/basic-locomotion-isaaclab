@@ -4,46 +4,26 @@
         string creator = "MuJoCo USD Converter v0.2.0"
     }
     defaultPrim = "pegasus_description"
-    doc = """Generated from Composed Stage of root layer /tmp/tmp5xhcx9pd/pegasus_description.usdc
-
-
-Generated from Composed Stage of root layer /tmp/mjcf_import_pegasus_156c5nuj/usdex_pegasus/pegasus_description.usdc
-
-
-Generated from Composed Stage of root layer /tmp/mjcf_import_pegasus_156c5nuj/temp_pegasus/pegasus.usd
-"""
     kilogramsPerUnit = 1
     metersPerUnit = 1
     upAxis = "Z"
 )
 
 def Xform "pegasus_description" (
-    prepend references = @./payloads/base.usda@
-    variants = {
-        string Physics = "physics"
+    prepend apiSchemas = ["GeomModelAPI"]
+    assetInfo = {
+        string name = "pegasus_description"
     }
-    append variantSets = "Physics"
+    kind = "component"
+    prepend payload = @./Payload/Contents.usda@
 )
 {
-    variantSet "Physics" = {
-        "mujoco" (
-            prepend payload = @./payloads/Physics/mujoco.usda@
-        ) {
+    float3[] extentsHint = [(-0.4794999, -0.35250002, -0.386146), (0.47950011, 0.35250002, -0.304146), (3.4028235e38, 3.4028235e38, 3.4028235e38), (-3.4028235e38, -3.4028235e38, -3.4028235e38), (3.4028235e38, 3.4028235e38, 3.4028235e38), (-3.4028235e38, -3.4028235e38, -3.4028235e38), (-0.514, -0.3615, -0.386146), (0.5245475, 0.3615, 0.595)]
+}
 
-        }
-        "none" {
-
-        }
-        "physics" (
-            prepend payload = @./payloads/Physics/physics.usda@
-        ) {
-
-        }
-        "physx" (
-            prepend payload = @./payloads/Physics/physx.usda@
-        ) {
-
-        }
-    }
+def PhysicsScene "PhysicsScene" (
+    prepend payload = @./Payload/Contents.usda@</PhysicsScene>
+)
+{
 }
 

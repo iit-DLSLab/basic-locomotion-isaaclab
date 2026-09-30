@@ -16,13 +16,16 @@ dynamic_friction = [0.288801908493042, 0.2260836958885193, 0.9928773045539856, 0
 bias = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 delay = 2
 
+stiffness = 40.0
+damping = 2.0
+
 A2_HIP_ACTUATOR_CFG = PaceDCMotorCfg(
     joint_names_expr=[".*_hip_joint"],
     saturation_effort=23.7,
     effort_limit=23.7,
     velocity_limit=30.1,
-    stiffness={".*": 20.0},  # P gain in Nm/rad
-    damping={".*": 1.5},  # D gain in Nm s/rad
+    stiffness={".*": stiffness},  # P gain in Nm/rad
+    damping={".*": damping},  # D gain in Nm s/rad
     encoder_bias={"FL_hip_joint": bias[0], "FR_hip_joint": bias[3], "RL_hip_joint": bias[6], "RR_hip_joint": bias[9]},  # encoder bias in radians
     # note: modeling coulomb friction if friction = dynamic_friction
     # > in newer Isaac Sim versions, friction is renamed to static_friction
@@ -39,8 +42,8 @@ A2_THIGH_ACTUATOR_CFG = PaceDCMotorCfg(
     saturation_effort=23.7,
     effort_limit=23.7,
     velocity_limit=30.1,
-    stiffness={".*": 20.0},  # P gain in Nm/rad
-    damping={".*": 1.5},  # D gain in Nm s/rad
+    stiffness={".*": stiffness},  # P gain in Nm/rad
+    damping={".*": damping},  # D gain in Nm s/rad
     encoder_bias={"FL_thigh_joint": bias[1], "FR_thigh_joint": bias[4], "RL_thigh_joint": bias[7], "RR_thigh_joint": bias[10]},  # encoder bias in radians
     # note: modeling coulomb friction if friction = dynamic_friction
     # > in newer Isaac Sim versions, friction is renamed to static_friction
@@ -57,8 +60,8 @@ A2_CALF_ACTUATOR_CFG = PaceDCMotorCfg(
     saturation_effort=45.43,
     effort_limit=45.43,
     velocity_limit=15.7,
-    stiffness={".*": 20.0},  # P gain in Nm/rad
-    damping={".*": 1.5},  # D gain in Nm s/rad
+    stiffness={".*": stiffness},  # P gain in Nm/rad
+    damping={".*": damping},  # D gain in Nm s/rad
     encoder_bias={"FL_calf_joint": bias[2], "FR_calf_joint": bias[5], "RL_calf_joint": bias[8], "RR_calf_joint": bias[11]},  # encoder bias in radians
     # note: modeling coulomb friction if friction = dynamic_friction
     # > in newer Isaac Sim versions, friction is renamed to static_friction

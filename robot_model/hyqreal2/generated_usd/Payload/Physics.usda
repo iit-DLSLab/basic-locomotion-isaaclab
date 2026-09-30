@@ -1,0 +1,853 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "MuJoCo USD Converter v0.2.0"
+    }
+    defaultPrim = "hyqreal2_description"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "hyqreal2_description"
+{
+    def Scope "Physics"
+    {
+        def Material "PhysicsMaterial" (
+            prepend apiSchemas = ["PhysicsMaterialAPI", "NewtonMaterialAPI", "MjcMaterialAPI"]
+        )
+        {
+            float newton:rollingFriction = 0.0001
+            float newton:torsionalFriction = 0.005
+            float physics:dynamicFriction = 1
+        }
+
+        def MjcActuator "FL_hip"
+        {
+            uniform double mjc:ctrlRange:max = 173
+            uniform double mjc:ctrlRange:min = -173
+            rel mjc:target = </hyqreal2_description/Geometry/base/FL_hip/FL_hip_joint>
+        }
+
+        def MjcActuator "FL_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 208
+            uniform double mjc:ctrlRange:min = -208
+            rel mjc:target = </hyqreal2_description/Geometry/base/FL_hip/FL_thigh/FL_thigh_joint>
+        }
+
+        def MjcActuator "FL_calf"
+        {
+            uniform double mjc:ctrlRange:max = 249
+            uniform double mjc:ctrlRange:min = -249
+            rel mjc:target = </hyqreal2_description/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_calf_joint>
+        }
+
+        def MjcActuator "FR_hip"
+        {
+            uniform double mjc:ctrlRange:max = 173
+            uniform double mjc:ctrlRange:min = -173
+            rel mjc:target = </hyqreal2_description/Geometry/base/FR_hip/FR_hip_joint>
+        }
+
+        def MjcActuator "FR_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 208
+            uniform double mjc:ctrlRange:min = -208
+            rel mjc:target = </hyqreal2_description/Geometry/base/FR_hip/FR_thigh/FR_thigh_joint>
+        }
+
+        def MjcActuator "FR_calf"
+        {
+            uniform double mjc:ctrlRange:max = 249
+            uniform double mjc:ctrlRange:min = -249
+            rel mjc:target = </hyqreal2_description/Geometry/base/FR_hip/FR_thigh/FR_calf/FR_calf_joint>
+        }
+
+        def MjcActuator "RL_hip"
+        {
+            uniform double mjc:ctrlRange:max = 173
+            uniform double mjc:ctrlRange:min = -173
+            rel mjc:target = </hyqreal2_description/Geometry/base/RL_hip/RL_hip_joint>
+        }
+
+        def MjcActuator "RL_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 208
+            uniform double mjc:ctrlRange:min = -208
+            rel mjc:target = </hyqreal2_description/Geometry/base/RL_hip/RL_thigh/RL_thigh_joint>
+        }
+
+        def MjcActuator "RL_calf"
+        {
+            uniform double mjc:ctrlRange:max = 249
+            uniform double mjc:ctrlRange:min = -249
+            rel mjc:target = </hyqreal2_description/Geometry/base/RL_hip/RL_thigh/RL_calf/RL_calf_joint>
+        }
+
+        def MjcActuator "RR_hip"
+        {
+            uniform double mjc:ctrlRange:max = 173
+            uniform double mjc:ctrlRange:min = -173
+            rel mjc:target = </hyqreal2_description/Geometry/base/RR_hip/RR_hip_joint>
+        }
+
+        def MjcActuator "RR_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 208
+            uniform double mjc:ctrlRange:min = -208
+            rel mjc:target = </hyqreal2_description/Geometry/base/RR_hip/RR_thigh/RR_thigh_joint>
+        }
+
+        def MjcActuator "RR_calf"
+        {
+            uniform double mjc:ctrlRange:max = 249
+            uniform double mjc:ctrlRange:min = -249
+            rel mjc:target = </hyqreal2_description/Geometry/base/RR_hip/RR_thigh/RR_calf/RR_calf_joint>
+        }
+    }
+
+    def "Geometry"
+    {
+        def "base" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysicsArticulationRootAPI", "NewtonArticulationRootAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0.0015, 0.0019, -0.0014)
+            float3 physics:diagonalInertia = (9.46, 9.36, 2.42)
+            float physics:mass = 83.07
+            quatf physics:principalAxes = (-0.015333807, 0.70667136, -0.0152992075, 0.70721036)
+
+            over "torso" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 2
+                float newton:contactGap = 0
+                uniform token physics:approximation = "convexHull"
+                bool physics:collisionEnabled = 0
+                float physics:density = 1000
+            }
+
+            over "Box" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                float newton:contactGap = 0
+                float physics:density = 1000
+            }
+
+            def "FL_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (-0.0291805, -0.0025707, 0.0009034)
+                float3 physics:diagonalInertia = (0.00531613, 0.00492843, 0.0047808)
+                float physics:mass = 5.07
+                quatf physics:principalAxes = (0.6333227, 0.72169363, 0.06526777, 0.2716629)
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "FL_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:actuatorfrcrange:max = 150
+                    uniform double mjc:actuatorfrcrange:min = -150
+                    uniform double mjc:armature = 0.01
+                    uniform double mjc:damping = 0.6
+                    uniform double mjc:frictionloss = 0.2
+                    uniform token physics:axis = "Z"
+                    rel physics:body0 = </hyqreal2_description/Geometry/base>
+                    rel physics:body1 = </hyqreal2_description/Geometry/base/FL_hip>
+                    point3f physics:localPos0 = (0.4042, 0.1005, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (-1.6081226e-16, -0.70710677, -4.5986944e-17, 0.70710677)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                    float physics:lowerLimit = -41.999985
+                    float physics:upperLimit = 23.000015
+                }
+
+                def "FL_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0659, 0.0099, -0.0426)
+                    float3 physics:diagonalInertia = (0.0841688, 0.0797647, 0.0139666)
+                    float physics:mass = 4.627
+                    quatf physics:principalAxes = (0.33219215, 0.6798613, 0.34892616, 0.55289024)
+
+                    over "upper_leg_visual" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        float newton:contactGap = 0
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "FL_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:actuatorfrcrange:max = 250
+                        uniform double mjc:actuatorfrcrange:min = -250
+                        uniform double mjc:armature = 0.01
+                        uniform double mjc:damping = 0.6
+                        uniform double mjc:frictionloss = 0.2
+                        uniform token physics:axis = "Z"
+                        rel physics:body0 = </hyqreal2_description/Geometry/base/FL_hip>
+                        rel physics:body1 = </hyqreal2_description/Geometry/base/FL_hip/FL_thigh>
+                        point3f physics:localPos0 = (-1.2325952e-32, -0.1636, 5.551115e-17)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (-0.7071068, -0.7071067, 1.9015054e-18, -1.110223e-16)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = 14.999978
+                        float physics:upperLimit = 124.99991
+                    }
+
+                    def "FL_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.273618, -0.00998183, 0.0000257963)
+                        float3 physics:diagonalInertia = (0.0483041, 0.047405, 0.00115536)
+                        float physics:mass = 1.2089
+                        quatf physics:principalAxes = (0.0066212406, 0.7070001, -0.0065567205, 0.70715207)
+
+                        over "lower_leg_visual" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            float newton:contactGap = 0
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "FL_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:actuatorfrcrange:max = 350
+                            uniform double mjc:actuatorfrcrange:min = -350
+                            uniform double mjc:armature = 0.01
+                            uniform double mjc:damping = 0.6
+                            uniform double mjc:frictionloss = 0.2
+                            uniform token physics:axis = "Z"
+                            rel physics:body0 = </hyqreal2_description/Geometry/base/FL_hip/FL_thigh>
+                            rel physics:body1 = </hyqreal2_description/Geometry/base/FL_hip/FL_thigh/FL_calf>
+                            point3f physics:localPos0 = (0.363, 0, 0)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -158.70988
+                            float physics:upperLimit = -38.37998
+                        }
+
+                        def "FL_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.000008192, 0.000008192, 0.000008192)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "FL" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                float newton:contactGap = 0
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </hyqreal2_description/Geometry/base/FL_hip/FL_thigh/FL_calf>
+                                rel physics:body1 = </hyqreal2_description/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot>
+                                point3f physics:localPos0 = (0.38, 0, 5.551115e-17)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+
+            def "FR_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (-0.0291805, -0.0025707, 0.0009034)
+                float3 physics:diagonalInertia = (0.00531613, 0.00492843, 0.0047808)
+                float physics:mass = 5.07
+                quatf physics:principalAxes = (0.6333227, 0.72169363, 0.06526777, 0.2716629)
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "FR_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:actuatorfrcrange:max = 150
+                    uniform double mjc:actuatorfrcrange:min = -150
+                    uniform double mjc:armature = 0.01
+                    uniform double mjc:damping = 0.6
+                    uniform double mjc:frictionloss = 0.2
+                    uniform token physics:axis = "Z"
+                    rel physics:body0 = </hyqreal2_description/Geometry/base>
+                    rel physics:body1 = </hyqreal2_description/Geometry/base/FR_hip>
+                    point3f physics:localPos0 = (0.4042, -0.1005, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (0.7071068, 0, 0.7071067, 0)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                    float physics:lowerLimit = -41.999985
+                    float physics:upperLimit = 23.000015
+                }
+
+                def "FR_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0659, 0.0099, 0.0426)
+                    float3 physics:diagonalInertia = (0.0841688, 0.0797647, 0.0139666)
+                    float physics:mass = 4.627
+                    quatf physics:principalAxes = (0.67986125, 0.33219212, 0.5528902, 0.34892613)
+
+                    over "upper_leg_visual_mirrored" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        float newton:contactGap = 0
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "FR_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:actuatorfrcrange:max = 250
+                        uniform double mjc:actuatorfrcrange:min = -250
+                        uniform double mjc:armature = 0.01
+                        uniform double mjc:damping = 0.6
+                        uniform double mjc:frictionloss = 0.2
+                        uniform token physics:axis = "Z"
+                        rel physics:body0 = </hyqreal2_description/Geometry/base/FR_hip>
+                        rel physics:body1 = </hyqreal2_description/Geometry/base/FR_hip/FR_thigh>
+                        point3f physics:localPos0 = (-6.617445e-24, -0.1636, -5.551115e-17)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (0.7071068, -0.7071067, 5.551115e-17, 1.110223e-16)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = 14.999978
+                        float physics:upperLimit = 124.99991
+                    }
+
+                    def "FR_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.273618, -0.00998183, 0.0000257963)
+                        float3 physics:diagonalInertia = (0.0483041, 0.047405, 0.00115536)
+                        float physics:mass = 1.2089
+                        quatf physics:principalAxes = (0.0066212406, 0.7070001, -0.0065567205, 0.70715207)
+
+                        over "lower_leg_visual" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            float newton:contactGap = 0
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "FR_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:actuatorfrcrange:max = 350
+                            uniform double mjc:actuatorfrcrange:min = -350
+                            uniform double mjc:armature = 0.01
+                            uniform double mjc:damping = 0.6
+                            uniform double mjc:frictionloss = 0.2
+                            uniform token physics:axis = "Z"
+                            rel physics:body0 = </hyqreal2_description/Geometry/base/FR_hip/FR_thigh>
+                            rel physics:body1 = </hyqreal2_description/Geometry/base/FR_hip/FR_thigh/FR_calf>
+                            point3f physics:localPos0 = (0.363, 5.551115e-17, 0)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -158.70988
+                            float physics:upperLimit = -38.37998
+                        }
+
+                        def "FR_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.000008192, 0.000008192, 0.000008192)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "FR" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                float newton:contactGap = 0
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </hyqreal2_description/Geometry/base/FR_hip/FR_thigh/FR_calf>
+                                rel physics:body1 = </hyqreal2_description/Geometry/base/FR_hip/FR_thigh/FR_calf/FR_foot>
+                                point3f physics:localPos0 = (0.38, 5.551115e-17, 0)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+
+            def "RL_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (-0.0291805, -0.0025707, 0.0009034)
+                float3 physics:diagonalInertia = (0.00531613, 0.00492843, 0.0047808)
+                float physics:mass = 5.07
+                quatf physics:principalAxes = (0.6333227, 0.72169363, 0.06526777, 0.2716629)
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "RL_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:actuatorfrcrange:max = 150
+                    uniform double mjc:actuatorfrcrange:min = -150
+                    uniform double mjc:armature = 0.01
+                    uniform double mjc:damping = 0.6
+                    uniform double mjc:frictionloss = 0.2
+                    uniform token physics:axis = "Z"
+                    rel physics:body0 = </hyqreal2_description/Geometry/base>
+                    rel physics:body1 = </hyqreal2_description/Geometry/base/RL_hip>
+                    point3f physics:localPos0 = (-0.4042, 0.1005, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (-1.6081226e-16, -0.70710677, -4.5986944e-17, 0.70710677)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                    float physics:lowerLimit = -41.999985
+                    float physics:upperLimit = 23.000015
+                }
+
+                def "RL_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0659, 0.0099, -0.0426)
+                    float3 physics:diagonalInertia = (0.0841688, 0.0797647, 0.0139666)
+                    float physics:mass = 4.627
+                    quatf physics:principalAxes = (0.33219215, 0.6798613, 0.34892616, 0.55289024)
+
+                    over "upper_leg_visual" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        float newton:contactGap = 0
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "RL_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:actuatorfrcrange:max = 250
+                        uniform double mjc:actuatorfrcrange:min = -250
+                        uniform double mjc:armature = 0.01
+                        uniform double mjc:damping = 0.6
+                        uniform double mjc:frictionloss = 0.2
+                        uniform token physics:axis = "Z"
+                        rel physics:body0 = </hyqreal2_description/Geometry/base/RL_hip>
+                        rel physics:body1 = </hyqreal2_description/Geometry/base/RL_hip/RL_thigh>
+                        point3f physics:localPos0 = (-1.2325952e-32, -0.1636, -5.551115e-17)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (-0.7071068, -0.7071067, 1.9015054e-18, -1.110223e-16)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = 14.999978
+                        float physics:upperLimit = 124.99991
+                    }
+
+                    def "RL_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.273618, -0.00998183, 0.0000257963)
+                        float3 physics:diagonalInertia = (0.0483041, 0.047405, 0.00115536)
+                        float physics:mass = 1.2089
+                        quatf physics:principalAxes = (0.0066212406, 0.7070001, -0.0065567205, 0.70715207)
+
+                        over "lower_leg_visual" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            float newton:contactGap = 0
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "RL_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:actuatorfrcrange:max = 350
+                            uniform double mjc:actuatorfrcrange:min = -350
+                            uniform double mjc:armature = 0.01
+                            uniform double mjc:damping = 0.6
+                            uniform double mjc:frictionloss = 0.2
+                            uniform token physics:axis = "Z"
+                            rel physics:body0 = </hyqreal2_description/Geometry/base/RL_hip/RL_thigh>
+                            rel physics:body1 = </hyqreal2_description/Geometry/base/RL_hip/RL_thigh/RL_calf>
+                            point3f physics:localPos0 = (0.363, 0, 0)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -158.70988
+                            float physics:upperLimit = -38.37998
+                        }
+
+                        def "RL_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.000008192, 0.000008192, 0.000008192)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "RL" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                float newton:contactGap = 0
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </hyqreal2_description/Geometry/base/RL_hip/RL_thigh/RL_calf>
+                                rel physics:body1 = </hyqreal2_description/Geometry/base/RL_hip/RL_thigh/RL_calf/RL_foot>
+                                point3f physics:localPos0 = (0.38, 0, 5.551115e-17)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+
+            def "RR_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (-0.0291805, -0.0025707, 0.0009034)
+                float3 physics:diagonalInertia = (0.00531613, 0.00492843, 0.0047808)
+                float physics:mass = 5.07
+                quatf physics:principalAxes = (0.6333227, 0.72169363, 0.06526777, 0.2716629)
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    float newton:contactGap = 0
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "RR_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:actuatorfrcrange:max = 150
+                    uniform double mjc:actuatorfrcrange:min = -150
+                    uniform double mjc:armature = 0.01
+                    uniform double mjc:damping = 0.6
+                    uniform double mjc:frictionloss = 0.2
+                    uniform token physics:axis = "Z"
+                    rel physics:body0 = </hyqreal2_description/Geometry/base>
+                    rel physics:body1 = </hyqreal2_description/Geometry/base/RR_hip>
+                    point3f physics:localPos0 = (-0.4042, -0.1005, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (0.7071068, 0, 0.7071067, 0)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                    float physics:lowerLimit = -41.999985
+                    float physics:upperLimit = 23.000015
+                }
+
+                def "RR_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (0.0659, 0.0099, 0.0426)
+                    float3 physics:diagonalInertia = (0.0841688, 0.0797647, 0.0139666)
+                    float physics:mass = 4.627
+                    quatf physics:principalAxes = (0.67986125, 0.33219212, 0.5528902, 0.34892613)
+
+                    over "upper_leg_visual_mirrored" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        float newton:contactGap = 0
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        float newton:contactGap = 0
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "RR_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:actuatorfrcrange:max = 250
+                        uniform double mjc:actuatorfrcrange:min = -250
+                        uniform double mjc:armature = 0.01
+                        uniform double mjc:damping = 0.6
+                        uniform double mjc:frictionloss = 0.2
+                        uniform token physics:axis = "Z"
+                        rel physics:body0 = </hyqreal2_description/Geometry/base/RR_hip>
+                        rel physics:body1 = </hyqreal2_description/Geometry/base/RR_hip/RR_thigh>
+                        point3f physics:localPos0 = (6.617445e-24, -0.1636, 5.551115e-17)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (0.7071068, -0.7071067, 5.551115e-17, 1.110223e-16)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = 14.999978
+                        float physics:upperLimit = 124.99991
+                    }
+
+                    def "RR_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.273618, -0.00998183, 0.0000257963)
+                        float3 physics:diagonalInertia = (0.0483041, 0.047405, 0.00115536)
+                        float physics:mass = 1.2089
+                        quatf physics:principalAxes = (0.0066212406, 0.7070001, -0.0065567205, 0.70715207)
+
+                        over "lower_leg_visual" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            float newton:contactGap = 0
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            float newton:contactGap = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "RR_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:actuatorfrcrange:max = 350
+                            uniform double mjc:actuatorfrcrange:min = -350
+                            uniform double mjc:armature = 0.01
+                            uniform double mjc:damping = 0.6
+                            uniform double mjc:frictionloss = 0.2
+                            uniform token physics:axis = "Z"
+                            rel physics:body0 = </hyqreal2_description/Geometry/base/RR_hip/RR_thigh>
+                            rel physics:body1 = </hyqreal2_description/Geometry/base/RR_hip/RR_thigh/RR_calf>
+                            point3f physics:localPos0 = (0.363, -5.551115e-17, 0)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -158.70988
+                            float physics:upperLimit = -38.37998
+                        }
+
+                        def "RR_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.000008192, 0.000008192, 0.000008192)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "RR" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </hyqreal2_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                float newton:contactGap = 0
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </hyqreal2_description/Geometry/base/RR_hip/RR_thigh/RR_calf>
+                                rel physics:body1 = </hyqreal2_description/Geometry/base/RR_hip/RR_thigh/RR_calf/RR_foot>
+                                point3f physics:localPos0 = (0.38, -5.551115e-17, -5.551115e-17)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+def PhysicsScene "PhysicsScene" (
+    prepend apiSchemas = ["NewtonSceneAPI", "MjcSceneAPI"]
+)
+{
+    uniform token mjc:compiler:angle = "radian"
+    uniform bool mjc:flag:multiccd = 0
+    uniform int newton:maxSolverIterations = 100
+    uniform int newton:timeStepsPerSecond = 500
+    vector3f physics:gravityDirection = (0, 0, -1)
+    float physics:gravityMagnitude = 9.81
+}
+

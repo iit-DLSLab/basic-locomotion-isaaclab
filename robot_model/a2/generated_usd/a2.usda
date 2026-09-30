@@ -4,49 +4,26 @@
         string creator = "MuJoCo USD Converter v0.2.0"
     }
     defaultPrim = "a2_description"
-    doc = """Generated from Composed Stage of root layer /tmp/tmp5ysgbhbm/a2_description.usdc
-
-
-Generated from Composed Stage of root layer /tmp/mjcf_import_a2_lm96t9_b/usdex_a2/a2_description.usdc
-
-
-Generated from Composed Stage of root layer /tmp/mjcf_import_a2_lm96t9_b/temp_a2/a2.usd
-
-
-Generated from Composed Stage of root layer /home/gturrisi-iit.local/other_ws_home/sim2real-robot-identification/robot_model/a2/a2/payloads/base.usd
-"""
     kilogramsPerUnit = 1
     metersPerUnit = 1
     upAxis = "Z"
 )
 
 def Xform "a2_description" (
-    prepend references = @./payloads/base.usda@
-    variants = {
-        string Physics = "physics"
+    prepend apiSchemas = ["GeomModelAPI"]
+    assetInfo = {
+        string name = "a2_description"
     }
-    append variantSets = "Physics"
+    kind = "component"
+    prepend payload = @./Payload/Contents.usda@
 )
 {
-    variantSet "Physics" = {
-        "mujoco" (
-            prepend payload = @./payloads/Physics/mujoco.usda@
-        ) {
+    float3[] extentsHint = [(-0.32785073, -0.22923286, 0.11866025), (0.3872476, 0.22923286, 0.8302998), (3.4028235e38, 3.4028235e38, 3.4028235e38), (-3.4028235e38, -3.4028235e38, -3.4028235e38), (3.4028235e38, 3.4028235e38, 3.4028235e38), (-3.4028235e38, -3.4028235e38, -3.4028235e38), (-0.33043003, -0.23490301, 0.118), (0.39116636, 0.23490301, 0.8303191)]
+}
 
-        }
-        "none" {
-
-        }
-        "physics" (
-            prepend payload = @./payloads/Physics/physics.usda@
-        ) {
-
-        }
-        "physx" (
-            prepend payload = @./payloads/Physics/physx.usda@
-        ) {
-
-        }
-    }
+def PhysicsScene "PhysicsScene" (
+    prepend payload = @./Payload/Contents.usda@</PhysicsScene>
+)
+{
 }
 

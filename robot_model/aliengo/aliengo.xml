@@ -85,6 +85,7 @@
                         <!--geom name="FL" class="collision" size="0.0265" pos="0 0 -0.25"/-->
 
                         <body name="FL_foot" pos="0 0 -0.25">
+                            <inertial pos="0 0 0" mass="0.02" diaginertia="5.618e-06 5.618e-06 5.618e-06"/>
                             <!-- FL_foot only collision -->
                             <geom name="FL" class="collision" size="0.0265"/>
                         </body>
@@ -128,6 +129,7 @@
                         <!--geom name="FR" class="collision" size="0.0265" pos="0 0 -0.25"/-->
 
                         <body name="FR_foot" pos="0 0 -0.25">
+                            <inertial pos="0 0 0" mass="0.02" diaginertia="5.618e-06 5.618e-06 5.618e-06"/>
                             <!-- FR_foot only collision -->
                             <geom name="FR" class="collision" size="0.0265"/>
                         </body>
@@ -171,6 +173,7 @@
                         <!--geom name="RL" class="collision" size="0.0265" pos="0 0 -0.25"/-->
                         
                         <body name="RL_foot" pos="0 0 -0.25">
+                            <inertial pos="0 0 0" mass="0.02" diaginertia="5.618e-06 5.618e-06 5.618e-06"/>
                             <!-- RL_foot only collision -->
                             <geom name="RL" class="collision" size="0.0265"/>
                         </body>
@@ -214,6 +217,7 @@
                         <!--geom name="RR" class="collision" size="0.0265" pos="0 0 -0.25"/-->
 
                         <body name="RR_foot" pos="0 0 -0.25">
+                            <inertial pos="0 0 0" mass="0.02" diaginertia="5.618e-06 5.618e-06 5.618e-06"/>
                             <!-- RR_foot only collision -->
                             <geom name="RR" class="collision" size="0.0265"/>
                         </body>

@@ -1,0 +1,321 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "MuJoCo USD Converter v0.2.0"
+    }
+    defaultPrim = "go2_description"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "go2_description"
+{
+    def Scope "Materials"
+    {
+        def Material "black" (
+            prepend references = @./MaterialsLibrary.usdc@</Materials/black>
+        )
+        {
+        }
+
+        def Material "white" (
+            prepend references = @./MaterialsLibrary.usdc@</Materials/white>
+        )
+        {
+        }
+
+        def Material "gray" (
+            prepend references = @./MaterialsLibrary.usdc@</Materials/gray>
+        )
+        {
+        }
+
+        def Material "metal" (
+            prepend references = @./MaterialsLibrary.usdc@</Materials/metal>
+        )
+        {
+        }
+    }
+
+    over "Geometry"
+    {
+        over "base"
+        {
+            over "base_0" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </go2_description/Materials/black>
+            }
+
+            over "base_1" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </go2_description/Materials/black>
+            }
+
+            over "base_2" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </go2_description/Materials/black>
+            }
+
+            over "base_3" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </go2_description/Materials/white>
+            }
+
+            over "base_4" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </go2_description/Materials/gray>
+            }
+
+            over "Box" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </go2_description/Materials/gray>
+            }
+
+            over "FL_hip"
+            {
+                over "hip_0" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </go2_description/Materials/metal>
+                }
+
+                over "hip_1" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </go2_description/Materials/gray>
+                }
+
+                over "FL_thigh"
+                {
+                    over "thigh_0" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </go2_description/Materials/metal>
+                    }
+
+                    over "thigh_1" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </go2_description/Materials/gray>
+                    }
+
+                    over "FL_calf"
+                    {
+                        over "calf_0" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/gray>
+                        }
+
+                        over "calf_1" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/black>
+                        }
+
+                        over "foot" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/black>
+                        }
+                    }
+                }
+            }
+
+            over "FR_hip"
+            {
+                over "hip_0" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </go2_description/Materials/metal>
+                }
+
+                over "hip_1" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </go2_description/Materials/gray>
+                }
+
+                over "FR_thigh"
+                {
+                    over "thigh_mirror_0" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </go2_description/Materials/metal>
+                    }
+
+                    over "thigh_mirror_1" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </go2_description/Materials/gray>
+                    }
+
+                    over "FR_calf"
+                    {
+                        over "calf_mirror_0" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/gray>
+                        }
+
+                        over "calf_mirror_1" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/black>
+                        }
+
+                        over "foot" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/black>
+                        }
+                    }
+                }
+            }
+
+            over "RL_hip"
+            {
+                over "hip_0" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </go2_description/Materials/metal>
+                }
+
+                over "hip_1" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </go2_description/Materials/gray>
+                }
+
+                over "RL_thigh"
+                {
+                    over "thigh_0" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </go2_description/Materials/metal>
+                    }
+
+                    over "thigh_1" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </go2_description/Materials/gray>
+                    }
+
+                    over "RL_calf"
+                    {
+                        over "calf_0" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/gray>
+                        }
+
+                        over "calf_1" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/black>
+                        }
+
+                        over "foot" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/black>
+                        }
+                    }
+                }
+            }
+
+            over "RR_hip"
+            {
+                over "hip_0" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </go2_description/Materials/metal>
+                }
+
+                over "hip_1" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </go2_description/Materials/gray>
+                }
+
+                over "RR_thigh"
+                {
+                    over "thigh_mirror_0" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </go2_description/Materials/metal>
+                    }
+
+                    over "thigh_mirror_1" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </go2_description/Materials/gray>
+                    }
+
+                    over "RR_calf"
+                    {
+                        over "calf_mirror_0" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/gray>
+                        }
+
+                        over "calf_mirror_1" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/black>
+                        }
+
+                        over "foot" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </go2_description/Materials/black>
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

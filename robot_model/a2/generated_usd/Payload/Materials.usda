@@ -1,0 +1,190 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "MuJoCo USD Converter v0.2.0"
+    }
+    defaultPrim = "a2_description"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "a2_description"
+{
+    def Scope "Materials"
+    {
+        def Material "gray" (
+            prepend references = @./MaterialsLibrary.usdc@</Materials/gray>
+        )
+        {
+        }
+
+        def Material "black" (
+            prepend references = @./MaterialsLibrary.usdc@</Materials/black>
+        )
+        {
+        }
+    }
+
+    over "Geometry"
+    {
+        over "base"
+        {
+            over "base_link" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                rel material:binding = </a2_description/Materials/gray>
+            }
+
+            over "FL_hip"
+            {
+                over "left_front_Link1" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </a2_description/Materials/gray>
+                }
+
+                over "FL_thigh"
+                {
+                    over "left_front_Link2" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </a2_description/Materials/gray>
+                    }
+
+                    over "FL_calf"
+                    {
+                        over "left_front_Link3" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </a2_description/Materials/gray>
+                        }
+
+                        over "left_front_Link4" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </a2_description/Materials/black>
+                        }
+                    }
+                }
+            }
+
+            over "FR_hip"
+            {
+                over "right_front_Link1" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </a2_description/Materials/gray>
+                }
+
+                over "FR_thigh"
+                {
+                    over "right_front_Link2" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </a2_description/Materials/gray>
+                    }
+
+                    over "FR_calf"
+                    {
+                        over "right_front_Link3" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </a2_description/Materials/gray>
+                        }
+
+                        over "right_front_Link4" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </a2_description/Materials/black>
+                        }
+                    }
+                }
+            }
+
+            over "RL_hip"
+            {
+                over "left_hind_Link1" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </a2_description/Materials/gray>
+                }
+
+                over "RL_thigh"
+                {
+                    over "left_hind_Link2" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </a2_description/Materials/gray>
+                    }
+
+                    over "RL_calf"
+                    {
+                        over "left_hind_Link3" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </a2_description/Materials/gray>
+                        }
+
+                        over "left_hind_Link4" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </a2_description/Materials/black>
+                        }
+                    }
+                }
+            }
+
+            over "RR_hip"
+            {
+                over "right_hind_Link1" (
+                    prepend apiSchemas = ["MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding = </a2_description/Materials/gray>
+                }
+
+                over "RR_thigh"
+                {
+                    over "right_hind_Link2" (
+                        prepend apiSchemas = ["MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding = </a2_description/Materials/gray>
+                    }
+
+                    over "RR_calf"
+                    {
+                        over "right_hind_Link3" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </a2_description/Materials/gray>
+                        }
+
+                        over "right_hind_Link4" (
+                            prepend apiSchemas = ["MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding = </a2_description/Materials/black>
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

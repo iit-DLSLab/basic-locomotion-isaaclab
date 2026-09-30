@@ -54,8 +54,11 @@
             <geom class="visual" type="mesh" mesh="lower_leg_visual" rgba="0.3 0.3 0.3 1"/>
             <geom class="collision" type="box" size="0.15 0.015 0.02" pos="0.2 0.01 0." quat="0.9962 0 0 -0.0872" />
 
-            <!-- FL foot collision -->
-            <geom class="collision" type="sphere" name="FL" size="0.032" pos="0.38 0 0" quat="0.5 0.5 -0.5 -0.5"/>
+            <body name="FL_foot" pos="0.38 0 0">
+                <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
+                <!-- FL_foot only collision -->
+                <geom class="collision" type="sphere" name="FL" size="0.032"/>
+            </body>
           </body>
         </body>
       </body>
@@ -84,8 +87,11 @@
             <geom class="visual" type="mesh" mesh="lower_leg_visual" rgba="0.3 0.3 0.3 1"/>
             <geom class="collision" type="box" size="0.15 0.015 0.02" pos="0.2 0.01 0." quat="0.9962 0 0 -0.0872" />
 
-            <!-- FR foot collision -->
-            <geom class="collision" type="sphere" name="FR" size="0.032" pos="0.38 0 0" quat="0.5 0.5 -0.5 -0.5"/>
+            <body name="FR_foot" pos="0.38 0 0">
+                <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
+                <!-- FR_foot only collision -->
+                <geom class="collision" type="sphere" name="FR" size="0.032"/>
+            </body>
           </body>
         </body>
       </body>
@@ -115,8 +121,11 @@
             <geom class="visual" type="mesh" mesh="lower_leg_visual" rgba="0.3 0.3 0.3 1"/>
             <geom class="collision" type="box" size="0.15 0.015 0.02" pos="0.2 0.01 0." quat="0.9962 0 0 -0.0872" />
 
-            <!-- RL foot collision -->
-            <geom class="collision" type="sphere" name="RL" size="0.032" pos="0.38 0 0" quat="0.5 0.5 -0.5 -0.5"/>
+            <body name="RL_foot" pos="0.38 0 0">
+                <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
+                <!-- RL_foot only collision -->
+                <geom class="collision" type="sphere" name="RL" size="0.032"/>
+            </body>
           </body>
         </body>
       </body>
@@ -144,8 +153,11 @@
             <geom class="visual" type="mesh" mesh="lower_leg_visual" rgba="0.3 0.3 0.3 1"/>
             <geom class="collision" type="box" size="0.15 0.015 0.02" pos="0.2 0.01 0." quat="0.9962 0 0 -0.0872" />
 
-            <!-- RR foot collision -->
-            <geom class="collision" type="sphere" name="RR" size="0.032" pos="0.38 0 0" quat="0.5 0.5 -0.5 -0.5"/>
+            <body name="RR_foot" pos="0.38 0 0">
+                <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
+                <!-- RR_foot only collision -->
+                <geom class="collision" type="sphere" name="RR" size="0.032"/>
+            </body>
           </body>
         </body>
       </body>

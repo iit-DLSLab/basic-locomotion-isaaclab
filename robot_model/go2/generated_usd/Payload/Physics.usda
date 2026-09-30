@@ -1,0 +1,1406 @@
+#usda 1.0
+(
+    customLayerData = {
+        string creator = "MuJoCo USD Converter v0.2.0"
+    }
+    defaultPrim = "go2_description"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "go2_description"
+{
+    def Scope "Physics"
+    {
+        def Material "PhysicsMaterial" (
+            prepend apiSchemas = ["PhysicsMaterialAPI", "NewtonMaterialAPI", "MjcMaterialAPI"]
+        )
+        {
+            float newton:rollingFriction = 0.0001
+            float newton:torsionalFriction = 0.005
+            float physics:dynamicFriction = 0.6
+        }
+
+        def MjcActuator "FL_hip"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            rel mjc:target = </go2_description/Geometry/base/FL_hip/FL_hip_joint>
+        }
+
+        def MjcActuator "FL_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            rel mjc:target = </go2_description/Geometry/base/FL_hip/FL_thigh/FL_thigh_joint>
+        }
+
+        def MjcActuator "FL_calf"
+        {
+            uniform double mjc:ctrlRange:max = 45.43
+            uniform double mjc:ctrlRange:min = -45.43
+            rel mjc:target = </go2_description/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_calf_joint>
+        }
+
+        def MjcActuator "FR_hip"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            rel mjc:target = </go2_description/Geometry/base/FR_hip/FR_hip_joint>
+        }
+
+        def MjcActuator "FR_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            rel mjc:target = </go2_description/Geometry/base/FR_hip/FR_thigh/FR_thigh_joint>
+        }
+
+        def MjcActuator "FR_calf"
+        {
+            uniform double mjc:ctrlRange:max = 45.43
+            uniform double mjc:ctrlRange:min = -45.43
+            rel mjc:target = </go2_description/Geometry/base/FR_hip/FR_thigh/FR_calf/FR_calf_joint>
+        }
+
+        def MjcActuator "RL_hip"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            rel mjc:target = </go2_description/Geometry/base/RL_hip/RL_hip_joint>
+        }
+
+        def MjcActuator "RL_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            rel mjc:target = </go2_description/Geometry/base/RL_hip/RL_thigh/RL_thigh_joint>
+        }
+
+        def MjcActuator "RL_calf"
+        {
+            uniform double mjc:ctrlRange:max = 45.43
+            uniform double mjc:ctrlRange:min = -45.43
+            rel mjc:target = </go2_description/Geometry/base/RL_hip/RL_thigh/RL_calf/RL_calf_joint>
+        }
+
+        def MjcActuator "RR_hip"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            rel mjc:target = </go2_description/Geometry/base/RR_hip/RR_hip_joint>
+        }
+
+        def MjcActuator "RR_thigh"
+        {
+            uniform double mjc:ctrlRange:max = 23.7
+            uniform double mjc:ctrlRange:min = -23.7
+            rel mjc:target = </go2_description/Geometry/base/RR_hip/RR_thigh/RR_thigh_joint>
+        }
+
+        def MjcActuator "RR_calf"
+        {
+            uniform double mjc:ctrlRange:max = 45.43
+            uniform double mjc:ctrlRange:min = -45.43
+            rel mjc:target = </go2_description/Geometry/base/RR_hip/RR_thigh/RR_calf/RR_calf_joint>
+        }
+    }
+
+    def "Geometry"
+    {
+        def "base" (
+            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysicsArticulationRootAPI", "NewtonArticulationRootAPI"]
+        )
+        {
+            point3f physics:centerOfMass = (0.021112, 0, -0.005366)
+            float3 physics:diagonalInertia = (0.107027, 0.0980771, 0.0244531)
+            float physics:mass = 6.921
+            quatf physics:principalAxes = (-0.0005434711, 0.71343505, -0.0017376901, 0.70071906)
+
+            over "base_0" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 2
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                uniform token physics:approximation = "convexHull"
+                bool physics:collisionEnabled = 0
+                float physics:density = 1000
+            }
+
+            over "base_1" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 2
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                uniform token physics:approximation = "convexHull"
+                bool physics:collisionEnabled = 0
+                float physics:density = 1000
+            }
+
+            over "base_2" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 2
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                uniform token physics:approximation = "convexHull"
+                bool physics:collisionEnabled = 0
+                float physics:density = 1000
+            }
+
+            over "base_3" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 2
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                uniform token physics:approximation = "convexHull"
+                bool physics:collisionEnabled = 0
+                float physics:density = 1000
+            }
+
+            over "base_4" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 2
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                uniform token physics:approximation = "convexHull"
+                bool physics:collisionEnabled = 0
+                float physics:density = 1000
+            }
+
+            over "Box" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 2
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                bool physics:collisionEnabled = 0
+                float physics:density = 1000
+            }
+
+            over "Box_1" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                float physics:density = 1000
+            }
+
+            over "Box_2" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                float physics:density = 1000
+            }
+
+            over "Box_3" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                float physics:density = 1000
+            }
+
+            over "Capsule" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                float physics:density = 1000
+            }
+
+            over "Capsule_1" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                float physics:density = 1000
+            }
+
+            over "Capsule_2" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                float physics:density = 1000
+            }
+
+            over "Sphere" (
+                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+            )
+            {
+                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                uniform int mjc:group = 3
+                uniform double mjc:margin = 0.001
+                float newton:contactGap = 0
+                float newton:contactMargin = 0.001
+                float physics:density = 1000
+            }
+
+            over "imu" (
+                prepend apiSchemas = ["MjcSiteAPI"]
+            )
+            {
+            }
+
+            def "FL_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (-0.0054, 0.00194, -0.000105)
+                float3 physics:diagonalInertia = (0.00088403, 0.000596003, 0.000479967)
+                float physics:mass = 0.678
+                quatf physics:principalAxes = (0.49701393, 0.49924493, 0.50546193, 0.49823695)
+
+                over "hip_0" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 2
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    uniform token physics:approximation = "convexHull"
+                    bool physics:collisionEnabled = 0
+                    float physics:density = 1000
+                }
+
+                over "hip_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 2
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    uniform token physics:approximation = "convexHull"
+                    bool physics:collisionEnabled = 0
+                    float physics:density = 1000
+                }
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "FL_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.001
+                    uniform double mjc:damping = 0.1531
+                    uniform double mjc:frictionloss = 0.2884
+                    uniform token physics:axis = "X"
+                    rel physics:body0 = </go2_description/Geometry/base>
+                    rel physics:body1 = </go2_description/Geometry/base/FL_hip>
+                    point3f physics:localPos0 = (0.1934, 0.0465, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (1, 0, 0, 0)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                    float physics:lowerLimit = -60.00014
+                    float physics:upperLimit = 60.00014
+                }
+
+                def "FL_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (-0.00374, -0.0223, -0.0327)
+                    float3 physics:diagonalInertia = (0.00594973, 0.00584149, 0.000878787)
+                    float physics:mass = 1.152
+                    quatf physics:principalAxes = (0.82953286, 0.08476349, -0.020063197, 0.5516229)
+
+                    over "thigh_0" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "thigh_1" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "FL_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.0197
+                        uniform double mjc:damping = 0.2406
+                        uniform double mjc:frictionloss = 0.1739
+                        uniform token physics:axis = "Y"
+                        rel physics:body0 = </go2_description/Geometry/base/FL_hip>
+                        rel physics:body1 = </go2_description/Geometry/base/FL_hip/FL_thigh>
+                        point3f physics:localPos0 = (0, 0.0955, 0)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (1, 0, 0, 0)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = -90.00021
+                        float physics:upperLimit = 200.00238
+                    }
+
+                    def "FL_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.00629595, -0.000622121, -0.141417)
+                        float3 physics:diagonalInertia = (0.0014901, 0.00146356, 0.0000531397)
+                        float physics:mass = 0.241352
+                        quatf physics:principalAxes = (0.7106718, 0.0015409894, -0.0045008687, 0.7035078)
+
+                        over "calf_0" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "calf_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "Box_2" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "foot" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "FL_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.0356
+                            uniform double mjc:damping = 0.145
+                            uniform double mjc:frictionloss = 1.0151
+                            uniform token physics:axis = "Y"
+                            rel physics:body0 = </go2_description/Geometry/base/FL_hip/FL_thigh>
+                            rel physics:body1 = </go2_description/Geometry/base/FL_hip/FL_thigh/FL_calf>
+                            point3f physics:localPos0 = (0, 0, -0.213)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -155.99922
+                            float physics:upperLimit = -48.00011
+                        }
+
+                        def "FL_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.000003872, 0.000003872, 0.000003872)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "FL" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                uniform double mjc:margin = 0.001
+                                float newton:contactGap = 0
+                                float newton:contactMargin = 0.001
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </go2_description/Geometry/base/FL_hip/FL_thigh/FL_calf>
+                                rel physics:body1 = </go2_description/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot>
+                                point3f physics:localPos0 = (-0.002, 0, -0.213)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+
+            def "FR_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (-0.0054, -0.00194, -0.000105)
+                float3 physics:diagonalInertia = (0.00088403, 0.000596003, 0.000479967)
+                float physics:mass = 0.678
+                quatf physics:principalAxes = (0.49823695, 0.50546193, 0.49924493, 0.49701393)
+
+                over "hip_0" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 2
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    uniform token physics:approximation = "convexHull"
+                    bool physics:collisionEnabled = 0
+                    float physics:density = 1000
+                }
+
+                over "hip_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 2
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    uniform token physics:approximation = "convexHull"
+                    bool physics:collisionEnabled = 0
+                    float physics:density = 1000
+                }
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "FR_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.0129
+                    uniform double mjc:damping = 0.2628
+                    uniform double mjc:frictionloss = 0.1835
+                    uniform token physics:axis = "X"
+                    rel physics:body0 = </go2_description/Geometry/base>
+                    rel physics:body1 = </go2_description/Geometry/base/FR_hip>
+                    point3f physics:localPos0 = (0.1934, -0.0465, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (1, 0, 0, 0)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                    float physics:lowerLimit = -60.00014
+                    float physics:upperLimit = 60.00014
+                }
+
+                def "FR_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (-0.00374, 0.0223, -0.0327)
+                    float3 physics:diagonalInertia = (0.00594973, 0.00584149, 0.000878787)
+                    float physics:mass = 1.152
+                    quatf physics:principalAxes = (0.5516229, -0.020063197, 0.08476349, 0.82953286)
+
+                    over "thigh_mirror_0" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "thigh_mirror_1" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "FR_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.0135
+                        uniform double mjc:damping = 0.142
+                        uniform double mjc:frictionloss = 0.2386
+                        uniform token physics:axis = "Y"
+                        rel physics:body0 = </go2_description/Geometry/base/FR_hip>
+                        rel physics:body1 = </go2_description/Geometry/base/FR_hip/FR_thigh>
+                        point3f physics:localPos0 = (0, -0.0955, 0)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (1, 0, 0, 0)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = -90.00021
+                        float physics:upperLimit = 200.00238
+                    }
+
+                    def "FR_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.00629595, 0.000622121, -0.141417)
+                        float3 physics:diagonalInertia = (0.0014901, 0.00146356, 0.0000531397)
+                        float physics:mass = 0.241352
+                        quatf physics:principalAxes = (0.70350766, -0.004500868, 0.0015409893, 0.71067166)
+
+                        over "calf_mirror_0" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "calf_mirror_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "Box_2" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "foot" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "FR_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.0371
+                            uniform double mjc:damping = 0.1728
+                            uniform double mjc:frictionloss = 0.4912
+                            uniform token physics:axis = "Y"
+                            rel physics:body0 = </go2_description/Geometry/base/FR_hip/FR_thigh>
+                            rel physics:body1 = </go2_description/Geometry/base/FR_hip/FR_thigh/FR_calf>
+                            point3f physics:localPos0 = (0, 0, -0.213)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -155.99922
+                            float physics:upperLimit = -48.00011
+                        }
+
+                        def "FR_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.000003872, 0.000003872, 0.000003872)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "FR" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                uniform double mjc:margin = 0.001
+                                float newton:contactGap = 0
+                                float newton:contactMargin = 0.001
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </go2_description/Geometry/base/FR_hip/FR_thigh/FR_calf>
+                                rel physics:body1 = </go2_description/Geometry/base/FR_hip/FR_thigh/FR_calf/FR_foot>
+                                point3f physics:localPos0 = (-0.002, 0, -0.213)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+
+            def "RL_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0.0054, 0.00194, -0.000105)
+                float3 physics:diagonalInertia = (0.00088403, 0.000596003, 0.000479967)
+                float physics:mass = 0.678
+                quatf physics:principalAxes = (0.5054619, 0.4982369, 0.49701387, 0.49924487)
+
+                over "hip_0" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 2
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    uniform token physics:approximation = "convexHull"
+                    bool physics:collisionEnabled = 0
+                    float physics:density = 1000
+                }
+
+                over "hip_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 2
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    uniform token physics:approximation = "convexHull"
+                    bool physics:collisionEnabled = 0
+                    float physics:density = 1000
+                }
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "RL_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.0075
+                    uniform double mjc:damping = 0.2243
+                    uniform double mjc:frictionloss = 0.155
+                    uniform token physics:axis = "X"
+                    rel physics:body0 = </go2_description/Geometry/base>
+                    rel physics:body1 = </go2_description/Geometry/base/RL_hip>
+                    point3f physics:localPos0 = (-0.1934, 0.0465, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (1, 0, 0, 0)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                    float physics:lowerLimit = -60.00014
+                    float physics:upperLimit = 60.00014
+                }
+
+                def "RL_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (-0.00374, -0.0223, -0.0327)
+                    float3 physics:diagonalInertia = (0.00594973, 0.00584149, 0.000878787)
+                    float physics:mass = 1.152
+                    quatf physics:principalAxes = (0.82953286, 0.08476349, -0.020063197, 0.5516229)
+
+                    over "thigh_0" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "thigh_1" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "RL_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.0205
+                        uniform double mjc:damping = 0.2352
+                        uniform double mjc:frictionloss = 0.1388
+                        uniform token physics:axis = "Y"
+                        rel physics:body0 = </go2_description/Geometry/base/RL_hip>
+                        rel physics:body1 = </go2_description/Geometry/base/RL_hip/RL_thigh>
+                        point3f physics:localPos0 = (0, 0.0955, 0)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (1, 0, 0, 0)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = -30.00007
+                        float physics:upperLimit = 260.00253
+                    }
+
+                    def "RL_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.00629595, -0.000622121, -0.141417)
+                        float3 physics:diagonalInertia = (0.0014901, 0.00146356, 0.0000531397)
+                        float physics:mass = 0.241352
+                        quatf physics:principalAxes = (0.7106718, 0.0015409894, -0.0045008687, 0.7035078)
+
+                        over "calf_0" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "calf_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "Box_2" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "foot" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "RL_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.0228
+                            uniform double mjc:damping = 0.1201
+                            uniform double mjc:frictionloss = 1.3573
+                            uniform token physics:axis = "Y"
+                            rel physics:body0 = </go2_description/Geometry/base/RL_hip/RL_thigh>
+                            rel physics:body1 = </go2_description/Geometry/base/RL_hip/RL_thigh/RL_calf>
+                            point3f physics:localPos0 = (0, 0, -0.213)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -155.99922
+                            float physics:upperLimit = -48.00011
+                        }
+
+                        def "RL_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.000003872, 0.000003872, 0.000003872)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "RL" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                uniform double mjc:margin = 0.001
+                                float newton:contactGap = 0
+                                float newton:contactMargin = 0.001
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </go2_description/Geometry/base/RL_hip/RL_thigh/RL_calf>
+                                rel physics:body1 = </go2_description/Geometry/base/RL_hip/RL_thigh/RL_calf/RL_foot>
+                                point3f physics:localPos0 = (-0.002, 0, -0.213)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+
+            def "RR_hip" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (0.0054, -0.00194, -0.000105)
+                float3 physics:diagonalInertia = (0.00088403, 0.000596003, 0.000479967)
+                float physics:mass = 0.678
+                quatf physics:principalAxes = (0.49924493, 0.49701393, 0.49823695, 0.50546193)
+
+                over "hip_0" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 2
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    uniform token physics:approximation = "convexHull"
+                    bool physics:collisionEnabled = 0
+                    float physics:density = 1000
+                }
+
+                over "hip_1" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 2
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    uniform token physics:approximation = "convexHull"
+                    bool physics:collisionEnabled = 0
+                    float physics:density = 1000
+                }
+
+                over "Capsule" (
+                    prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                )
+                {
+                    rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                    uniform int mjc:group = 3
+                    uniform double mjc:margin = 0.001
+                    float newton:contactGap = 0
+                    float newton:contactMargin = 0.001
+                    float physics:density = 1000
+                }
+
+                def PhysicsRevoluteJoint "RR_hip_joint" (
+                    prepend apiSchemas = ["MjcJointAPI"]
+                )
+                {
+                    uniform double mjc:armature = 0.0081
+                    uniform double mjc:damping = 0.2989
+                    uniform double mjc:frictionloss = 0.2488
+                    uniform token physics:axis = "X"
+                    rel physics:body0 = </go2_description/Geometry/base>
+                    rel physics:body1 = </go2_description/Geometry/base/RR_hip>
+                    point3f physics:localPos0 = (-0.1934, -0.0465, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (1, 0, 0, 0)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                    float physics:lowerLimit = -60.00014
+                    float physics:upperLimit = 60.00014
+                }
+
+                def "RR_thigh" (
+                    prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                )
+                {
+                    point3f physics:centerOfMass = (-0.00374, 0.0223, -0.0327)
+                    float3 physics:diagonalInertia = (0.00594973, 0.00584149, 0.000878787)
+                    float physics:mass = 1.152
+                    quatf physics:principalAxes = (0.5516229, -0.020063197, 0.08476349, 0.82953286)
+
+                    over "thigh_mirror_0" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "thigh_mirror_1" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 2
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        uniform token physics:approximation = "convexHull"
+                        bool physics:collisionEnabled = 0
+                        float physics:density = 1000
+                    }
+
+                    over "Box" (
+                        prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                    )
+                    {
+                        rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                        uniform int mjc:group = 3
+                        uniform double mjc:margin = 0.001
+                        float newton:contactGap = 0
+                        float newton:contactMargin = 0.001
+                        float physics:density = 1000
+                    }
+
+                    def PhysicsRevoluteJoint "RR_thigh_joint" (
+                        prepend apiSchemas = ["MjcJointAPI"]
+                    )
+                    {
+                        uniform double mjc:armature = 0.0139
+                        uniform double mjc:damping = 0.1983
+                        uniform double mjc:frictionloss = 0.2484
+                        uniform token physics:axis = "Y"
+                        rel physics:body0 = </go2_description/Geometry/base/RR_hip>
+                        rel physics:body1 = </go2_description/Geometry/base/RR_hip/RR_thigh>
+                        point3f physics:localPos0 = (0, -0.0955, 0)
+                        point3f physics:localPos1 = (0, 0, 0)
+                        quatf physics:localRot0 = (1, 0, 0, 0)
+                        quatf physics:localRot1 = (1, 0, 0, 0)
+                        float physics:lowerLimit = -30.00007
+                        float physics:upperLimit = 260.00253
+                    }
+
+                    def "RR_calf" (
+                        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                    )
+                    {
+                        point3f physics:centerOfMass = (0.00629595, 0.000622121, -0.141417)
+                        float3 physics:diagonalInertia = (0.0014901, 0.00146356, 0.0000531397)
+                        float physics:mass = 0.241352
+                        quatf physics:principalAxes = (0.70350766, -0.004500868, 0.0015409893, 0.71067166)
+
+                        over "calf_mirror_0" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "calf_mirror_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        over "Box" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "Box_1" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "Box_2" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 3
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            float physics:density = 1000
+                        }
+
+                        over "foot" (
+                            prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMeshCollisionAPI", "NewtonMeshCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                        )
+                        {
+                            rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                            uniform int mjc:group = 2
+                            uniform double mjc:margin = 0.001
+                            float newton:contactGap = 0
+                            float newton:contactMargin = 0.001
+                            uniform token physics:approximation = "convexHull"
+                            bool physics:collisionEnabled = 0
+                            float physics:density = 1000
+                        }
+
+                        def PhysicsRevoluteJoint "RR_calf_joint" (
+                            prepend apiSchemas = ["MjcJointAPI"]
+                        )
+                        {
+                            uniform double mjc:armature = 0.0332
+                            uniform double mjc:damping = 0.1
+                            uniform double mjc:frictionloss = 0.7893
+                            uniform token physics:axis = "Y"
+                            rel physics:body0 = </go2_description/Geometry/base/RR_hip/RR_thigh>
+                            rel physics:body1 = </go2_description/Geometry/base/RR_hip/RR_thigh/RR_calf>
+                            point3f physics:localPos0 = (0, 0, -0.213)
+                            point3f physics:localPos1 = (0, 0, 0)
+                            quatf physics:localRot0 = (1, 0, 0, 0)
+                            quatf physics:localRot1 = (1, 0, 0, 0)
+                            float physics:lowerLimit = -155.99922
+                            float physics:upperLimit = -48.00011
+                        }
+
+                        def "RR_foot" (
+                            prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+                        )
+                        {
+                            point3f physics:centerOfMass = (0, 0, 0)
+                            float3 physics:diagonalInertia = (0.000003872, 0.000003872, 0.000003872)
+                            float physics:mass = 0.02
+                            quatf physics:principalAxes = (1, 0, 0, 0)
+
+                            over "RR" (
+                                prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
+                            )
+                            {
+                                rel material:binding:physics = </go2_description/Physics/PhysicsMaterial>
+                                uniform int mjc:group = 3
+                                uniform double mjc:margin = 0.001
+                                float newton:contactGap = 0
+                                float newton:contactMargin = 0.001
+                                float physics:density = 1000
+                            }
+
+                            def PhysicsFixedJoint "PhysicsFixedJoint"
+                            {
+                                rel physics:body0 = </go2_description/Geometry/base/RR_hip/RR_thigh/RR_calf>
+                                rel physics:body1 = </go2_description/Geometry/base/RR_hip/RR_thigh/RR_calf/RR_foot>
+                                point3f physics:localPos0 = (-0.002, 0, -0.213)
+                                point3f physics:localPos1 = (0, 0, 0)
+                                quatf physics:localRot0 = (1, 0, 0, 0)
+                                quatf physics:localRot1 = (1, 0, 0, 0)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+def PhysicsScene "PhysicsScene" (
+    prepend apiSchemas = ["NewtonSceneAPI", "MjcSceneAPI"]
+)
+{
+    uniform token mjc:compiler:angle = "radian"
+    uniform bool mjc:flag:multiccd = 0
+    uniform token mjc:option:cone = "elliptic"
+    uniform double mjc:option:impratio = 100
+    uniform int newton:maxSolverIterations = 100
+    uniform int newton:timeStepsPerSecond = 500
+    vector3f physics:gravityDirection = (0, 0, -1)
+    float physics:gravityMagnitude = 9.81
+}
+

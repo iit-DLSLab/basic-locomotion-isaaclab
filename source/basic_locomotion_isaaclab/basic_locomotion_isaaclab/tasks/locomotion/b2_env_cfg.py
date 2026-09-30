@@ -58,6 +58,15 @@ class EventCfg:
         },
     )
 
+    base_com = EventTerm(
+        func=mdp.randomize_rigid_body_com,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names="base"),
+            "com_range": {"x": (-0.02, 0.02), "y": (-0.02, 0.02), "z": (-0.02, 0.02)},
+        },
+    )
+
     scale_all_link_masses = EventTerm(
         func=mdp.randomize_rigid_body_mass,
         mode="startup",
@@ -76,24 +85,18 @@ class EventCfg:
         },
     )
     
-
-    scale_all_joint_friction_model = EventTerm(
-        func=custom_events.randomize_joint_friction_model,
-        mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]), 
-                "friction_distribution_params": (0.2, 2.0),
-                "operation": "scale"},
-    )
-
-
-    scale_all_joint_armature_model = EventTerm(
-        func=custom_events.randomize_joint_friction_model,
-        mode="startup",
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]), 
-                "armature_distribution_params": (0.0, 1.0),
-                "operation": "scale"},
-    )
     
+    randomize_joint_parameters = EventTerm(
+        func=custom_events.randomize_joint_parameters,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=[".*"]), 
+            "friction_distribution_params": (0.8, 1.2),
+            "armature_distribution_params": (0.8, 1.2),
+            "operation": "scale",
+            "distribution": "uniform",
+        },
+    )
 
     actuator_gains = EventTerm(
         func=mdp.randomize_actuator_gains,
@@ -184,7 +187,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
     use_imu = False
     # an imu sensor in case we don't want any state estimator (for now we can't use sites from the xml)
     imu = ImuCfg(
-        prim_path="/World/envs/env_.*/Robot/base", 
+        prim_path="/World/envs/env_.*/Robot/Geometry/base", 
         offset=ImuCfg.OffsetCfg(
             pos=(0.0, -0.02341, 0.04927)
         ), 
@@ -250,7 +253,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
 
     # Base-centered height scanner for pose-related rewards and privileged observations.
     pose_height_scanner = RayCasterCfg(
-        prim_path="/World/envs/env_.*/Robot/base",
+        prim_path="/World/envs/env_.*/Robot/Geometry/base",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.0)),
         ray_alignment='yaw',
         pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[0.6, 0.6]),
@@ -261,7 +264,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
 
     # Template copied onto each foot link to measure the terrain immediately around that foot.
     foot_height_scanner = RayCasterCfg(
-        prim_path="/World/envs/env_.*/Robot/FL_foot",
+        prim_path="/World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.5)),
         ray_alignment="yaw",
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
@@ -507,7 +510,7 @@ class B2RoughVisionEnvCfg(B2RoughBlindEnvCfg):
 
     # we add a height scanner for perceptive locomotion
     perceptive_height_scanner = RayCasterCfg(
-        prim_path="/World/envs/env_.*/Robot/base",
+        prim_path="/World/envs/env_.*/Robot/Geometry/base",
         offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 0.0)),
         ray_alignment='yaw',
         pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
@@ -518,7 +521,7 @@ class B2RoughVisionEnvCfg(B2RoughBlindEnvCfg):
 
     # we add a height scanner for feet edge reward
     edge_height_scanner = RayCasterCfg(
-        prim_path="/World/envs/env_.*/Robot/base",
+        prim_path="/World/envs/env_.*/Robot/Geometry/base",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.0)),
         ray_alignment='yaw',
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
@@ -530,7 +533,7 @@ class B2RoughVisionEnvCfg(B2RoughBlindEnvCfg):
     #camera_usd = CAMERA_USD_CFG
     use_depth_camera = False
     depth_camera = MultiMeshRayCasterCameraCfg(
-        prim_path="/World/envs/env_.*/Robot/base",
+        prim_path="/World/envs/env_.*/Robot/Geometry/base",
         update_period=1 / 60,
         offset=MultiMeshRayCasterCameraCfg.OffsetCfg(pos=(0.33, 0.0, 0.08), rot=(-0.405579, 0.579228, -0.579228, 0.405579)),
         mesh_prim_paths=[

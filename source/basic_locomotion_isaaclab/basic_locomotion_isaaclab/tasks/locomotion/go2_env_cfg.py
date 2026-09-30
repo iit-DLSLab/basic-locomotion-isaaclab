@@ -196,7 +196,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     use_imu = False
     # an imu sensor in case we don't want any state estimator (for now we can't use sites from the xml)
     imu = ImuCfg(
-        prim_path="/World/envs/env_.*/Robot/base", 
+        prim_path="/World/envs/env_.*/Robot/Geometry/base", 
         offset=ImuCfg.OffsetCfg(
             pos=(-0.02557, 0, 0.04232)
         ), 
@@ -262,7 +262,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
     # Base-centered height scanner for pose-related rewards and privileged observations.
     pose_height_scanner = RayCasterCfg(
-        prim_path="/World/envs/env_.*/Robot/base",
+        prim_path="/World/envs/env_.*/Robot/Geometry/base",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.0)),
         ray_alignment='yaw',
         pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[0.6, 0.6]),
@@ -273,7 +273,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
     # Template copied onto each foot link to measure the terrain immediately around that foot.
     foot_height_scanner = RayCasterCfg(
-        prim_path="/World/envs/env_.*/Robot/FL_foot",
+        prim_path="/World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.5)),
         ray_alignment="yaw",
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
@@ -519,7 +519,7 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
 
     # we add a height scanner for perceptive locomotion
     perceptive_height_scanner = RayCasterCfg(
-        prim_path="/World/envs/env_.*/Robot/base",
+        prim_path="/World/envs/env_.*/Robot/Geometry/base",
         offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 0.0)),
         ray_alignment='yaw',
         pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
@@ -530,7 +530,7 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
 
     # we add a height scanner for feet edge reward
     edge_height_scanner = RayCasterCfg(
-        prim_path="/World/envs/env_.*/Robot/base",
+        prim_path="/World/envs/env_.*/Robot/Geometry/base",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.0)),
         ray_alignment='yaw',
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
@@ -542,7 +542,7 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
     #camera_usd = CAMERA_USD_CFG
     use_depth_camera = False
     depth_camera = MultiMeshRayCasterCameraCfg(
-        prim_path="/World/envs/env_.*/Robot/base",
+        prim_path="/World/envs/env_.*/Robot/Geometry/base",
         update_period=1 / 60,
         offset=MultiMeshRayCasterCameraCfg.OffsetCfg(pos=(0.33, 0.0, 0.08), rot=(-0.405579, 0.579228, -0.579228, 0.405579)),
         mesh_prim_paths=[
@@ -564,7 +564,7 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
 
     use_unitree_l2_lidar = False
     unitree_l2_lidar = MultiMeshRayCasterCfg(
-        prim_path="/World/envs/env_.*/Robot/base",
+        prim_path="/World/envs/env_.*/Robot/Geometry/base",
         update_period=1 / 5.55,
         offset=MultiMeshRayCasterCfg.OffsetCfg(pos=(0.31, 0.0, 0.02)),
         ray_alignment="base",

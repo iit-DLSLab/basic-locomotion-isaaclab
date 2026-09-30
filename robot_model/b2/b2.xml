@@ -33,22 +33,22 @@
         <mesh name="FL_thigh" file="assets/FL_thigh.obj"/>
         <mesh name="FL_thigh_protect" file="assets/FL_thigh_protect.obj"/>
         <mesh name="FL_calf" file="assets/FL_calf.obj"/>
-        <mesh name="FL_foot" file="assets/FL_foot.obj"/>
+        <mesh name="FL_foot_visual" file="assets/FL_foot.obj"/>
         <mesh name="FR_hip" file="assets/FR_hip.obj"/>
         <mesh name="FR_thigh" file="assets/FR_thigh.obj"/>
         <mesh name="FR_thigh_protect" file="assets/FR_thigh_protect.obj"/>
         <mesh name="FR_calf" file="assets/FR_calf.obj"/>
-        <mesh name="FR_foot" file="assets/FR_foot.obj"/>
+        <mesh name="FR_foot_visual" file="assets/FR_foot.obj"/>
         <mesh name="RL_hip" file="assets/RL_hip.obj"/>
         <mesh name="RL_thigh" file="assets/RL_thigh.obj"/>
         <mesh name="RL_thigh_protect" file="assets/RL_thigh_protect.obj"/>
         <mesh name="RL_calf" file="assets/RL_calf.obj"/>
-        <mesh name="RL_foot" file="assets/RL_foot.obj"/>
+        <mesh name="RL_foot_visual" file="assets/RL_foot.obj"/>
         <mesh name="RR_hip" file="assets/RR_hip.obj"/>
         <mesh name="RR_thigh" file="assets/RR_thigh.obj"/>
         <mesh name="RR_thigh_protect" file="assets/RR_thigh_protect.obj"/>
         <mesh name="RR_calf" file="assets/RR_calf.obj"/>
-        <mesh name="RR_foot" file="assets/RR_foot.obj"/>
+        <mesh name="RR_foot_visual" file="assets/RR_foot.obj"/>
         <mesh name="f_oc_link" file="assets/f_oc_link.obj"/>
         <mesh name="r_oc_link" file="assets/r_oc_link.obj"/>
     </asset>
@@ -120,9 +120,13 @@
                         <geom size="0.025 0.014 0.0175" pos="0.023 0 -0.31" quat="0.540302 0 0.841471 0" type="box"
                               rgba="0.7 0.7 0.7 1" class="collision"/>
                         <geom pos="0 8.6986e-05 0" type="mesh" contype="0" conaffinity="0" group="1" density="0"
-                              rgba="0.15 0.15 0.15 1" mesh="FL_foot" friction="0.4 0.005 0.0001"/>
-                        <geom name="FL" size="0.032" pos="0 8.6986e-05 -0.35" quat="0.707388 0.706825 0 0" type="sphere"
-                              rgba="0.15 0.15 0.15 1" class="collision" friction="0.4 0.005 0.0001"/>
+                              rgba="0.15 0.15 0.15 1" mesh="FL_foot_visual" friction="0.4 0.005 0.0001"/>
+                        <body name="FL_foot" pos="0 8.6986e-05 -0.35">
+                            <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
+                            <!-- FL_foot only collision -->
+                            <geom name="FL" size="0.032" type="sphere" rgba="0.15 0.15 0.15 1" class="collision"
+                                  friction="0.4 0.005 0.0001"/>
+                        </body>
                     </body>
                 </body>
             </body>
@@ -158,9 +162,13 @@
                         <geom size="0.025 0.014 0.0175" pos="0.023 0 -0.31" quat="0.540302 0 0.841471 0" type="box"
                               rgba="0.7 0.7 0.7 1" class="collision"/>
                         <geom type="mesh" contype="0" conaffinity="0" group="1" density="0" rgba="0.15 0.15 0.15 1"
-                              mesh="FR_foot" friction="0.4 0.005 0.0001"/>
-                        <geom name="FR" size="0.032" pos="0 8.6986e-05 -0.35" quat="0.707388 0.706825 0 0" type="sphere"
-                              rgba="0.15 0.15 0.15 1" class="collision" friction="0.4 0.005 0.0001"/>
+                              mesh="FR_foot_visual" friction="0.4 0.005 0.0001"/>
+                        <body name="FR_foot" pos="0 8.6986e-05 -0.35">
+                            <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
+                            <!-- FR_foot only collision -->
+                            <geom name="FR" size="0.032" type="sphere" rgba="0.15 0.15 0.15 1" class="collision"
+                                  friction="0.4 0.005 0.0001"/>
+                        </body>
                     </body>
                 </body>
             </body>
@@ -196,9 +204,13 @@
                         <geom size="0.025 0.014 0.0175" pos="0.023 0 -0.31" quat="0.540302 0 0.841471 0" type="box"
                               rgba="0.7 0.7 0.7 1" class="collision"/>
                         <geom pos="0 8.6986e-05 0" type="mesh" contype="0" conaffinity="0" group="1" density="0"
-                              rgba="0.15 0.15 0.15 1" mesh="RL_foot" friction="0.4 0.005 0.0001"/>
-                        <geom name="RL" size="0.032" pos="0 8.6986e-05 -0.35" quat="0.707388 0.706825 0 0" type="sphere"
-                              rgba="0.15 0.15 0.15 1" class="collision" friction="0.4 0.005 0.0001"/>
+                              rgba="0.15 0.15 0.15 1" mesh="RL_foot_visual" friction="0.4 0.005 0.0001"/>
+                        <body name="RL_foot" pos="0 8.6986e-05 -0.35">
+                            <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
+                            <!-- RL_foot only collision -->
+                            <geom name="RL" size="0.032" type="sphere" rgba="0.15 0.15 0.15 1" class="collision"
+                                  friction="0.4 0.005 0.0001"/>
+                        </body>
                     </body>
                 </body>
             </body>
@@ -234,9 +246,13 @@
                         <geom size="0.025 0.014 0.0175" pos="0.023 0 -0.31" quat="0.540302 0 0.841471 0" type="box"
                               rgba="0.7 0.7 0.7 1" class="collision"/>
                         <geom pos="0 -8.6984e-05 0" type="mesh" contype="0" conaffinity="0" group="1" density="0"
-                              rgba="0.15 0.15 0.15 1" mesh="RR_foot" friction="0.4 0.005 0.0001"/>
-                        <geom name="RR" size="0.032" pos="0 8.6986e-05 -0.35" quat="0.707388 0.706825 0 0" type="sphere"
-                              rgba="0.15 0.15 0.15 1" class="collision" friction="0.4 0.005 0.0001"/>
+                              rgba="0.15 0.15 0.15 1" mesh="RR_foot_visual" friction="0.4 0.005 0.0001"/>
+                        <body name="RR_foot" pos="0 8.6986e-05 -0.35">
+                            <inertial pos="0 0 0" mass="0.02" diaginertia="8.192e-06 8.192e-06 8.192e-06"/>
+                            <!-- RR_foot only collision -->
+                            <geom name="RR" size="0.032" type="sphere" rgba="0.15 0.15 0.15 1" class="collision"
+                                  friction="0.4 0.005 0.0001"/>
+                        </body>
                     </body>
                 </body>
             </body>
