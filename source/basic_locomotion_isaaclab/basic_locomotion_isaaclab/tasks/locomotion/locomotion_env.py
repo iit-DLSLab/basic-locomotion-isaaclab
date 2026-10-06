@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import copy
 import gymnasium as gym
 import math
 import torch
@@ -36,6 +37,7 @@ from isaaclab.sensors import (
 from isaaclab.sim import SimulationCfg
 from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils.configclass import configclass
+from isaaclab.utils.noise import NoiseModel
 
 from isaaclab import cloner
 
@@ -109,10 +111,6 @@ class LocomotionEnv(DirectRLEnv):
                 )
                 self._rma_latent_encoder.to(self.device)
             self._observation_history_rma = torch.zeros(self.num_envs, cfg.rma_history_length, cfg.single_rma_observation_space, device=self.device)
-            if self.cfg.observation_noise_model:
-                self._observation_noise_model_rma: NoiseModel = self.cfg.observation_noise_model.class_type(
-                    self.cfg.observation_noise_model, num_envs=self.num_envs, device=self.device
-                )
 
         # Learned State Estimator
         if(cfg.use_concurrent_state_est == True):
@@ -124,9 +122,34 @@ class LocomotionEnv(DirectRLEnv):
             )
             self._concurrent_state_est_network.to(self.device)
             self._observation_history_concurrent_state_est = torch.zeros(self.num_envs, cfg.concurrent_state_est_history_length, cfg.single_concurrent_state_est_observation_space, device=self.device)
-            if self.cfg.observation_noise_model:
-                self._observation_noise_model_concurrent_state_est: NoiseModel = self.cfg.observation_noise_model.class_type(
-                    self.cfg.observation_noise_model, num_envs=self.num_envs, device=self.device
+
+        # Observation noise with a separate std for each term, see cfg.observation_noise_std.
+        # The terms must follow the same order used to build the observations
+        if self.cfg.observation_noise_model:
+            num_joints = cfg.action_space
+            proprio_terms = [
+                ("base_linear", 3),
+                ("base_ang_vel", 3),
+                ("projected_gravity", 3),
+                ("commands", 3),
+                ("joint_pos", num_joints),
+                ("joint_vel", num_joints),
+                ("actions", num_joints),
+            ]
+            policy_terms = (proprio_terms + [("clock", 4 if cfg.use_clock_signal else 0)]) * cfg.history_length
+            # the height map takes whatever is left of the observation space
+            rma_size = cfg.rma_output_space if cfg.use_rma else 0
+            height_map_size = cfg.observation_space - sum(size for _, size in policy_terms) - rma_size
+            policy_terms += [("height_map", height_map_size), ("rma", rma_size)]
+
+            self._observation_noise_model = self._make_observation_noise_model(policy_terms)
+            if cfg.use_rma:
+                self._observation_noise_model_rma = self._make_observation_noise_model(
+                    proprio_terms * cfg.rma_history_length
+                )
+            if cfg.use_concurrent_state_est:
+                self._observation_noise_model_concurrent_state_est = self._make_observation_noise_model(
+                    proprio_terms * cfg.concurrent_state_est_history_length
                 )
 
         # Logging
@@ -311,6 +334,20 @@ class LocomotionEnv(DirectRLEnv):
     def _apply_action(self):
         self._robot.set_joint_position_target(self._processed_actions, joint_ids=self._ids_joints_order)
 
+
+    def _make_observation_noise_model(self, terms: list[tuple[str, int]]) -> NoiseModel:
+        # Expand the (noise std, bias std) of each term to one value per observation dimension
+        noise_std = [self.cfg.observation_noise_std[name][0] for name, size in terms for _ in range(size)]
+        bias_std = [self.cfg.observation_noise_std[name][1] for name, size in terms for _ in range(size)]
+
+        noise_model_cfg = copy.deepcopy(self.cfg.observation_noise_model)
+        noise_model_cfg.noise_cfg.std = torch.tensor(noise_std, device=self.device)
+        noise_model_cfg.bias_noise_cfg.std = torch.tensor(bias_std, device=self.device)
+        noise_model = noise_model_cfg.class_type(noise_model_cfg, num_envs=self.num_envs, device=self.device)
+
+        # A first call sizes the bias to the observation, otherwise the first reset fails
+        noise_model(torch.zeros(self.num_envs, len(noise_std), device=self.device))
+        return noise_model
 
     def _get_observations(self) -> dict:
 

@@ -339,11 +339,25 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.05, operation="add"),
         bias_noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.015, operation="abs"),
     )
-    # at every time-step add gaussian noise + bias. The bias is a gaussian sampled at reset
+    # at every time-step add gaussian noise + bias. The bias is a gaussian sampled at reset.
+    # The std is set separately for each observation term with observation_noise_std
     observation_noise_model: NoiseModelWithAdditiveBiasCfg = NoiseModelWithAdditiveBiasCfg(
-        noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.02, operation="add"),
-        bias_noise_cfg=GaussianNoiseCfg(mean=0.0, std=0.001, operation="abs"),
+        noise_cfg=GaussianNoiseCfg(mean=0.0, operation="add"),
+        bias_noise_cfg=GaussianNoiseCfg(mean=0.0, operation="abs"),
     )
+    # (noise std, bias std) for each observation term
+    observation_noise_std = {
+        "base_linear": (0.05, 0.001),
+        "base_ang_vel": (0.05, 0.001),
+        "projected_gravity": (0.05, 0.001),
+        "commands": (0.01, 0.001),
+        "joint_pos": (0.01, 0.001),
+        "joint_vel": (0.05, 0.001),
+        "actions": (0.01, 0.001),
+        "clock": (0.01, 0.001),
+        "height_map": (0.02, 0.001),
+        "rma": (0.02, 0.001),
+    }
 
     # robot
     robot: ArticulationCfg = PEGASUS_CFG.replace(prim_path="/World/envs/env_.*/Robot")
