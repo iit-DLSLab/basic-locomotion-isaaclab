@@ -254,7 +254,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
     # Base-centered height scanner for pose-related rewards and privileged observations.
     pose_height_scanner = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base",
-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.0)),
+        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
         ray_alignment='yaw',
         pattern_cfg=patterns.GridPatternCfg(resolution=0.2, size=[0.6, 0.6]),
         debug_vis=False,
@@ -265,7 +265,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
     # Template copied onto each foot link to measure the terrain immediately around that foot.
     foot_height_scanner = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot",
-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.5)),
+        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
         ray_alignment="yaw",
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
         debug_vis=False,
@@ -525,7 +525,7 @@ class B2RoughVisionEnvCfg(B2RoughBlindEnvCfg):
     # we add a height scanner for perceptive locomotion
     perceptive_height_scanner = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base",
-        offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 0.0)),
+        offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 2.0)),
         ray_alignment='yaw',
         pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
         debug_vis=False,
@@ -536,7 +536,7 @@ class B2RoughVisionEnvCfg(B2RoughBlindEnvCfg):
     # we add a height scanner for feet edge reward
     edge_height_scanner = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base",
-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 0.0)),
+        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
         ray_alignment='yaw',
         pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
         debug_vis=False,
