@@ -344,16 +344,16 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
     )
     # (noise std, bias std) for each observation term
     observation_noise_std = {
-        "base_linear": (0.05, 0.001),
-        "base_ang_vel": (0.05, 0.001),
-        "projected_gravity": (0.05, 0.001),
-        "commands": (0.01, 0.001),
-        "joint_pos": (0.01, 0.001),
-        "joint_vel": (0.05, 0.001),
-        "actions": (0.01, 0.001),
-        "clock": (0.01, 0.001),
-        "height_map": (0.02, 0.001),
-        "rma": (0.02, 0.001),
+        "base_linear": (0.05, 0.01),
+        "base_ang_vel": (0.05, 0.01),
+        "projected_gravity": (0.05, 0.01),
+        "commands": (0.01, 0.01),
+        "joint_pos": (0.01, 0.01),
+        "joint_vel": (0.05, 0.01),
+        "actions": (0.01, 0.01),
+        "clock": (0.01, 0.01),
+        "height_map": (0.02, 0.01),
+        "rma": (0.02, 0.01),
     }
 
     # robot
