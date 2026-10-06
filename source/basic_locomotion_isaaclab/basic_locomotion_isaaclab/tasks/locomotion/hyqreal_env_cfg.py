@@ -364,7 +364,7 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
         "projected_gravity": (0.05, 0.01),
         "commands": (0.01, 0.01),
         "joint_pos": (0.01, 0.01),
-        "joint_vel": (0.05, 0.01),
+        "joint_vel": (0.1, 0.01),
         "actions": (0.01, 0.01),
         "clock": (0.01, 0.01),
         "height_map": (0.02, 0.01),
