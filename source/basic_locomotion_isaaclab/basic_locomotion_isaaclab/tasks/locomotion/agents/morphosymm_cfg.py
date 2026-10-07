@@ -50,7 +50,8 @@ obs_space_names_actor = [
         "joints_pos",
         "joints_vel",
         "joints_pos",
-        "clock_data",
+        "clock_data", # periodic clock data
+        "clock_data", # periodic clock data
     ]*int(history_length)
 obs_space_names_actor += ["heightmap:7x9"]
 
@@ -65,7 +66,8 @@ obs_space_names_critic = [
         "joints_pos",
         "joints_vel",
         "joints_pos",
-        "clock_data",
+        "clock_data", # periodic clock data
+        "clock_data", # periodic clock data
     ]*int(history_length)
 obs_space_names_critic += ["heightmap:7x9"]
 obs_space_names_critic += [    

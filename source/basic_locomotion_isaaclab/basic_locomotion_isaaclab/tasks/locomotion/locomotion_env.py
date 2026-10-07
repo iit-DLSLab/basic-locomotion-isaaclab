@@ -66,6 +66,10 @@ class LocomotionEnv(DirectRLEnv):
         self._previous_previous_actions = torch.zeros(
             self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device
         )
+        # Output of the exponential moving average action filter
+        self._filtered_actions = torch.zeros(
+            self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device
+        )
 
         # X/Y linear velocity and yaw angular velocity commands
         self._commands = torch.zeros(self.num_envs, 3, device=self.device)
@@ -136,7 +140,7 @@ class LocomotionEnv(DirectRLEnv):
                 ("joint_vel", num_joints),
                 ("actions", num_joints),
             ]
-            policy_terms = (proprio_terms + [("clock", 4 if cfg.use_clock_signal else 0)]) * cfg.history_length
+            policy_terms = (proprio_terms + [("clock", 8 if cfg.use_clock_signal else 0)]) * cfg.history_length
             # the height map takes whatever is left of the observation space
             rma_size = cfg.rma_output_space if cfg.use_rma else 0
             height_map_size = cfg.observation_space - sum(size for _, size in policy_terms) - rma_size
@@ -181,6 +185,7 @@ class LocomotionEnv(DirectRLEnv):
                 "feet_height_clearance_aperiodic",
                 "feet_height_clearance_mujoco_periodic",
                 "feet_height_clearance_mujoco_aperiodic",
+                "feet_swing_trajectory_periodic",
                 "feet_slide",
                 "feet_to_hip_distance_l2",
                 "feet_edge",
@@ -322,11 +327,11 @@ class LocomotionEnv(DirectRLEnv):
         # Clip the action
         self._actions = torch.clamp(self._actions, -self.cfg.desired_clip_actions, self.cfg.desired_clip_actions)
 
-        # Filter the action
+        # Filter the action with an exponential moving average (low-pass on the filter output, not on the raw actions)
         if(self.cfg.use_filter_actions):
-            alpha = 0.8
-            temp = alpha * self._actions + (1 - alpha) * self._previous_actions
-            self._processed_actions = self.cfg.action_scale * temp + default_joint_pos_ordered
+            alpha = self.cfg.action_filter_alpha
+            self._filtered_actions = alpha * self._actions + (1 - alpha) * self._filtered_actions
+            self._processed_actions = self.cfg.action_scale * self._filtered_actions + default_joint_pos_ordered
         else:
             self._processed_actions = self.cfg.action_scale * self._actions + default_joint_pos_ordered
 
@@ -371,11 +376,12 @@ class LocomotionEnv(DirectRLEnv):
             # Increment the phase signal by the step frequency and wrap to [0, 1)
             self._phase_signal += self.step_dt * self._step_freq
             self._phase_signal = self._phase_signal % 1.0
-            clock_data = torch.vstack([self._phase_signal[:,0], self._phase_signal[:,1], self._phase_signal[:,2], self._phase_signal[:,3]]).T
+            # Encode the phase as sin/cos so the signal stays continuous at the 1 -> 0 wrap: [sin FL..RR, cos FL..RR]
+            clock_data = torch.cat([torch.sin(2.0 * torch.pi * self._phase_signal), torch.cos(2.0 * torch.pi * self._phase_signal)], dim=1)
             
-            # for all the envs that are not moving, we put -1
+            # for all the envs that are not moving, we put -1 (outside the unit circle, so distinguishable from any phase)
             should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
-            clock_data[:, :] = clock_data[:, :]*should_move.unsqueeze(1).expand(-1, 4) + -1.0* ~should_move.unsqueeze(1).expand(-1, 4)
+            clock_data[:, :] = clock_data[:, :]*should_move.unsqueeze(1).expand(-1, 8) + -1.0* ~should_move.unsqueeze(1).expand(-1, 8)
             
 
         # Choosing the main source of observation
@@ -506,6 +512,7 @@ class LocomotionEnv(DirectRLEnv):
         stance_contact_suggestion = custom_rewards.stance_contact_suggestion(self)
         feet_height_clearance_mujoco_aperiodic = custom_rewards.feet_height_clearance_mujoco_aperiodic(self)
         feet_height_clearance_mujoco_periodic = custom_rewards.feet_height_clearance_mujoco_periodic(self)
+        feet_swing_trajectory_periodic = custom_rewards.feet_swing_trajectory_periodic(self)
         feet_height_clearance_periodic = custom_rewards.feet_height_clearance_periodic(self)
         feet_height_clearance_aperiodic = custom_rewards.feet_height_clearance_aperiodic(self)
         feet_to_hip_distance_l2 = custom_rewards.feet_to_hip_distance_l2(self)
@@ -537,6 +544,7 @@ class LocomotionEnv(DirectRLEnv):
             "feet_height_clearance_periodic": feet_height_clearance_periodic * self.cfg.feet_height_clearance_periodic_reward_scale * self.step_dt,
             "feet_height_clearance_mujoco_aperiodic": feet_height_clearance_mujoco_aperiodic * self.cfg.feet_height_clearance_mujoco_aperiodic_reward_scale * self.step_dt,
             "feet_height_clearance_mujoco_periodic": feet_height_clearance_mujoco_periodic * self.cfg.feet_height_clearance_mujoco_periodic_reward_scale * self.step_dt,
+            "feet_swing_trajectory_periodic": feet_swing_trajectory_periodic * self.cfg.feet_swing_trajectory_periodic_reward_scale * self.step_dt,
             
             "feet_slide": feet_slide * self.cfg.feet_slide_reward_scale * self.step_dt,
             "feet_to_hip_distance_l2": feet_to_hip_distance_l2 * self.cfg.feet_to_hip_distance_reward_scale * self.step_dt,
@@ -622,6 +630,7 @@ class LocomotionEnv(DirectRLEnv):
         self._actions[env_ids] = 0.0
         self._previous_actions[env_ids] = 0.0
         self._previous_previous_actions[env_ids] = 0.0
+        self._filtered_actions[env_ids] = 0.0
         
         # Reset commands
         custom_events._get_new_random_commands(self, env_ids)

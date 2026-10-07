@@ -180,7 +180,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
     use_clock_signal = True
     if(use_clock_signal):
-        observation_space += 4 # clock signal for periodic gait
+        observation_space += 8 # clock signal for periodic gait (sin and cos of the phase of each leg)
 
     single_observation_space = observation_space # Usefull for concatenating history
 
@@ -382,11 +382,13 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     # Desired tracking variables
     desired_base_height = 0.30
     desired_feet_height = 0.05
+    foot_radius = 0.022 # radius of the foot collision sphere
 
 
     # Desired clip actions
     desired_clip_actions = 3.0
     use_filter_actions = True
+    action_filter_alpha = 0.8 # exponential moving average, lower is smoother but adds delay
         
 
     # Tracking reward scale
@@ -415,10 +417,11 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
     # Feet reward scale
     feet_height_clearance_aperiodic_reward_scale = 0.25*0.0  
-    feet_height_clearance_periodic_reward_scale = 0.25*0.0
-    
     feet_height_clearance_mujoco_aperiodic_reward_scale = 0.25*0.0
-    feet_height_clearance_mujoco_periodic_reward_scale = 0.25
+    
+    feet_height_clearance_periodic_reward_scale = 0.25*0.0
+    feet_height_clearance_mujoco_periodic_reward_scale = 0.25*0.0
+    feet_swing_trajectory_periodic_reward_scale = 0.5
     
     feet_slide_reward_scale = -0.25*0.0
     

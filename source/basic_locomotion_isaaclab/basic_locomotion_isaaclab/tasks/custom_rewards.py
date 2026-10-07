@@ -389,6 +389,28 @@ def feet_height_clearance_mujoco_periodic(self) -> torch.Tensor:
     return feet_height_clearance_mujoco_periodic
 
 
+def feet_swing_trajectory_periodic(self) -> torch.Tensor:
+    """Dense tracking of a phase-based swing height reference, shaping the whole swing and not only its peak."""
+    feet_terrain_height = _get_feet_terrain_heights(self)
+    should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
+    in_swing = self._phase_signal >= self._duty_factor
+
+    # Swing progress from 0 (liftoff) to 1 (touchdown)
+    swing_progress = torch.clamp((self._phase_signal - self._duty_factor) / (1.0 - self._duty_factor), 0.0, 1.0)
+
+    # Raised cosine: zero height and zero vertical velocity at liftoff and touchdown, peak at mid swing
+    feet_z_ref = 0.5 * self.cfg.desired_feet_height * (1.0 - torch.cos(2.0 * torch.pi * swing_progress))
+
+    # The foot body is the center of the foot sphere, so it sits foot_radius above the terrain in stance
+    feet_z = self._robot.data.body_pos_w[:, self._feet_ids_robot, 2] - feet_terrain_height - self.cfg.foot_radius
+    feet_z_error = torch.square(feet_z - feet_z_ref)
+
+    # Tolerance proportional to the desired swing height (half of it gives exp(-1))
+    feet_z_std = 0.5 * self.cfg.desired_feet_height
+    feet_swing_trajectory = torch.exp(-feet_z_error / feet_z_std**2) * in_swing
+    return torch.sum(feet_swing_trajectory, dim=1) * should_move
+
+
 def feet_slide(self) -> torch.Tensor:
     contacts_foot = (
         self._contact_sensor.data.net_forces_w_history[:, :, self._feet_contact_sensor_ids, :].norm(dim=-1).max(dim=1)[0]
@@ -416,7 +438,14 @@ def feet_to_hip_distance_l2(self) -> torch.Tensor:
     desired_hip_offset_x = self._desired_hip_offset_x
     feet_to_hip_distance_x = torch.square(feet_to_base_h[:, 0] + desired_hip_offset_x.unsqueeze(0) - hip_to_base_h[:, 0])
     feet_to_hip_distance_y = torch.square(feet_to_base_h[:, 1] + desired_hip_offset_y.unsqueeze(0) - hip_to_base_h[:, 1])
-    feet_to_hip_distance = -torch.mean(torch.sqrt(feet_to_hip_distance_x + feet_to_hip_distance_y), dim=1)
+    feet_to_hip_distance_per_foot = torch.sqrt(feet_to_hip_distance_x + feet_to_hip_distance_y)
+
+    # While walking only the feet in commanded stance count, otherwise the reward fights the stride during swing.
+    # While standing all feet count.
+    in_stance = (self._phase_signal < self._duty_factor) | ~should_move.unsqueeze(1)
+    feet_to_hip_distance = -torch.sum(feet_to_hip_distance_per_foot * in_stance, dim=1) / torch.clamp(
+        torch.sum(in_stance, dim=1), min=1
+    )
     feet_to_hip_distance = feet_to_hip_distance * torch.where(
         should_move, torch.ones_like(feet_to_hip_distance), torch.full_like(feet_to_hip_distance, 3.0)
     )

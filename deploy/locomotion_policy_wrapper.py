@@ -47,6 +47,9 @@ class LocomotionPolicyWrapper:
         self.observation_space = config.training_env["single_observation_space"]
 
         self.use_clock_signal = config.training_env["use_clock_signal"]
+        # The clock is either the raw phase of each leg (4 values, older policies) or its sin and cos (8 values).
+        # The proprioceptive part of the observation is 48 values, the clock takes the rest.
+        self.clock_size = int(config.training_env["single_observation_space"]) - 48 if self.use_clock_signal else 0
 
 
         # Step frequency ramps linearly with the commanded xy linear velocity norm, from
@@ -65,6 +68,9 @@ class LocomotionPolicyWrapper:
         self.desired_clip_actions = config.training_env["desired_clip_actions"]
 
         self.use_filter_actions = config.training_env["use_filter_actions"]
+        # Policies exported before action_filter_alpha existed use the old 2-tap filter on the raw actions
+        self.action_filter_alpha = config.training_env.get("action_filter_alpha", None)
+        self.filtered_rl_actions = np.zeros(12)
 
 
         self.use_observation_history = config.training_env["use_observation_history"]
@@ -201,11 +207,15 @@ class LocomotionPolicyWrapper:
 
             self.phase_signal += self.step_freq * (1 / (self.RL_FREQ))
             self.phase_signal = self.phase_signal % 1.0
-            obs = np.concatenate((obs, self.phase_signal), axis=0)
+            if(self.clock_size == 8):
+                clock_data = np.concatenate((np.sin(2.0 * np.pi * self.phase_signal), np.cos(2.0 * np.pi * self.phase_signal)))
+            else:
+                clock_data = self.phase_signal
+            obs = np.concatenate((obs, clock_data), axis=0)
 
             commands = np.array([ref_base_lin_vel_h[0], ref_base_lin_vel_h[1], ref_base_ang_vel[2]], dtype=np.float32)
             if(np.linalg.norm(commands) < 0.01):
-                obs[48:52] = -1.0
+                obs[48:48+self.clock_size] = -1.0
 
 
         if(config.training_env["use_concurrent_state_est"] == True):
@@ -312,7 +322,13 @@ class LocomotionPolicyWrapper:
         
 
         # Action Filtering
-        if(self.use_filter_actions):
+        if(self.use_filter_actions and self.action_filter_alpha is not None):
+            # Exponential moving average, as in training
+            alpha = self.action_filter_alpha
+            self.past_rl_actions = rl_action_temp.copy()
+            self.filtered_rl_actions = alpha * rl_action_temp + (1-alpha) * self.filtered_rl_actions
+            rl_action_temp = self.filtered_rl_actions.copy()
+        elif(self.use_filter_actions):
             alpha = 0.8
             past_rl_actions_temp = self.past_rl_actions.copy()
             self.past_rl_actions = rl_action_temp.copy()
