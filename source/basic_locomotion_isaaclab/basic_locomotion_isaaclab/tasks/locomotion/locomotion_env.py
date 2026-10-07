@@ -186,6 +186,7 @@ class LocomotionEnv(DirectRLEnv):
                 "feet_height_clearance_mujoco_periodic",
                 "feet_height_clearance_mujoco_aperiodic",
                 "feet_swing_trajectory_periodic",
+                "feet_swing_trajectory_aperiodic",
                 "feet_slide",
                 "feet_to_hip_distance_l2",
                 "feet_edge",
@@ -513,6 +514,7 @@ class LocomotionEnv(DirectRLEnv):
         feet_height_clearance_mujoco_aperiodic = custom_rewards.feet_height_clearance_mujoco_aperiodic(self)
         feet_height_clearance_mujoco_periodic = custom_rewards.feet_height_clearance_mujoco_periodic(self)
         feet_swing_trajectory_periodic = custom_rewards.feet_swing_trajectory_periodic(self)
+        feet_swing_trajectory_aperiodic = custom_rewards.feet_swing_trajectory_aperiodic(self)
         feet_height_clearance_periodic = custom_rewards.feet_height_clearance_periodic(self)
         feet_height_clearance_aperiodic = custom_rewards.feet_height_clearance_aperiodic(self)
         feet_to_hip_distance_l2 = custom_rewards.feet_to_hip_distance_l2(self)
@@ -545,6 +547,7 @@ class LocomotionEnv(DirectRLEnv):
             "feet_height_clearance_mujoco_aperiodic": feet_height_clearance_mujoco_aperiodic * self.cfg.feet_height_clearance_mujoco_aperiodic_reward_scale * self.step_dt,
             "feet_height_clearance_mujoco_periodic": feet_height_clearance_mujoco_periodic * self.cfg.feet_height_clearance_mujoco_periodic_reward_scale * self.step_dt,
             "feet_swing_trajectory_periodic": feet_swing_trajectory_periodic * self.cfg.feet_swing_trajectory_periodic_reward_scale * self.step_dt,
+            "feet_swing_trajectory_aperiodic": feet_swing_trajectory_aperiodic * self.cfg.feet_swing_trajectory_aperiodic_reward_scale * self.step_dt,
             
             "feet_slide": feet_slide * self.cfg.feet_slide_reward_scale * self.step_dt,
             "feet_to_hip_distance_l2": feet_to_hip_distance_l2 * self.cfg.feet_to_hip_distance_reward_scale * self.step_dt,

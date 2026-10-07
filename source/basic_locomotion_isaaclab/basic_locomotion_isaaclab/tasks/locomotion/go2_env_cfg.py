@@ -418,6 +418,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     # Feet reward scale
     feet_height_clearance_aperiodic_reward_scale = 0.25*0.0  
     feet_height_clearance_mujoco_aperiodic_reward_scale = 0.25*0.0
+    feet_swing_trajectory_aperiodic_reward_scale = 0.5*0.0
     
     feet_height_clearance_periodic_reward_scale = 0.25*0.0
     feet_height_clearance_mujoco_periodic_reward_scale = 0.25*0.0

@@ -411,6 +411,37 @@ def feet_swing_trajectory_periodic(self) -> torch.Tensor:
     return torch.sum(feet_swing_trajectory, dim=1) * should_move
 
 
+def feet_swing_trajectory_aperiodic(self) -> torch.Tensor:
+    """Same swing height reference as feet_swing_trajectory_periodic, but the swing progress comes from the
+    measured air time of each foot instead of the phase signal, so liftoff timing is left free."""
+    feet_terrain_height = _get_feet_terrain_heights(self)
+    should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
+
+    current_air_time = self._contact_sensor.data.current_air_time[:, self._feet_contact_sensor_ids]
+
+    # Nominal swing duration, as in feet_air_time: (1 - duty_factor) / step_freq
+    desired_air_time = (1.0 - self._duty_factor) / self._step_freq
+
+    # Rewarded only up to the nominal touchdown, otherwise hovering just above the ground keeps paying.
+    # Longer swings are left to the excess penalty in feet_air_time.
+    in_swing = (current_air_time > 0.0) & (current_air_time < desired_air_time)
+
+    # Swing progress from 0 (liftoff) to 1 (nominal touchdown)
+    swing_progress = torch.clamp(current_air_time / desired_air_time, 0.0, 1.0)
+
+    # Raised cosine: zero height and zero vertical velocity at liftoff and touchdown, peak at mid swing
+    feet_z_ref = 0.5 * self.cfg.desired_feet_height * (1.0 - torch.cos(2.0 * torch.pi * swing_progress))
+
+    # The foot body is the center of the foot sphere, so it sits foot_radius above the terrain in stance
+    feet_z = self._robot.data.body_pos_w[:, self._feet_ids_robot, 2] - feet_terrain_height - self.cfg.foot_radius
+    feet_z_error = torch.square(feet_z - feet_z_ref)
+
+    # Tolerance proportional to the desired swing height (half of it gives exp(-1))
+    feet_z_std = 0.5 * self.cfg.desired_feet_height
+    feet_swing_trajectory = torch.exp(-feet_z_error / feet_z_std**2) * in_swing
+    return torch.sum(feet_swing_trajectory, dim=1) * should_move
+
+
 def feet_slide(self) -> torch.Tensor:
     contacts_foot = (
         self._contact_sensor.data.net_forces_w_history[:, :, self._feet_contact_sensor_ids, :].norm(dim=-1).max(dim=1)[0]
