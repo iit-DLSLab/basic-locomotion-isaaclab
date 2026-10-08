@@ -195,7 +195,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         debug_vis=False)
 
     
-    use_concurrent_state_est = True
+    use_concurrent_state_est = False
     if(use_concurrent_state_est):
         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
         
@@ -376,7 +376,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
 
     # Desired tracking variables
     desired_base_height = 0.60
-    desired_feet_height = 0.05
+    desired_feet_height = 0.08
     foot_radius = 0.041 # radius of the foot collision sphere
 
 
