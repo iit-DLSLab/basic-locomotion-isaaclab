@@ -1,0 +1,105 @@
+--- git commit ---
+2c83233f99c14a7cf952c999ae7d060e8505ff49
+
+
+--- git status ---
+On branch feat/swing_rewards
+Your branch is up to date with 'origin/feat/swing_rewards'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   deploy/config.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	deploy/rosbag/rosbag2_2026_08_07-12_22_59_0.db3
+	imgui.ini
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/deploy/config.py b/deploy/config.py
+index a0bfba9..33bf38d 100644
+--- a/deploy/config.py
++++ b/deploy/config.py
+@@ -4,7 +4,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
+ sys.path.append(dir_path+"/../")
+ sys.path.append(dir_path+"/../scripts/rsl_rl")
+ 
+-robot = 'go2'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
++robot = 'pegasus'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
+ scene = 'scene_random_boxes'  # flat, random_boxes, random_pyramids, perlin
+ 
+ # ----------------------------------------------------------------------------------------------------------------
+@@ -47,7 +47,7 @@ elif(robot == "pegasus"):
+     Kp_stand_up_and_down = 200.
+     Kd_stand_up_and_down = 10.
+ 
+-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_symm_blind"
++    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-10-08_09-31-12"
+ 
+ else:
+     raise ValueError(f"Robot {robot} not supported")
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+index 52cdef9..9f95025 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+@@ -61,27 +61,27 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+     experiment_name = "rough_direct"
+     obs_groups = {"actor": ["policy"], "critic": ["critic"]}  # rsl_rl 5.4 port
+     actor = RslRlMLPModelCfg(
+-        hidden_dims=[256, 256, 256],
++        hidden_dims=[128, 128, 128],
+         activation="elu",
+         obs_normalization=False,
+         distribution_cfg=RslRlMLPModelCfg.GaussianDistributionCfg(init_std=1.0),
+     )
+     critic = RslRlMLPModelCfg(
+-        hidden_dims=[512, 256, 128],
++        hidden_dims=[128, 128, 128],
+         activation="elu",
+         obs_normalization=False,
+     )
+     algorithm = RslRlPpoAlgorithmCfg(
+         value_loss_coef=1.0,
+         use_clipped_value_loss=True,
+-        clip_param=0.15,
++        clip_param=0.2,
+         entropy_coef=0.005,
+         num_learning_epochs=5,
+         num_mini_batches=4,
+         learning_rate=1.0e-3,
+         schedule="adaptive",
+-        gamma=0.97,
+-        lam=0.99,
++        gamma=0.99,
++        lam=0.95,
+         desired_kl=0.01,
+         max_grad_norm=1.0,
+     )
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+index 0e383ba..5afa8b1 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+@@ -195,7 +195,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
+         debug_vis=False)
+ 
+     
+-    use_concurrent_state_est = True
++    use_concurrent_state_est = False
+     if(use_concurrent_state_est):
+         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
+         
+@@ -376,7 +376,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
+ 
+     # Desired tracking variables
+     desired_base_height = 0.60
+-    desired_feet_height = 0.05
++    desired_feet_height = 0.08
+     foot_radius = 0.041 # radius of the foot collision sphere
+ 
+ 
