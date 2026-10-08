@@ -415,6 +415,9 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
     feet_swing_trajectory_periodic_reward_scale = 0.5
     
     feet_slide_reward_scale = -0.25 * 0.0
+
+    feet_landing_vel_reward_scale = -1.0
+    feet_landing_height = 0.02 # foot height above terrain below which the downward velocity is penalized
     
     feet_to_hip_distance_reward_scale = 1.5
     # This is used in loocmotion_env.py for the above reward

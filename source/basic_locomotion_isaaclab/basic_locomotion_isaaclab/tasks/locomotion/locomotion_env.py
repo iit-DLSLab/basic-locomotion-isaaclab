@@ -188,6 +188,7 @@ class LocomotionEnv(DirectRLEnv):
                 "feet_swing_trajectory_periodic",
                 "feet_swing_trajectory_aperiodic",
                 "feet_slide",
+                "feet_landing_vel_l2",
                 "feet_to_hip_distance_l2",
                 "feet_edge",
                 "feet_vertical_surface_contacts",
@@ -508,6 +509,7 @@ class LocomotionEnv(DirectRLEnv):
         feet_air_time_variance = custom_rewards.feet_air_time_variance(self)
 
         feet_slide = custom_rewards.feet_slide(self)
+        feet_landing_vel_l2 = custom_rewards.feet_landing_vel_l2(self)
         feet_edge = custom_rewards.feet_edge(self)
         periodic_contact_suggestion = custom_rewards.periodic_contact_suggestion(self)
         stance_contact_suggestion = custom_rewards.stance_contact_suggestion(self)
@@ -550,6 +552,7 @@ class LocomotionEnv(DirectRLEnv):
             "feet_swing_trajectory_aperiodic": feet_swing_trajectory_aperiodic * self.cfg.feet_swing_trajectory_aperiodic_reward_scale * self.step_dt,
             
             "feet_slide": feet_slide * self.cfg.feet_slide_reward_scale * self.step_dt,
+            "feet_landing_vel_l2": feet_landing_vel_l2 * self.cfg.feet_landing_vel_reward_scale * self.step_dt,
             "feet_to_hip_distance_l2": feet_to_hip_distance_l2 * self.cfg.feet_to_hip_distance_reward_scale * self.step_dt,
             "feet_edge": feet_edge * self.cfg.feet_edge_reward_scale * self.step_dt,
             "feet_vertical_surface_contacts": feet_vertical_surface_contacts * self.cfg.feet_vertical_surface_contacts_reward_scale * self.step_dt,

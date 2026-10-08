@@ -452,6 +452,24 @@ def feet_slide(self) -> torch.Tensor:
     return feet_slide
 
 
+def feet_landing_vel_l2(self) -> torch.Tensor:
+    """Penalize the downward foot velocity in the last centimeters before touchdown, to get softer (less noisy) impacts."""
+    feet_terrain_height = _get_feet_terrain_heights(self)
+    contacts_foot = (
+        self._contact_sensor.data.net_forces_w_history[:, :, self._feet_contact_sensor_ids, :].norm(dim=-1).max(dim=1)[0]
+        > 1.0
+    )
+
+    # The foot body is the center of the foot sphere, so it sits foot_radius above the terrain in stance
+    feet_z = self._robot.data.body_pos_w[:, self._feet_ids_robot, 2] - feet_terrain_height - self.cfg.foot_radius
+    near_ground = (feet_z < self.cfg.feet_landing_height) & ~contacts_foot
+
+    # Only the downward velocity counts, liftoff is left free
+    feet_vz_down = torch.clamp(self._robot.data.body_lin_vel_w[:, self._feet_ids_robot, 2], max=0.0)
+    feet_landing_vel = torch.sum(torch.square(feet_vz_down) * near_ground, dim=1)
+    return feet_landing_vel
+
+
 def feet_to_hip_distance_l2(self) -> torch.Tensor:
     should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
     rot_w2h = math_utils.matrix_from_quat(math_utils.yaw_quat(self._robot.data.root_quat_w.torch))

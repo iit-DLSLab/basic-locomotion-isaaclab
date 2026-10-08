@@ -416,6 +416,9 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
 
     feet_slide_reward_scale = -0.25 * 0.0
 
+    feet_landing_vel_reward_scale = -1.0
+    feet_landing_height = 0.04 # foot height above terrain below which the downward velocity is penalized
+
     feet_to_hip_distance_reward_scale = 1.5
     # This is used in loocmotion_env.py for the above reward
     desired_hip_offset_y = 0.12
