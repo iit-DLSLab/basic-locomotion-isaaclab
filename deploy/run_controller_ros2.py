@@ -392,12 +392,12 @@ class ControllerROS2(Node):
         control_signal_msg.timestamp = float(self.get_clock().now().nanoseconds)
         control_signal_msg.sequence_id = int(self.sequence_id % 1000)  # To avoid overflow, we reset the sequence id after it reaches a certain value
         self.sequence_id += 1
+        control_signal_msg.control_mode = 1 
         control_signal_msg.joints_position = np.array(desired_joint_pos).flatten().tolist()
         control_signal_msg.joints_velocity = np.zeros(12).tolist()
         control_signal_msg.joints_torques = np.zeros(12).tolist()
         control_signal_msg.kp = (np.ones(12) * Kp).tolist()
         control_signal_msg.kd = (np.ones(12) * Kd).tolist()
-
         self.publisher_control_signal.publish(control_signal_msg)
         
         
