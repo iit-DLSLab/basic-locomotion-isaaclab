@@ -190,7 +190,8 @@ class LocomotionEnv(DirectRLEnv):
                 "feet_slide",
                 "feet_landing_vel_l2",
                 "feet_to_hip_distance_l2",
-                "feet_edge",
+                "feet_edge_stance",
+                "feet_edge_swing",
                 "feet_vertical_surface_contacts",
 
                 "periodic_contact_suggestion",
@@ -261,11 +262,13 @@ class LocomotionEnv(DirectRLEnv):
             self.scene.sensors[f"{foot_name.lower()}_height_scanner"] = scanner
             self._foot_height_scanners.append(scanner)
 
-        # Add the perceptive and edge scanners only for vision-based locomotion.
+        # Add the perceptive scanner only for vision-based locomotion.
         if(getattr(self.cfg, "use_vision", False)):
             self._perceptive_height_scanner = RayCaster(self.cfg.perceptive_height_scanner)
             self.scene.sensors["perceptive_height_scanner"] = self._perceptive_height_scanner
 
+        # The edge scanner is only used by the feet edge rewards (never observed), so it is available for blind locomotion as well
+        if(getattr(self.cfg, "edge_height_scanner", None) is not None):
             self._edge_height_scanner = RayCaster(self.cfg.edge_height_scanner)
             self.scene.sensors["edge_height_scanner"] = self._edge_height_scanner
 
@@ -510,7 +513,8 @@ class LocomotionEnv(DirectRLEnv):
 
         feet_slide = custom_rewards.feet_slide(self)
         feet_landing_vel_l2 = custom_rewards.feet_landing_vel_l2(self)
-        feet_edge = custom_rewards.feet_edge(self)
+        feet_edge_stance = custom_rewards.feet_edge_stance(self)
+        feet_edge_swing = custom_rewards.feet_edge_swing(self)
         periodic_contact_suggestion = custom_rewards.periodic_contact_suggestion(self)
         stance_contact_suggestion = custom_rewards.stance_contact_suggestion(self)
         feet_height_clearance_mujoco_aperiodic = custom_rewards.feet_height_clearance_mujoco_aperiodic(self)
@@ -554,7 +558,8 @@ class LocomotionEnv(DirectRLEnv):
             "feet_slide": feet_slide * self.cfg.feet_slide_reward_scale * self.step_dt,
             "feet_landing_vel_l2": feet_landing_vel_l2 * self.cfg.feet_landing_vel_reward_scale * self.step_dt,
             "feet_to_hip_distance_l2": feet_to_hip_distance_l2 * self.cfg.feet_to_hip_distance_reward_scale * self.step_dt,
-            "feet_edge": feet_edge * self.cfg.feet_edge_reward_scale * self.step_dt,
+            "feet_edge_stance": feet_edge_stance * self.cfg.feet_edge_stance_reward_scale * self.step_dt,
+            "feet_edge_swing": feet_edge_swing * getattr(self.cfg, "feet_edge_swing_reward_scale", 0.0) * self.step_dt,
             "feet_vertical_surface_contacts": feet_vertical_surface_contacts * self.cfg.feet_vertical_surface_contacts_reward_scale * self.step_dt,
 
             "periodic_contact_suggestion": periodic_contact_suggestion * self.cfg.periodic_contact_suggestion_reward_scale * self.step_dt,

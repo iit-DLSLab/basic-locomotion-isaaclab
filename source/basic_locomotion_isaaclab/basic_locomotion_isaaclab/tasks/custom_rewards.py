@@ -12,7 +12,7 @@ def _has_edge_map(self) -> bool:
     return hasattr(self, "_edge_height_scanner")
 
 
-def _compute_edge_map(self) -> tuple[torch.Tensor, float, int, int]:
+def _get_edge_height_grid(self) -> tuple[torch.Tensor, float, int, int]:
     height_data_scanner = self._edge_height_scanner.data.ray_hits_w[..., 2]
     height_data_scanner = torch.nan_to_num(height_data_scanner, nan=0.0, posinf=1.0, neginf=-1.0)
     height_data_scanner = torch.clip(height_data_scanner, min=-5, max=5)
@@ -21,6 +21,11 @@ def _compute_edge_map(self) -> tuple[torch.Tensor, float, int, int]:
     height_map_x_points = int(round(self._edge_height_scanner.cfg.pattern_cfg.size[0] / height_map_resolution)) + 1
     height_map_y_points = int(round(self._edge_height_scanner.cfg.pattern_cfg.size[1] / height_map_resolution)) + 1
     height_grid = height_data_scanner.reshape(self.num_envs, height_map_y_points, height_map_x_points)
+    return height_grid, height_map_resolution, height_map_x_points, height_map_y_points
+
+
+def _compute_edge_map(self) -> tuple[torch.Tensor, float, int, int]:
+    height_grid, height_map_resolution, height_map_x_points, height_map_y_points = _get_edge_height_grid(self)
 
     edge_map = torch.zeros_like(height_grid, dtype=torch.bool)
 
@@ -403,7 +408,10 @@ def feet_swing_trajectory_periodic(self) -> torch.Tensor:
 
     # The foot body is the center of the foot sphere, so it sits foot_radius above the terrain in stance
     feet_z = self._robot.data.body_pos_w[:, self._feet_ids_robot, 2] - feet_terrain_height - self.cfg.foot_radius
-    feet_z_error = torch.square(feet_z - feet_z_ref)
+    feet_z_target_error = feet_z_ref - feet_z
+    # Stepping higher than the reference is penalized less than stepping lower, as in the feet height clearance rewards
+    feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
+    feet_z_error = torch.square(feet_z_target_error)
 
     # Tolerance proportional to the desired swing height (half of it gives exp(-1))
     feet_z_std = 0.5 * self.cfg.desired_feet_height
@@ -434,7 +442,10 @@ def feet_swing_trajectory_aperiodic(self) -> torch.Tensor:
 
     # The foot body is the center of the foot sphere, so it sits foot_radius above the terrain in stance
     feet_z = self._robot.data.body_pos_w[:, self._feet_ids_robot, 2] - feet_terrain_height - self.cfg.foot_radius
-    feet_z_error = torch.square(feet_z - feet_z_ref)
+    feet_z_target_error = feet_z_ref - feet_z
+    # Stepping higher than the reference is penalized less than stepping lower, as in the feet height clearance rewards
+    feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
+    feet_z_error = torch.square(feet_z_target_error)
 
     # Tolerance proportional to the desired swing height (half of it gives exp(-1))
     feet_z_std = 0.5 * self.cfg.desired_feet_height
@@ -501,7 +512,7 @@ def feet_to_hip_distance_l2(self) -> torch.Tensor:
     return feet_to_hip_distance
 
 
-def feet_edge(self) -> torch.Tensor:
+def feet_edge_stance(self) -> torch.Tensor:
     if not _has_edge_map(self):
         return torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
 
@@ -562,10 +573,64 @@ def feet_edge(self) -> torch.Tensor:
         nearest_feasible_distance,
         scan_diagonal,
     )
-    feet_edge = torch.sum(
+    feet_edge_stance = torch.sum(
         torch.where(violating_feet, nearest_feasible_distance, torch.zeros_like(nearest_feasible_distance)), dim=1
     )
-    return feet_edge
+    return feet_edge_stance
+
+
+def feet_edge_swing(self) -> torch.Tensor:
+    """Penalize swing feet that are horizontally closer than feet_edge_swing_margin to a riser face (the high side
+    of an edge) while still below its top, so that the feet move back or up to clear it instead of hitting it."""
+    if not _has_edge_map(self):
+        return torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
+
+    # Stance is a contact loaded mostly vertically. A foot pushing against a riser is still considered in swing.
+    forces_w = self._contact_sensor.data.net_forces_w[:, self._feet_contact_sensor_ids, :]
+    forces_z = torch.abs(forces_w[..., 2])
+    forces_xy = torch.linalg.norm(forces_w[..., :2], dim=-1)
+    in_stance = (torch.linalg.norm(forces_w, dim=-1) > 1.0) & (forces_xy <= 4 * forces_z)
+
+    height_grid, height_map_resolution, _, _ = _get_edge_height_grid(self)
+
+    # Riser tops: cells higher than one of their neighbors by more than the edge threshold
+    riser_top = torch.zeros_like(height_grid, dtype=torch.bool)
+    x_steps = height_grid[:, :, 1:] - height_grid[:, :, :-1]
+    riser_top[:, :, 1:] |= x_steps > self.cfg.feet_edge_height_threshold
+    riser_top[:, :, :-1] |= -x_steps > self.cfg.feet_edge_height_threshold
+    y_steps = height_grid[:, 1:, :] - height_grid[:, :-1, :]
+    riser_top[:, 1:, :] |= y_steps > self.cfg.feet_edge_height_threshold
+    riser_top[:, :-1, :] |= -y_steps > self.cfg.feet_edge_height_threshold
+    riser_top_flat = riser_top.reshape(self.num_envs, 1, -1)
+    riser_top_height = height_grid.reshape(self.num_envs, 1, -1)
+
+    feet_pos_w = self._robot.data.body_pos_w[:, self._feet_ids_robot, :3]
+    feet_pos_scanner_w = feet_pos_w - self._edge_height_scanner.data.pos_w.unsqueeze(1)
+    scanner_yaw_w = math_utils.yaw_quat(self._edge_height_scanner.data.quat_w.torch).unsqueeze(1).expand(
+        -1, feet_pos_w.shape[1], -1
+    )
+    feet_xy_scanner = math_utils.quat_apply_inverse(scanner_yaw_w, feet_pos_scanner_w)[..., :2]
+
+    # Horizontal distance from the foot center to the riser face, which lies half a cell from the riser top center
+    grid_xy = self._edge_height_scanner.ray_starts[0, :, :2].to(device=self.device, dtype=feet_xy_scanner.dtype)
+    feet_to_riser_distance = torch.clamp(
+        torch.linalg.norm(feet_xy_scanner.unsqueeze(2) - grid_xy.unsqueeze(0).unsqueeze(0), dim=-1)
+        - 0.5 * height_map_resolution,
+        min=0.0,
+    )
+
+    # 1 when touching the riser face, 0 once feet_edge_swing_margin away from it
+    margin = getattr(self.cfg, "feet_edge_swing_margin", 0.04)
+    too_close = torch.clamp((self.cfg.foot_radius + margin - feet_to_riser_distance) / margin, 0.0, 1.0)
+
+    # The foot body is the center of the foot sphere, so its bottom is foot_radius below it
+    feet_bottom_z = feet_pos_w[..., 2] - self.cfg.foot_radius
+    height_margin = getattr(self.cfg, "feet_edge_swing_height_margin", 0.01)
+    below_riser_top = feet_bottom_z.unsqueeze(2) < riser_top_height - height_margin
+
+    feet_edge_swing_per_foot = torch.max(too_close * below_riser_top * riser_top_flat, dim=2).values
+    feet_edge_swing = torch.sum(feet_edge_swing_per_foot * ~in_stance, dim=1)
+    return feet_edge_swing
 
 
 def _set_debug_vis_impl(self, debug_vis: bool):

@@ -376,7 +376,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
 
     # Desired tracking variables
     desired_base_height = 0.60
-    desired_feet_height = 0.08
+    desired_feet_height = 0.05
     foot_radius = 0.041 # radius of the foot collision sphere
 
 
@@ -421,21 +421,24 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     
     feet_slide_reward_scale = -0.25 * 0.0
 
-    feet_landing_vel_reward_scale = -1.0
-    feet_landing_height = 0.04 # foot height above terrain below which the downward velocity is penalized
+    feet_landing_vel_reward_scale = -0.1
+    feet_landing_height = 0.03 # foot height above terrain below which the downward velocity is penalized
     
     feet_to_hip_distance_reward_scale = 1.5
     # This is used in loocmotion_env.py for the above reward
     desired_hip_offset_y = 0.148
     desired_hip_offset_x = 0.112
 
-    feet_edge_reward_scale = 0.0
+    feet_edge_stance_reward_scale = 0.0
+    feet_edge_swing_reward_scale = -1.0
+    feet_edge_swing_margin = 0.04 # desired horizontal distance of the swing foot from a riser face [m]
+    feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized [m]
     feet_edge_height_threshold = 0.05
     feet_edge_horizontal_radius = 0.10
     feet_edge_radius_px = 0
     visualize_edge_map = False
 
-    feet_vertical_surface_contacts_reward_scale = -1.0
+    feet_vertical_surface_contacts_reward_scale = -1.5
 
     # variables used in feet air time and periodic contact suggestion reward
     desired_step_freq = 1.4 
@@ -474,7 +477,7 @@ class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
                 proportion=0.2
             ),
             "boxes": terrain_gen.MeshRandomGridTerrainCfg(
-                proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.10), platform_width=2.0,
+                proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.13), platform_width=2.0,
             ),
             "star": terrain_gen.MeshStarTerrainCfg(
                 proportion=0.1, num_bars=10, bar_width_range=(0.15, 0.20), bar_height_range=(0.05, 0.13), platform_width=2.0,
@@ -489,11 +492,11 @@ class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
                 proportion=0.1, slope_range=(0.2, 0.4), platform_width=2.0, border_width=0.25
             ),
             "pyramid_stairs": terrain_gen.MeshPyramidStairsTerrainCfg(
-                proportion=0.15, step_height_range=(0.05, 0.13), step_width=0.3,
+                proportion=0.15, step_height_range=(0.05, 0.16), step_width=0.3,
                 platform_width=3.0, border_width=1.0, holes=False,
             ),
             "pyramid_stairs_inv": terrain_gen.MeshInvertedPyramidStairsTerrainCfg(
-                proportion=0.15, step_height_range=(0.05, 0.13), step_width=0.3,
+                proportion=0.15, step_height_range=(0.05, 0.16), step_width=0.3,
                 platform_width=3.0, border_width=1.0, holes=False,
             ),
         },
@@ -519,6 +522,17 @@ class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
         debug_vis=False,
     )
 
+    # we add a height scanner for the feet edge rewards (only used in the rewards, so also for blind locomotion)
+    edge_height_scanner = RayCasterCfg(
+        prim_path="/World/envs/env_.*/Robot/Geometry/base",
+        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+        ray_alignment='yaw',
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[1.2, 1.2]),
+        debug_vis=False,
+        mesh_prim_paths=["/World/ground"],
+        global_world_only=True,
+    )
+
 
 
 @configclass
@@ -530,7 +544,7 @@ class PegasusRoughVisionEnvCfg(PegasusRoughBlindEnvCfg):
         height_map_y_points = int(round(pattern_cfg.size[1] / pattern_cfg.resolution)) + 1
         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
 
-        self.feet_edge_reward_scale = -1.0
+        self.feet_edge_stance_reward_scale = -1.0
 
     use_vision = True
 
@@ -540,17 +554,6 @@ class PegasusRoughVisionEnvCfg(PegasusRoughBlindEnvCfg):
         offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 2.0)),
         ray_alignment='yaw',
         pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
-        debug_vis=False,
-        mesh_prim_paths=["/World/ground"],
-        global_world_only=True,
-    )
-
-    # we add a height scanner for feet edge reward
-    edge_height_scanner = RayCasterCfg(
-        prim_path="/World/envs/env_.*/Robot/Geometry/base",
-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
-        ray_alignment='yaw',
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
         global_world_only=True,

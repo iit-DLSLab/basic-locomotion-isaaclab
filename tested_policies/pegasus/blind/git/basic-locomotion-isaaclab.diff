@@ -1,29 +1,43 @@
 --- git commit ---
-2c83233f99c14a7cf952c999ae7d060e8505ff49
+1eb1a973ba0772721ccdb3147a5ae24a94c2dec2
 
 
 --- git status ---
-On branch feat/swing_rewards
-Your branch is up to date with 'origin/feat/swing_rewards'.
-
+HEAD detached from b59c570
 Changes not staged for commit:
-  (use "git add <file>..." to update what will be committed)
+  (use "git add/rm <file>..." to update what will be committed)
   (use "git restore <file>..." to discard changes in working directory)
 	modified:   deploy/config.py
-	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/custom_rewards.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/a2_env_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/aliengo_env_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/b2_env_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/hyqreal_env_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/locomotion_env.py
 	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+	deleted:    tested_policies/pegasus/blind/events.out.tfevents.1791453120.gturrisi.4168965.0
+	deleted:    tested_policies/pegasus/blind/exported/policy.onnx
+	deleted:    tested_policies/pegasus/blind/exported/policy.onnx.data
+	deleted:    tested_policies/pegasus/blind/exported/policy.pt
+	deleted:    tested_policies/pegasus/blind/git/basic-locomotion-isaaclab.diff
+	deleted:    tested_policies/pegasus/blind/model_4850.pt
+	deleted:    tested_policies/pegasus/blind/model_4900.pt
+	deleted:    tested_policies/pegasus/blind/params/agent.yaml
+	deleted:    tested_policies/pegasus/blind/params/env.yaml
 
 Untracked files:
   (use "git add <file>..." to include in what will be committed)
 	deploy/rosbag/rosbag2_2026_08_07-12_22_59_0.db3
 	imgui.ini
+	tested_policies/pegasus/2026-10-08_18-54-54/
 
 no changes added to commit (use "git add" and/or "git commit -a") 
 
 
 --- git diff ---
 diff --git a/deploy/config.py b/deploy/config.py
-index a0bfba9..33bf38d 100644
+index a0bfba9..008d89f 100644
 --- a/deploy/config.py
 +++ b/deploy/config.py
 @@ -4,7 +4,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -40,66 +54,2596 @@ index a0bfba9..33bf38d 100644
      Kd_stand_up_and_down = 10.
  
 -    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_symm_blind"
-+    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-10-08_09-31-12"
++    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-10-08_18-54-54"
  
  else:
      raise ValueError(f"Robot {robot} not supported")
-diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
-index 52cdef9..9f95025 100644
---- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
-+++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
-@@ -61,27 +61,27 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
-     experiment_name = "rough_direct"
-     obs_groups = {"actor": ["policy"], "critic": ["critic"]}  # rsl_rl 5.4 port
-     actor = RslRlMLPModelCfg(
--        hidden_dims=[256, 256, 256],
-+        hidden_dims=[128, 128, 128],
-         activation="elu",
-         obs_normalization=False,
-         distribution_cfg=RslRlMLPModelCfg.GaussianDistributionCfg(init_std=1.0),
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/custom_rewards.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/custom_rewards.py
+index cf7512d..44c7e4b 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/custom_rewards.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/custom_rewards.py
+@@ -12,7 +12,7 @@ def _has_edge_map(self) -> bool:
+     return hasattr(self, "_edge_height_scanner")
+ 
+ 
+-def _compute_edge_map(self) -> tuple[torch.Tensor, float, int, int]:
++def _get_edge_height_grid(self) -> tuple[torch.Tensor, float, int, int]:
+     height_data_scanner = self._edge_height_scanner.data.ray_hits_w[..., 2]
+     height_data_scanner = torch.nan_to_num(height_data_scanner, nan=0.0, posinf=1.0, neginf=-1.0)
+     height_data_scanner = torch.clip(height_data_scanner, min=-5, max=5)
+@@ -21,6 +21,11 @@ def _compute_edge_map(self) -> tuple[torch.Tensor, float, int, int]:
+     height_map_x_points = int(round(self._edge_height_scanner.cfg.pattern_cfg.size[0] / height_map_resolution)) + 1
+     height_map_y_points = int(round(self._edge_height_scanner.cfg.pattern_cfg.size[1] / height_map_resolution)) + 1
+     height_grid = height_data_scanner.reshape(self.num_envs, height_map_y_points, height_map_x_points)
++    return height_grid, height_map_resolution, height_map_x_points, height_map_y_points
++
++
++def _compute_edge_map(self) -> tuple[torch.Tensor, float, int, int]:
++    height_grid, height_map_resolution, height_map_x_points, height_map_y_points = _get_edge_height_grid(self)
+ 
+     edge_map = torch.zeros_like(height_grid, dtype=torch.bool)
+ 
+@@ -403,7 +408,10 @@ def feet_swing_trajectory_periodic(self) -> torch.Tensor:
+ 
+     # The foot body is the center of the foot sphere, so it sits foot_radius above the terrain in stance
+     feet_z = self._robot.data.body_pos_w[:, self._feet_ids_robot, 2] - feet_terrain_height - self.cfg.foot_radius
+-    feet_z_error = torch.square(feet_z - feet_z_ref)
++    feet_z_target_error = feet_z_ref - feet_z
++    # Stepping higher than the reference is penalized less than stepping lower, as in the feet height clearance rewards
++    feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
++    feet_z_error = torch.square(feet_z_target_error)
+ 
+     # Tolerance proportional to the desired swing height (half of it gives exp(-1))
+     feet_z_std = 0.5 * self.cfg.desired_feet_height
+@@ -434,7 +442,10 @@ def feet_swing_trajectory_aperiodic(self) -> torch.Tensor:
+ 
+     # The foot body is the center of the foot sphere, so it sits foot_radius above the terrain in stance
+     feet_z = self._robot.data.body_pos_w[:, self._feet_ids_robot, 2] - feet_terrain_height - self.cfg.foot_radius
+-    feet_z_error = torch.square(feet_z - feet_z_ref)
++    feet_z_target_error = feet_z_ref - feet_z
++    # Stepping higher than the reference is penalized less than stepping lower, as in the feet height clearance rewards
++    feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
++    feet_z_error = torch.square(feet_z_target_error)
+ 
+     # Tolerance proportional to the desired swing height (half of it gives exp(-1))
+     feet_z_std = 0.5 * self.cfg.desired_feet_height
+@@ -501,7 +512,7 @@ def feet_to_hip_distance_l2(self) -> torch.Tensor:
+     return feet_to_hip_distance
+ 
+ 
+-def feet_edge(self) -> torch.Tensor:
++def feet_edge_stance(self) -> torch.Tensor:
+     if not _has_edge_map(self):
+         return torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
+ 
+@@ -562,10 +573,64 @@ def feet_edge(self) -> torch.Tensor:
+         nearest_feasible_distance,
+         scan_diagonal,
      )
-     critic = RslRlMLPModelCfg(
--        hidden_dims=[512, 256, 128],
-+        hidden_dims=[128, 128, 128],
-         activation="elu",
-         obs_normalization=False,
+-    feet_edge = torch.sum(
++    feet_edge_stance = torch.sum(
+         torch.where(violating_feet, nearest_feasible_distance, torch.zeros_like(nearest_feasible_distance)), dim=1
      )
-     algorithm = RslRlPpoAlgorithmCfg(
-         value_loss_coef=1.0,
-         use_clipped_value_loss=True,
--        clip_param=0.15,
-+        clip_param=0.2,
-         entropy_coef=0.005,
-         num_learning_epochs=5,
-         num_mini_batches=4,
-         learning_rate=1.0e-3,
-         schedule="adaptive",
--        gamma=0.97,
--        lam=0.99,
-+        gamma=0.99,
-+        lam=0.95,
-         desired_kl=0.01,
-         max_grad_norm=1.0,
+-    return feet_edge
++    return feet_edge_stance
++
++
++def feet_edge_swing(self) -> torch.Tensor:
++    """Penalize swing feet that are horizontally closer than feet_edge_swing_margin to a riser face (the high side
++    of an edge) while still below its top, so that the feet move back or up to clear it instead of hitting it."""
++    if not _has_edge_map(self):
++        return torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
++
++    # Stance is a contact loaded mostly vertically. A foot pushing against a riser is still considered in swing.
++    forces_w = self._contact_sensor.data.net_forces_w[:, self._feet_contact_sensor_ids, :]
++    forces_z = torch.abs(forces_w[..., 2])
++    forces_xy = torch.linalg.norm(forces_w[..., :2], dim=-1)
++    in_stance = (torch.linalg.norm(forces_w, dim=-1) > 1.0) & (forces_xy <= 4 * forces_z)
++
++    height_grid, height_map_resolution, _, _ = _get_edge_height_grid(self)
++
++    # Riser tops: cells higher than one of their neighbors by more than the edge threshold
++    riser_top = torch.zeros_like(height_grid, dtype=torch.bool)
++    x_steps = height_grid[:, :, 1:] - height_grid[:, :, :-1]
++    riser_top[:, :, 1:] |= x_steps > self.cfg.feet_edge_height_threshold
++    riser_top[:, :, :-1] |= -x_steps > self.cfg.feet_edge_height_threshold
++    y_steps = height_grid[:, 1:, :] - height_grid[:, :-1, :]
++    riser_top[:, 1:, :] |= y_steps > self.cfg.feet_edge_height_threshold
++    riser_top[:, :-1, :] |= -y_steps > self.cfg.feet_edge_height_threshold
++    riser_top_flat = riser_top.reshape(self.num_envs, 1, -1)
++    riser_top_height = height_grid.reshape(self.num_envs, 1, -1)
++
++    feet_pos_w = self._robot.data.body_pos_w[:, self._feet_ids_robot, :3]
++    feet_pos_scanner_w = feet_pos_w - self._edge_height_scanner.data.pos_w.unsqueeze(1)
++    scanner_yaw_w = math_utils.yaw_quat(self._edge_height_scanner.data.quat_w.torch).unsqueeze(1).expand(
++        -1, feet_pos_w.shape[1], -1
++    )
++    feet_xy_scanner = math_utils.quat_apply_inverse(scanner_yaw_w, feet_pos_scanner_w)[..., :2]
++
++    # Horizontal distance from the foot center to the riser face, which lies half a cell from the riser top center
++    grid_xy = self._edge_height_scanner.ray_starts[0, :, :2].to(device=self.device, dtype=feet_xy_scanner.dtype)
++    feet_to_riser_distance = torch.clamp(
++        torch.linalg.norm(feet_xy_scanner.unsqueeze(2) - grid_xy.unsqueeze(0).unsqueeze(0), dim=-1)
++        - 0.5 * height_map_resolution,
++        min=0.0,
++    )
++
++    # 1 when touching the riser face, 0 once feet_edge_swing_margin away from it
++    margin = getattr(self.cfg, "feet_edge_swing_margin", 0.04)
++    too_close = torch.clamp((self.cfg.foot_radius + margin - feet_to_riser_distance) / margin, 0.0, 1.0)
++
++    # The foot body is the center of the foot sphere, so its bottom is foot_radius below it
++    feet_bottom_z = feet_pos_w[..., 2] - self.cfg.foot_radius
++    height_margin = getattr(self.cfg, "feet_edge_swing_height_margin", 0.01)
++    below_riser_top = feet_bottom_z.unsqueeze(2) < riser_top_height - height_margin
++
++    feet_edge_swing_per_foot = torch.max(too_close * below_riser_top * riser_top_flat, dim=2).values
++    feet_edge_swing = torch.sum(feet_edge_swing_per_foot * ~in_stance, dim=1)
++    return feet_edge_swing
+ 
+ 
+ def _set_debug_vis_impl(self, debug_vis: bool):
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/a2_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/a2_env_cfg.py
+index 2636137..73c9cbb 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/a2_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/a2_env_cfg.py
+@@ -426,7 +426,7 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
+     
+     feet_slide_reward_scale = -0.25*0.0
+ 
+-    feet_landing_vel_reward_scale = -1.0
++    feet_landing_vel_reward_scale = -0.1
+     feet_landing_height = 0.02 # foot height above terrain below which the downward velocity is penalized
+     
+     feet_to_hip_distance_reward_scale = 1.5
+@@ -434,13 +434,16 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
+     desired_hip_offset_y = 0.095
+     desired_hip_offset_x = 0.0
+ 
+-    feet_edge_reward_scale = 0.0
++    feet_edge_stance_reward_scale = 0.0
++    feet_edge_swing_reward_scale = -1.0
++    feet_edge_swing_margin = 0.04 # desired horizontal distance of the swing foot from a riser face [m]
++    feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized [m]
+     feet_edge_height_threshold = 0.05
+     feet_edge_horizontal_radius = 0.10
+     feet_edge_radius_px = 0
+     visualize_edge_map = False
+ 
+-    feet_vertical_surface_contacts_reward_scale = -2.5
++    feet_vertical_surface_contacts_reward_scale = -1.5
+ 
+     # variables used in feet air time and periodic contact suggestion reward
+     desired_step_freq = 1.4 
+@@ -524,6 +527,18 @@ class A2RoughBlindEnvCfg(A2FlatEnvCfg):
      )
+ 
+ 
++    # we add a height scanner for the feet edge rewards (only used in the rewards, so also for blind locomotion)
++    edge_height_scanner = RayCasterCfg(
++        prim_path="/World/envs/env_.*/Robot/Geometry/base",
++        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
++        ray_alignment='yaw',
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[1.2, 1.2]),
++        debug_vis=False,
++        mesh_prim_paths=["/World/ground"],
++        global_world_only=True,
++    )
++
++
+ 
+ @configclass
+ class A2RoughVisionEnvCfg(A2RoughBlindEnvCfg):
+@@ -534,7 +549,7 @@ class A2RoughVisionEnvCfg(A2RoughBlindEnvCfg):
+         height_map_y_points = int(round(pattern_cfg.size[1] / pattern_cfg.resolution)) + 1
+         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
+ 
+-        self.feet_edge_reward_scale = -1.0
++        self.feet_edge_stance_reward_scale = -1.0
+ 
+     use_vision = True
+ 
+@@ -549,14 +564,3 @@ class A2RoughVisionEnvCfg(A2RoughBlindEnvCfg):
+         global_world_only=True,
+     )
+ 
+-    # we add a height scanner for feet edge reward
+-    edge_height_scanner = RayCasterCfg(
+-        prim_path="/World/envs/env_.*/Robot/Geometry/base",
+-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+-        ray_alignment='yaw',
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
+-        debug_vis=False,
+-        mesh_prim_paths=["/World/ground"],
+-        global_world_only=True,
+-    )
+-
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/aliengo_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/aliengo_env_cfg.py
+index 5e99e22..aaddb93 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/aliengo_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/aliengo_env_cfg.py
+@@ -416,7 +416,7 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
+     
+     feet_slide_reward_scale = -0.25 * 0.0
+ 
+-    feet_landing_vel_reward_scale = -1.0
++    feet_landing_vel_reward_scale = -0.1
+     feet_landing_height = 0.02 # foot height above terrain below which the downward velocity is penalized
+     
+     feet_to_hip_distance_reward_scale = 1.5
+@@ -424,13 +424,16 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
+     desired_hip_offset_y = 0.083
+     desired_hip_offset_x = 0.0
+ 
+-    feet_edge_reward_scale = 0.0
++    feet_edge_stance_reward_scale = 0.0
++    feet_edge_swing_reward_scale = -1.0
++    feet_edge_swing_margin = 0.04 # desired horizontal distance of the swing foot from a riser face [m]
++    feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized [m]
+     feet_edge_height_threshold = 0.05
+     feet_edge_horizontal_radius = 0.10
+     feet_edge_radius_px = 0
+     visualize_edge_map = False
+ 
+-    feet_vertical_surface_contacts_reward_scale = -0.25
++    feet_vertical_surface_contacts_reward_scale = -1.5
+ 
+     # variables used in feet air time and periodic contact suggestion reward
+     desired_step_freq = 1.4 
+@@ -516,6 +519,18 @@ class AliengoRoughBlindEnvCfg(AliengoFlatEnvCfg):
+ 
+ 
+ 
++    # we add a height scanner for the feet edge rewards (only used in the rewards, so also for blind locomotion)
++    edge_height_scanner = RayCasterCfg(
++        prim_path="/World/envs/env_.*/Robot/Geometry/base",
++        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
++        ray_alignment='yaw',
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
++        debug_vis=False,
++        mesh_prim_paths=["/World/ground"],
++        global_world_only=True,
++    )
++
++
+ 
+ @configclass
+ class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
+@@ -526,7 +541,7 @@ class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
+         height_map_y_points = int(round(pattern_cfg.size[1] / pattern_cfg.resolution)) + 1
+         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
+ 
+-        self.feet_edge_reward_scale = -1.0
++        self.feet_edge_stance_reward_scale = -1.0
+ 
+     use_vision = True
+ 
+@@ -541,17 +556,6 @@ class AliengoRoughVisionEnvCfg(AliengoRoughBlindEnvCfg):
+         global_world_only=True,
+     )
+ 
+-    # we add a height scanner for feet edge reward
+-    edge_height_scanner = RayCasterCfg(
+-        prim_path="/World/envs/env_.*/Robot/Geometry/base",
+-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+-        ray_alignment='yaw',
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
+-        debug_vis=False,
+-        mesh_prim_paths=["/World/ground"],
+-        global_world_only=True,
+-    )
+-
+     #camera_usd = CAMERA_USD_CFG
+     use_depth_camera = False
+     depth_camera = MultiMeshRayCasterCameraCfg(
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/b2_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/b2_env_cfg.py
+index 41c86a5..35bb3f8 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/b2_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/b2_env_cfg.py
+@@ -416,7 +416,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
+ 
+     feet_slide_reward_scale = -0.25 * 0.0
+ 
+-    feet_landing_vel_reward_scale = -1.0
++    feet_landing_vel_reward_scale = -0.1
+     feet_landing_height = 0.04 # foot height above terrain below which the downward velocity is penalized
+ 
+     feet_to_hip_distance_reward_scale = 1.5
+@@ -424,13 +424,16 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
+     desired_hip_offset_y = 0.12
+     desired_hip_offset_x = 0.0
+ 
+-    feet_edge_reward_scale = 0.0
++    feet_edge_stance_reward_scale = 0.0
++    feet_edge_swing_reward_scale = -1.0
++    feet_edge_swing_margin = 0.04 # desired horizontal distance of the swing foot from a riser face [m]
++    feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized [m]
+     feet_edge_height_threshold = 0.05
+     feet_edge_horizontal_radius = 0.10
+     feet_edge_radius_px = 0
+     visualize_edge_map = False
+ 
+-    feet_vertical_surface_contacts_reward_scale = -0.25
++    feet_vertical_surface_contacts_reward_scale = -1.5
+ 
+     # variables used in feet air time and periodic contact suggestion reward
+     desired_step_freq = 1.4 
+@@ -515,6 +518,18 @@ class B2RoughBlindEnvCfg(B2FlatEnvCfg):
+ 
+ 
+ 
++    # we add a height scanner for the feet edge rewards (only used in the rewards, so also for blind locomotion)
++    edge_height_scanner = RayCasterCfg(
++        prim_path="/World/envs/env_.*/Robot/Geometry/base",
++        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
++        ray_alignment='yaw',
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[1.2, 1.2]),
++        debug_vis=False,
++        mesh_prim_paths=["/World/ground"],
++        global_world_only=True,
++    )
++
++
+ 
+ @configclass
+ class B2RoughVisionEnvCfg(B2RoughBlindEnvCfg):
+@@ -525,7 +540,7 @@ class B2RoughVisionEnvCfg(B2RoughBlindEnvCfg):
+         height_map_y_points = int(round(pattern_cfg.size[1] / pattern_cfg.resolution)) + 1
+         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
+ 
+-        self.feet_edge_reward_scale = -1.0
++        self.feet_edge_stance_reward_scale = -1.0
+ 
+     use_vision = True
+ 
+@@ -540,17 +555,6 @@ class B2RoughVisionEnvCfg(B2RoughBlindEnvCfg):
+         global_world_only=True,
+     )
+ 
+-    # we add a height scanner for feet edge reward
+-    edge_height_scanner = RayCasterCfg(
+-        prim_path="/World/envs/env_.*/Robot/Geometry/base",
+-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+-        ray_alignment='yaw',
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
+-        debug_vis=False,
+-        mesh_prim_paths=["/World/ground"],
+-        global_world_only=True,
+-    )
+-
+     #camera_usd = CAMERA_USD_CFG
+     use_depth_camera = False
+     depth_camera = MultiMeshRayCasterCameraCfg(
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
+index d90f655..5694b8a 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
+@@ -426,7 +426,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
+     
+     feet_slide_reward_scale = -0.25*0.0
+ 
+-    feet_landing_vel_reward_scale = -1.0
++    feet_landing_vel_reward_scale = -0.1
+     feet_landing_height = 0.02 # foot height above terrain below which the downward velocity is penalized
+     
+     feet_to_hip_distance_reward_scale = 1.5
+@@ -434,13 +434,16 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
+     desired_hip_offset_y = 0.095
+     desired_hip_offset_x = 0.0
+ 
+-    feet_edge_reward_scale = 0.0
++    feet_edge_stance_reward_scale = 0.0
++    feet_edge_swing_reward_scale = -1.0
++    feet_edge_swing_margin = 0.04 # desired horizontal distance of the swing foot from a riser face [m]
++    feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized [m]
+     feet_edge_height_threshold = 0.05
+     feet_edge_horizontal_radius = 0.10
+     feet_edge_radius_px = 0
+     visualize_edge_map = False
+ 
+-    feet_vertical_surface_contacts_reward_scale = -2.5
++    feet_vertical_surface_contacts_reward_scale = -1.5
+ 
+     # variables used in feet air time and periodic contact suggestion reward
+     desired_step_freq = 1.4 
+@@ -524,6 +527,18 @@ class Go2RoughBlindEnvCfg(Go2FlatEnvCfg):
+     )
+ 
+ 
++    # we add a height scanner for the feet edge rewards (only used in the rewards, so also for blind locomotion)
++    edge_height_scanner = RayCasterCfg(
++        prim_path="/World/envs/env_.*/Robot/Geometry/base",
++        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
++        ray_alignment='yaw',
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
++        debug_vis=False,
++        mesh_prim_paths=["/World/ground"],
++        global_world_only=True,
++    )
++
++
+ 
+ @configclass
+ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
+@@ -534,7 +549,7 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
+         height_map_y_points = int(round(pattern_cfg.size[1] / pattern_cfg.resolution)) + 1
+         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
+ 
+-        self.feet_edge_reward_scale = -1.0
++        self.feet_edge_stance_reward_scale = -1.0
+ 
+     use_vision = True
+ 
+@@ -549,17 +564,6 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
+         global_world_only=True,
+     )
+ 
+-    # we add a height scanner for feet edge reward
+-    edge_height_scanner = RayCasterCfg(
+-        prim_path="/World/envs/env_.*/Robot/Geometry/base",
+-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+-        ray_alignment='yaw',
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
+-        debug_vis=False,
+-        mesh_prim_paths=["/World/ground"],
+-        global_world_only=True,
+-    )
+-
+     #camera_usd = CAMERA_USD_CFG
+     use_depth_camera = False
+     depth_camera = MultiMeshRayCasterCameraCfg(
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/hyqreal_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/hyqreal_env_cfg.py
+index b07f54f..c69b5f9 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/hyqreal_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/hyqreal_env_cfg.py
+@@ -432,7 +432,7 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
+ 
+     feet_slide_reward_scale = -0.25 * 0.0
+ 
+-    feet_landing_vel_reward_scale = -1.0
++    feet_landing_vel_reward_scale = -0.1
+     feet_landing_height = 0.02 # foot height above terrain below which the downward velocity is penalized
+     
+     feet_to_hip_distance_reward_scale = 1.5
+@@ -440,13 +440,16 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
+     desired_hip_offset_y = 0.165
+     desired_hip_offset_x = 0.0
+ 
+-    feet_edge_reward_scale = 0.0
++    feet_edge_stance_reward_scale = 0.0
++    feet_edge_swing_reward_scale = -1.0
++    feet_edge_swing_margin = 0.04 # desired horizontal distance of the swing foot from a riser face [m]
++    feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized [m]
+     feet_edge_height_threshold = 0.05
+     feet_edge_horizontal_radius = 0.10
+     feet_edge_radius_px = 0
+     visualize_edge_map = False
+ 
+-    feet_vertical_surface_contacts_reward_scale = -0.25
++    feet_vertical_surface_contacts_reward_scale = -1.5
+ 
+     # variables used in feet air time and periodic contact suggestion reward
+     desired_step_freq = 1.4 
+@@ -533,6 +536,18 @@ class HyQRealRoughBlindEnvCfg(HyQRealFlatEnvCfg):
+ 
+ 
+ 
++    # we add a height scanner for the feet edge rewards (only used in the rewards, so also for blind locomotion)
++    edge_height_scanner = RayCasterCfg(
++        prim_path="/World/envs/env_.*/Robot/Geometry/base",
++        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
++        ray_alignment='yaw',
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[1.2, 1.2]),
++        debug_vis=False,
++        mesh_prim_paths=["/World/ground"],
++        global_world_only=True,
++    )
++
++
+ 
+ @configclass
+ class HyQRealRoughVisionEnvCfg(HyQRealRoughBlindEnvCfg):
+@@ -543,7 +558,7 @@ class HyQRealRoughVisionEnvCfg(HyQRealRoughBlindEnvCfg):
+         height_map_y_points = int(round(pattern_cfg.size[1] / pattern_cfg.resolution)) + 1
+         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
+ 
+-        self.feet_edge_reward_scale = -1.0
++        self.feet_edge_stance_reward_scale = -1.0
+ 
+     use_vision = True
+ 
+@@ -558,17 +573,6 @@ class HyQRealRoughVisionEnvCfg(HyQRealRoughBlindEnvCfg):
+         global_world_only=True,
+     )
+ 
+-    # we add a height scanner for feet edge reward
+-    edge_height_scanner = RayCasterCfg(
+-        prim_path="/World/envs/env_.*/Robot/Geometry/base",
+-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+-        ray_alignment='yaw',
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
+-        debug_vis=False,
+-        mesh_prim_paths=["/World/ground"],
+-        global_world_only=True,
+-    )
+-
+     #camera_usd = CAMERA_USD_CFG
+     use_depth_camera = False
+     depth_camera = MultiMeshRayCasterCameraCfg(
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/locomotion_env.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/locomotion_env.py
+index d5ac6d0..bc3992d 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/locomotion_env.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/locomotion_env.py
+@@ -190,7 +190,8 @@ class LocomotionEnv(DirectRLEnv):
+                 "feet_slide",
+                 "feet_landing_vel_l2",
+                 "feet_to_hip_distance_l2",
+-                "feet_edge",
++                "feet_edge_stance",
++                "feet_edge_swing",
+                 "feet_vertical_surface_contacts",
+ 
+                 "periodic_contact_suggestion",
+@@ -261,11 +262,13 @@ class LocomotionEnv(DirectRLEnv):
+             self.scene.sensors[f"{foot_name.lower()}_height_scanner"] = scanner
+             self._foot_height_scanners.append(scanner)
+ 
+-        # Add the perceptive and edge scanners only for vision-based locomotion.
++        # Add the perceptive scanner only for vision-based locomotion.
+         if(getattr(self.cfg, "use_vision", False)):
+             self._perceptive_height_scanner = RayCaster(self.cfg.perceptive_height_scanner)
+             self.scene.sensors["perceptive_height_scanner"] = self._perceptive_height_scanner
+ 
++        # The edge scanner is only used by the feet edge rewards (never observed), so it is available for blind locomotion as well
++        if(getattr(self.cfg, "edge_height_scanner", None) is not None):
+             self._edge_height_scanner = RayCaster(self.cfg.edge_height_scanner)
+             self.scene.sensors["edge_height_scanner"] = self._edge_height_scanner
+ 
+@@ -510,7 +513,8 @@ class LocomotionEnv(DirectRLEnv):
+ 
+         feet_slide = custom_rewards.feet_slide(self)
+         feet_landing_vel_l2 = custom_rewards.feet_landing_vel_l2(self)
+-        feet_edge = custom_rewards.feet_edge(self)
++        feet_edge_stance = custom_rewards.feet_edge_stance(self)
++        feet_edge_swing = custom_rewards.feet_edge_swing(self)
+         periodic_contact_suggestion = custom_rewards.periodic_contact_suggestion(self)
+         stance_contact_suggestion = custom_rewards.stance_contact_suggestion(self)
+         feet_height_clearance_mujoco_aperiodic = custom_rewards.feet_height_clearance_mujoco_aperiodic(self)
+@@ -554,7 +558,8 @@ class LocomotionEnv(DirectRLEnv):
+             "feet_slide": feet_slide * self.cfg.feet_slide_reward_scale * self.step_dt,
+             "feet_landing_vel_l2": feet_landing_vel_l2 * self.cfg.feet_landing_vel_reward_scale * self.step_dt,
+             "feet_to_hip_distance_l2": feet_to_hip_distance_l2 * self.cfg.feet_to_hip_distance_reward_scale * self.step_dt,
+-            "feet_edge": feet_edge * self.cfg.feet_edge_reward_scale * self.step_dt,
++            "feet_edge_stance": feet_edge_stance * self.cfg.feet_edge_stance_reward_scale * self.step_dt,
++            "feet_edge_swing": feet_edge_swing * getattr(self.cfg, "feet_edge_swing_reward_scale", 0.0) * self.step_dt,
+             "feet_vertical_surface_contacts": feet_vertical_surface_contacts * self.cfg.feet_vertical_surface_contacts_reward_scale * self.step_dt,
+ 
+             "periodic_contact_suggestion": periodic_contact_suggestion * self.cfg.periodic_contact_suggestion_reward_scale * self.step_dt,
 diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
-index 0e383ba..5afa8b1 100644
+index 68ad622..ae09adc 100644
 --- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
 +++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
-@@ -195,7 +195,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
-         debug_vis=False)
- 
-     
--    use_concurrent_state_est = True
-+    use_concurrent_state_est = False
-     if(use_concurrent_state_est):
-         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
-         
 @@ -376,7 +376,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
  
      # Desired tracking variables
      desired_base_height = 0.60
--    desired_feet_height = 0.05
-+    desired_feet_height = 0.08
+-    desired_feet_height = 0.08
++    desired_feet_height = 0.05
      foot_radius = 0.041 # radius of the foot collision sphere
  
  
+@@ -421,21 +421,24 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
+     
+     feet_slide_reward_scale = -0.25 * 0.0
+ 
+-    feet_landing_vel_reward_scale = -1.0
+-    feet_landing_height = 0.04 # foot height above terrain below which the downward velocity is penalized
++    feet_landing_vel_reward_scale = -0.1
++    feet_landing_height = 0.03 # foot height above terrain below which the downward velocity is penalized
+     
+     feet_to_hip_distance_reward_scale = 1.5
+     # This is used in loocmotion_env.py for the above reward
+     desired_hip_offset_y = 0.148
+     desired_hip_offset_x = 0.112
+ 
+-    feet_edge_reward_scale = 0.0
++    feet_edge_stance_reward_scale = 0.0
++    feet_edge_swing_reward_scale = -1.0
++    feet_edge_swing_margin = 0.04 # desired horizontal distance of the swing foot from a riser face [m]
++    feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized [m]
+     feet_edge_height_threshold = 0.05
+     feet_edge_horizontal_radius = 0.10
+     feet_edge_radius_px = 0
+     visualize_edge_map = False
+ 
+-    feet_vertical_surface_contacts_reward_scale = -1.0
++    feet_vertical_surface_contacts_reward_scale = -1.5
+ 
+     # variables used in feet air time and periodic contact suggestion reward
+     desired_step_freq = 1.4 
+@@ -474,7 +477,7 @@ class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
+                 proportion=0.2
+             ),
+             "boxes": terrain_gen.MeshRandomGridTerrainCfg(
+-                proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.10), platform_width=2.0,
++                proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.13), platform_width=2.0,
+             ),
+             "star": terrain_gen.MeshStarTerrainCfg(
+                 proportion=0.1, num_bars=10, bar_width_range=(0.15, 0.20), bar_height_range=(0.05, 0.13), platform_width=2.0,
+@@ -489,11 +492,11 @@ class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
+                 proportion=0.1, slope_range=(0.2, 0.4), platform_width=2.0, border_width=0.25
+             ),
+             "pyramid_stairs": terrain_gen.MeshPyramidStairsTerrainCfg(
+-                proportion=0.15, step_height_range=(0.05, 0.13), step_width=0.3,
++                proportion=0.15, step_height_range=(0.05, 0.16), step_width=0.3,
+                 platform_width=3.0, border_width=1.0, holes=False,
+             ),
+             "pyramid_stairs_inv": terrain_gen.MeshInvertedPyramidStairsTerrainCfg(
+-                proportion=0.15, step_height_range=(0.05, 0.13), step_width=0.3,
++                proportion=0.15, step_height_range=(0.05, 0.16), step_width=0.3,
+                 platform_width=3.0, border_width=1.0, holes=False,
+             ),
+         },
+@@ -519,6 +522,17 @@ class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
+         debug_vis=False,
+     )
+ 
++    # we add a height scanner for the feet edge rewards (only used in the rewards, so also for blind locomotion)
++    edge_height_scanner = RayCasterCfg(
++        prim_path="/World/envs/env_.*/Robot/Geometry/base",
++        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
++        ray_alignment='yaw',
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[1.2, 1.2]),
++        debug_vis=False,
++        mesh_prim_paths=["/World/ground"],
++        global_world_only=True,
++    )
++
+ 
+ 
+ @configclass
+@@ -530,7 +544,7 @@ class PegasusRoughVisionEnvCfg(PegasusRoughBlindEnvCfg):
+         height_map_y_points = int(round(pattern_cfg.size[1] / pattern_cfg.resolution)) + 1
+         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
+ 
+-        self.feet_edge_reward_scale = -1.0
++        self.feet_edge_stance_reward_scale = -1.0
+ 
+     use_vision = True
+ 
+@@ -545,17 +559,6 @@ class PegasusRoughVisionEnvCfg(PegasusRoughBlindEnvCfg):
+         global_world_only=True,
+     )
+ 
+-    # we add a height scanner for feet edge reward
+-    edge_height_scanner = RayCasterCfg(
+-        prim_path="/World/envs/env_.*/Robot/Geometry/base",
+-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+-        ray_alignment='yaw',
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
+-        debug_vis=False,
+-        mesh_prim_paths=["/World/ground"],
+-        global_world_only=True,
+-    )
+-
+     #camera_usd = CAMERA_USD_CFG
+     use_depth_camera = False
+     depth_camera = MultiMeshRayCasterCameraCfg(
+diff --git a/tested_policies/pegasus/blind/events.out.tfevents.1791453120.gturrisi.4168965.0 b/tested_policies/pegasus/blind/events.out.tfevents.1791453120.gturrisi.4168965.0
+deleted file mode 100644
+index f3b9aba..0000000
+Binary files a/tested_policies/pegasus/blind/events.out.tfevents.1791453120.gturrisi.4168965.0 and /dev/null differ
+diff --git a/tested_policies/pegasus/blind/exported/policy.onnx b/tested_policies/pegasus/blind/exported/policy.onnx
+deleted file mode 100644
+index 6da3d08..0000000
+Binary files a/tested_policies/pegasus/blind/exported/policy.onnx and /dev/null differ
+diff --git a/tested_policies/pegasus/blind/exported/policy.onnx.data b/tested_policies/pegasus/blind/exported/policy.onnx.data
+deleted file mode 100644
+index c68a0f3..0000000
+Binary files a/tested_policies/pegasus/blind/exported/policy.onnx.data and /dev/null differ
+diff --git a/tested_policies/pegasus/blind/exported/policy.pt b/tested_policies/pegasus/blind/exported/policy.pt
+deleted file mode 100644
+index 00d3e86..0000000
+Binary files a/tested_policies/pegasus/blind/exported/policy.pt and /dev/null differ
+diff --git a/tested_policies/pegasus/blind/git/basic-locomotion-isaaclab.diff b/tested_policies/pegasus/blind/git/basic-locomotion-isaaclab.diff
+deleted file mode 100644
+index c19af8d..0000000
+--- a/tested_policies/pegasus/blind/git/basic-locomotion-isaaclab.diff
++++ /dev/null
+@@ -1,105 +0,0 @@
+---- git commit ---
+-2c83233f99c14a7cf952c999ae7d060e8505ff49
+-
+-
+---- git status ---
+-On branch feat/swing_rewards
+-Your branch is up to date with 'origin/feat/swing_rewards'.
+-
+-Changes not staged for commit:
+-  (use "git add <file>..." to update what will be committed)
+-  (use "git restore <file>..." to discard changes in working directory)
+-	modified:   deploy/config.py
+-	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+-	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+-
+-Untracked files:
+-  (use "git add <file>..." to include in what will be committed)
+-	deploy/rosbag/rosbag2_2026_08_07-12_22_59_0.db3
+-	imgui.ini
+-
+-no changes added to commit (use "git add" and/or "git commit -a") 
+-
+-
+---- git diff ---
+-diff --git a/deploy/config.py b/deploy/config.py
+-index a0bfba9..33bf38d 100644
+---- a/deploy/config.py
+-+++ b/deploy/config.py
+-@@ -4,7 +4,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
+- sys.path.append(dir_path+"/../")
+- sys.path.append(dir_path+"/../scripts/rsl_rl")
+- 
+--robot = 'go2'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
+-+robot = 'pegasus'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
+- scene = 'scene_random_boxes'  # flat, random_boxes, random_pyramids, perlin
+- 
+- # ----------------------------------------------------------------------------------------------------------------
+-@@ -47,7 +47,7 @@ elif(robot == "pegasus"):
+-     Kp_stand_up_and_down = 200.
+-     Kd_stand_up_and_down = 10.
+- 
+--    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_symm_blind"
+-+    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-10-08_09-31-12"
+- 
+- else:
+-     raise ValueError(f"Robot {robot} not supported")
+-diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+-index 52cdef9..9f95025 100644
+---- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+-+++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+-@@ -61,27 +61,27 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+-     experiment_name = "rough_direct"
+-     obs_groups = {"actor": ["policy"], "critic": ["critic"]}  # rsl_rl 5.4 port
+-     actor = RslRlMLPModelCfg(
+--        hidden_dims=[256, 256, 256],
+-+        hidden_dims=[128, 128, 128],
+-         activation="elu",
+-         obs_normalization=False,
+-         distribution_cfg=RslRlMLPModelCfg.GaussianDistributionCfg(init_std=1.0),
+-     )
+-     critic = RslRlMLPModelCfg(
+--        hidden_dims=[512, 256, 128],
+-+        hidden_dims=[128, 128, 128],
+-         activation="elu",
+-         obs_normalization=False,
+-     )
+-     algorithm = RslRlPpoAlgorithmCfg(
+-         value_loss_coef=1.0,
+-         use_clipped_value_loss=True,
+--        clip_param=0.15,
+-+        clip_param=0.2,
+-         entropy_coef=0.005,
+-         num_learning_epochs=5,
+-         num_mini_batches=4,
+-         learning_rate=1.0e-3,
+-         schedule="adaptive",
+--        gamma=0.97,
+--        lam=0.99,
+-+        gamma=0.99,
+-+        lam=0.95,
+-         desired_kl=0.01,
+-         max_grad_norm=1.0,
+-     )
+-diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+-index 0e383ba..5afa8b1 100644
+---- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+-+++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+-@@ -195,7 +195,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
+-         debug_vis=False)
+- 
+-     
+--    use_concurrent_state_est = True
+-+    use_concurrent_state_est = False
+-     if(use_concurrent_state_est):
+-         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
+-         
+-@@ -376,7 +376,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
+- 
+-     # Desired tracking variables
+-     desired_base_height = 0.60
+--    desired_feet_height = 0.05
+-+    desired_feet_height = 0.08
+-     foot_radius = 0.041 # radius of the foot collision sphere
+- 
+- 
+\ No newline at end of file
+diff --git a/tested_policies/pegasus/blind/model_4850.pt b/tested_policies/pegasus/blind/model_4850.pt
+deleted file mode 100644
+index 34b27e8..0000000
+Binary files a/tested_policies/pegasus/blind/model_4850.pt and /dev/null differ
+diff --git a/tested_policies/pegasus/blind/model_4900.pt b/tested_policies/pegasus/blind/model_4900.pt
+deleted file mode 100644
+index b24b302..0000000
+Binary files a/tested_policies/pegasus/blind/model_4900.pt and /dev/null differ
+diff --git a/tested_policies/pegasus/blind/params/agent.yaml b/tested_policies/pegasus/blind/params/agent.yaml
+deleted file mode 100644
+index 054355c..0000000
+--- a/tested_policies/pegasus/blind/params/agent.yaml
++++ /dev/null
+@@ -1,233 +0,0 @@
+-seed: 42
+-device: cuda:0
+-num_steps_per_env: 24
+-init_at_random_ep_len: true
+-max_iterations: 8000
+-empirical_normalization: {}
+-obs_groups:
+-  actor:
+-  - policy
+-  critic:
+-  - critic
+-clip_actions: null
+-check_for_nan: true
+-save_interval: 50
+-experiment_name: rough_direct
+-run_name: ''
+-logger: wandb
+-neptune_project: basic-locomotion
+-wandb_project: basic-locomotion
+-resume: false
+-load_run: .*
+-load_checkpoint: model_.*.pt
+-class_name: OnPolicyRunner
+-actor:
+-  class_name: MLPModel
+-  hidden_dims:
+-  - 128
+-  - 128
+-  - 128
+-  activation: elu
+-  obs_normalization: false
+-  distribution_cfg:
+-    class_name: GaussianDistribution
+-    init_std: 1.0
+-    std_type: scalar
+-critic:
+-  class_name: MLPModel
+-  hidden_dims:
+-  - 128
+-  - 128
+-  - 128
+-  activation: elu
+-  obs_normalization: false
+-  distribution_cfg: null
+-algorithm:
+-  class_name: PPO
+-  num_learning_epochs: 5
+-  num_mini_batches: 4
+-  learning_rate: 0.001
+-  schedule: adaptive
+-  gamma: 0.99
+-  lam: 0.95
+-  entropy_coef: 0.005
+-  desired_kl: 0.01
+-  max_grad_norm: 1.0
+-  optimizer: adam
+-  value_loss_coef: 1.0
+-  use_clipped_value_loss: true
+-  clip_param: 0.2
+-  normalize_advantage_per_mini_batch: false
+-  share_cnn_encoders: false
+-  rnd_cfg: null
+-  symmetry_cfg: null
+-policy: {}
+-dataset:
+-  amp_data_path: /home/gturrisi/isaaclab_ws_home/basic-locomotion-isaaclab/scripts/amp_rl/amp_dataset
+-  datasets:
+-    flat: 1.0
+-    boxes: 1.0
+-    stairs: 1.0
+-  slow_down_factor: 1.0
+-  amp_joint_names:
+-  - FL_hip_joint
+-  - FR_hip_joint
+-  - RL_hip_joint
+-  - RR_hip_joint
+-  - FL_thigh_joint
+-  - FR_thigh_joint
+-  - RL_thigh_joint
+-  - RR_thigh_joint
+-  - FL_calf_joint
+-  - FR_calf_joint
+-  - RL_calf_joint
+-  - RR_calf_joint
+-  velocity_representation: body_fixed
+-discriminator:
+-  class_name: Discriminator
+-  hidden_dims:
+-  - 512
+-  - 256
+-  reward_scale: 1.0
+-  loss_type: BCEWithLogits
+-  empirical_normalization: false
+-morphologycal_symmetries_cfg:
+-  class_name: MorphologycalSymmetries
+-  obs_space_names_actor:
+-  - base_lin_vel
+-  - base_ang_vel
+-  - gravity
+-  - des_base_lin_vel_xy
+-  - des_base_ang_vel_yaw
+-  - joints_pos
+-  - joints_vel
+-  - joints_pos
+-  - clock_data
+-  - clock_data
+-  - base_lin_vel
+-  - base_ang_vel
+-  - gravity
+-  - des_base_lin_vel_xy
+-  - des_base_ang_vel_yaw
+-  - joints_pos
+-  - joints_vel
+-  - joints_pos
+-  - clock_data
+-  - clock_data
+-  - base_lin_vel
+-  - base_ang_vel
+-  - gravity
+-  - des_base_lin_vel_xy
+-  - des_base_ang_vel_yaw
+-  - joints_pos
+-  - joints_vel
+-  - joints_pos
+-  - clock_data
+-  - clock_data
+-  - base_lin_vel
+-  - base_ang_vel
+-  - gravity
+-  - des_base_lin_vel_xy
+-  - des_base_ang_vel_yaw
+-  - joints_pos
+-  - joints_vel
+-  - joints_pos
+-  - clock_data
+-  - clock_data
+-  - base_lin_vel
+-  - base_ang_vel
+-  - gravity
+-  - des_base_lin_vel_xy
+-  - des_base_ang_vel_yaw
+-  - joints_pos
+-  - joints_vel
+-  - joints_pos
+-  - clock_data
+-  - clock_data
+-  - heightmap:7x9
+-  obs_space_names_critic:
+-  - base_lin_vel
+-  - base_ang_vel
+-  - gravity
+-  - des_base_lin_vel_xy
+-  - des_base_ang_vel_yaw
+-  - joints_pos
+-  - joints_vel
+-  - joints_pos
+-  - clock_data
+-  - clock_data
+-  - base_lin_vel
+-  - base_ang_vel
+-  - gravity
+-  - des_base_lin_vel_xy
+-  - des_base_ang_vel_yaw
+-  - joints_pos
+-  - joints_vel
+-  - joints_pos
+-  - clock_data
+-  - clock_data
+-  - base_lin_vel
+-  - base_ang_vel
+-  - gravity
+-  - des_base_lin_vel_xy
+-  - des_base_ang_vel_yaw
+-  - joints_pos
+-  - joints_vel
+-  - joints_pos
+-  - clock_data
+-  - clock_data
+-  - base_lin_vel
+-  - base_ang_vel
+-  - gravity
+-  - des_base_lin_vel_xy
+-  - des_base_ang_vel_yaw
+-  - joints_pos
+-  - joints_vel
+-  - joints_pos
+-  - clock_data
+-  - clock_data
+-  - base_lin_vel
+-  - base_ang_vel
+-  - gravity
+-  - des_base_lin_vel_xy
+-  - des_base_ang_vel_yaw
+-  - joints_pos
+-  - joints_vel
+-  - joints_pos
+-  - clock_data
+-  - clock_data
+-  - heightmap:7x9
+-  - clock_data
+-  - clock_data
+-  - clock_data
+-  - clock_data
+-  - clock_data
+-  - clock_data
+-  - base_lin_vel
+-  - invariant_scalar
+-  - invariant_scalar
+-  - clock_data
+-  - clock_data
+-  - clock_data
+-  - clock_data
+-  - heightmap:4x4
+-  action_space_names:
+-  - joints_pos
+-  joints_order:
+-  - FL_hip_joint
+-  - FR_hip_joint
+-  - RL_hip_joint
+-  - RR_hip_joint
+-  - FL_thigh_joint
+-  - FR_thigh_joint
+-  - RL_thigh_joint
+-  - RR_thigh_joint
+-  - FL_calf_joint
+-  - FR_calf_joint
+-  - RL_calf_joint
+-  - RR_calf_joint
+-  robot_name: a1
+-  state_dependent_std: false
+-  small_init_output: true
+-  symmetric_initialization: true
+-  use_data_augmentation: false
+diff --git a/tested_policies/pegasus/blind/params/env.yaml b/tested_policies/pegasus/blind/params/env.yaml
+deleted file mode 100644
+index dac4084..0000000
+--- a/tested_policies/pegasus/blind/params/env.yaml
++++ /dev/null
+@@ -1,1537 +0,0 @@
+-sim:
+-  device: cuda:0
+-  dt: 0.005
+-  gravity: !!python/tuple
+-  - 0.0
+-  - 0.0
+-  - -9.81
+-  physics_prim_path: /physicsScene
+-  physics_material:
+-    func: isaaclab.sim.spawners.materials.physics_materials:spawn_rigid_body_material
+-    static_friction: 1.0
+-    dynamic_friction: 1.0
+-    restitution: 0.0
+-    density: null
+-    compliant_contact_stiffness: null
+-    compliant_contact_damping: null
+-    compliant_contact_acceleration_spring: null
+-    friction_combine_mode: multiply
+-    restitution_combine_mode: multiply
+-    damping_combine_mode: null
+-    _usd_applied_schema: PhysxMaterialAPI
+-    _usd_field_exceptions: {}
+-    _usd_namespace: physxMaterial
+-  use_fabric: true
+-  render_interval: 4
+-  enable_scene_query_support: false
+-  use_newton_actuators: false
+-  physics:
+-    class_type: isaaclab_newton.physics.mjwarp_manager:NewtonMJWarpManager
+-    deterministic: false
+-    num_substeps: 2
+-    collision_decimation: 0
+-    debug_mode: false
+-    use_cuda_graph: true
+-    deterministic_mode: not_guaranteed
+-    solver_cfg:
+-      class_type: isaaclab_newton.physics.mjwarp_manager:NewtonMJWarpManager
+-      solver_type: mujoco_warp
+-      njmax: 1000
+-      nconmax: 300
+-      iterations: 100
+-      ls_iterations: 50
+-      solver: newton
+-      integrator: implicitfast
+-      use_mujoco_cpu: false
+-      disable_contacts: false
+-      disable_sensors: false
+-      default_actuator_gear: null
+-      actuator_gears: null
+-      update_data_interval: 1
+-      save_to_mjcf: null
+-      impratio: 1.0
+-      cone: pyramidal
+-      ccd_iterations: 35
+-      ls_parallel: false
+-      use_mujoco_contacts: false
+-      tolerance: 1.0e-06
+-    soft_contact_cfg: null
+-    collision_cfg:
+-      broad_phase: explicit
+-      reduce_contacts: true
+-      rigid_contact_max: null
+-      max_triangle_pairs: 2500000
+-      soft_contact_max: null
+-      soft_contact_margin: 0.01
+-      enable_rigid_soft_full_surface_contact: false
+-      requires_grad: null
+-      sdf_hydroelastic_config: null
+-    default_shape_cfg:
+-      margin: 0.0
+-      gap: 0.01
+-      ke: 160000.0
+-      kd: 1100.0
+-      mu: 1.0
+-    load_visual_shapes: null
+-    bvh_constructor_geometry: cubql
+-    bvh_constructor_scene: sah
+-    bvh_constructor_gaussian: cubql
+-  create_stage_in_memory: false
+-  logging_level: WARNING
+-  save_logs_to_file: true
+-  log_dir: null
+-  visualizer_cfgs: []
+-  default_visualizer_cfg: null
+-ui_window_class_type: isaaclab.envs.ui.base_env_window:BaseEnvWindow
+-seed: 42
+-decimation: 4
+-is_finite_horizon: false
+-compute_final_obs: false
+-episode_length_s: 20.0
+-scene:
+-  class_type: isaaclab.scene.interactive_scene:InteractiveScene
+-  num_envs: 8192
+-  env_spacing: 4.0
+-  lazy_sensor_update: true
+-  replicate_physics: true
+-  filter_collisions: true
+-  clone_in_fabric: false
+-  clone_cfg:
+-    clone_strategy: isaaclab.cloner.cloner_strategies:sequential
+-    clone_combinations: []
+-    device: cpu
+-    clone_template: /World/envs/env_{}
+-    replicate_physics: true
+-events:
+-  physics_material:
+-    func: isaaclab.envs.mdp.events:randomize_rigid_body_material
+-    params:
+-      asset_cfg:
+-        name: robot
+-        joint_names: null
+-        joint_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        fixed_tendon_names: null
+-        fixed_tendon_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        body_names: .*
+-        body_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        object_collection_names: null
+-        object_collection_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        preserve_order: false
+-      static_friction_range: !!python/tuple
+-      - 0.2
+-      - 1.25
+-      dynamic_friction_range: !!python/tuple
+-      - 0.2
+-      - 1.25
+-      restitution_range: !!python/tuple
+-      - 0.0
+-      - 0.1
+-      num_buckets: 64
+-    mode: startup
+-    interval_range_s: null
+-    is_global_time: false
+-    resample_interval_on_reset: true
+-    min_step_count_between_reset: 0
+-  add_base_mass:
+-    func: isaaclab.envs.mdp.events:randomize_rigid_body_mass
+-    params:
+-      asset_cfg:
+-        name: robot
+-        joint_names: null
+-        joint_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        fixed_tendon_names: null
+-        fixed_tendon_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        body_names: base
+-        body_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        object_collection_names: null
+-        object_collection_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        preserve_order: false
+-      mass_distribution_params: !!python/tuple
+-      - -5.0
+-      - 5.0
+-      operation: add
+-    mode: startup
+-    interval_range_s: null
+-    is_global_time: false
+-    resample_interval_on_reset: true
+-    min_step_count_between_reset: 0
+-  base_com:
+-    func: isaaclab.envs.mdp.events:randomize_rigid_body_com
+-    params:
+-      asset_cfg:
+-        name: robot
+-        joint_names: null
+-        joint_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        fixed_tendon_names: null
+-        fixed_tendon_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        body_names: base
+-        body_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        object_collection_names: null
+-        object_collection_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        preserve_order: false
+-      com_range:
+-        x: !!python/tuple
+-        - -0.02
+-        - 0.02
+-        y: !!python/tuple
+-        - -0.02
+-        - 0.02
+-        z: !!python/tuple
+-        - -0.02
+-        - 0.02
+-    mode: startup
+-    interval_range_s: null
+-    is_global_time: false
+-    resample_interval_on_reset: true
+-    min_step_count_between_reset: 0
+-  scale_all_link_masses:
+-    func: isaaclab.envs.mdp.events:randomize_rigid_body_mass
+-    params:
+-      asset_cfg:
+-        name: robot
+-        joint_names: null
+-        joint_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        fixed_tendon_names: null
+-        fixed_tendon_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        body_names: .*
+-        body_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        object_collection_names: null
+-        object_collection_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        preserve_order: false
+-      mass_distribution_params: !!python/tuple
+-      - 0.9
+-      - 1.1
+-      operation: scale
+-    mode: startup
+-    interval_range_s: null
+-    is_global_time: false
+-    resample_interval_on_reset: true
+-    min_step_count_between_reset: 0
+-  base_external_force_torque:
+-    func: isaaclab.envs.mdp.events:apply_external_force_torque
+-    params:
+-      asset_cfg:
+-        name: robot
+-        joint_names: null
+-        joint_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        fixed_tendon_names: null
+-        fixed_tendon_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        body_names: base
+-        body_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        object_collection_names: null
+-        object_collection_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        preserve_order: false
+-      force_range: !!python/tuple
+-      - -5.0
+-      - 5.0
+-      torque_range: !!python/tuple
+-      - -5.0
+-      - 5.0
+-    mode: reset
+-    interval_range_s: null
+-    is_global_time: false
+-    resample_interval_on_reset: true
+-    min_step_count_between_reset: 0
+-  randomize_joint_parameters:
+-    func: basic_locomotion_isaaclab.tasks.custom_events:randomize_joint_parameters
+-    params:
+-      asset_cfg:
+-        name: robot
+-        joint_names:
+-        - .*
+-        joint_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        fixed_tendon_names: null
+-        fixed_tendon_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        body_names: null
+-        body_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        object_collection_names: null
+-        object_collection_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        preserve_order: false
+-      friction_distribution_params: !!python/tuple
+-      - 0.8
+-      - 1.2
+-      armature_distribution_params: !!python/tuple
+-      - 0.8
+-      - 1.2
+-      operation: scale
+-      distribution: uniform
+-    mode: reset
+-    interval_range_s: null
+-    is_global_time: false
+-    resample_interval_on_reset: true
+-    min_step_count_between_reset: 0
+-  actuator_gains:
+-    func: isaaclab.envs.mdp.events:randomize_actuator_gains
+-    params:
+-      asset_cfg:
+-        name: robot
+-        joint_names: .*
+-        joint_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        fixed_tendon_names: null
+-        fixed_tendon_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        body_names: null
+-        body_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        object_collection_names: null
+-        object_collection_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        preserve_order: false
+-      stiffness_distribution_params: !!python/tuple
+-      - 0.8
+-      - 1.2
+-      damping_distribution_params: !!python/tuple
+-      - 0.8
+-      - 1.2
+-      operation: scale
+-      distribution: uniform
+-    mode: reset
+-    interval_range_s: null
+-    is_global_time: false
+-    resample_interval_on_reset: true
+-    min_step_count_between_reset: 0
+-  randomize_pace_actuator_delay:
+-    func: basic_locomotion_isaaclab.tasks.custom_events:randomize_pace_actuator_delay
+-    params:
+-      asset_cfg:
+-        name: robot
+-        joint_names:
+-        - .*
+-        joint_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        fixed_tendon_names: null
+-        fixed_tendon_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        body_names: null
+-        body_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        object_collection_names: null
+-        object_collection_ids: !!python/object/apply:builtins.slice
+-        - null
+-        - null
+-        - null
+-        preserve_order: false
+-      min_delay: 0
+-    mode: reset
+-    interval_range_s: null
+-    is_global_time: false
+-    resample_interval_on_reset: true
+-    min_step_count_between_reset: 0
+-  push_robot:
+-    func: isaaclab.envs.mdp.events:push_by_setting_velocity
+-    params:
+-      velocity_range:
+-        x: !!python/tuple
+-        - -0.5
+-        - 0.5
+-        y: !!python/tuple
+-        - -0.5
+-        - 0.5
+-        z: !!python/tuple
+-        - -0.5
+-        - 0.5
+-        roll: !!python/tuple
+-        - -0.5
+-        - 0.5
+-        pitch: !!python/tuple
+-        - -0.5
+-        - 0.5
+-        yaw: !!python/tuple
+-        - -0.5
+-        - 0.5
+-    mode: interval
+-    interval_range_s: !!python/tuple
+-    - 10.0
+-    - 15.0
+-    is_global_time: false
+-    resample_interval_on_reset: true
+-    min_step_count_between_reset: 0
+-observation_space: 280
+-num_observations: null
+-state_space: 341
+-num_states: null
+-observation_noise_model:
+-  class_type: isaaclab.utils.noise.noise_model:NoiseModelWithAdditiveBias
+-  noise_cfg:
+-    func: isaaclab.utils.noise.noise_model:gaussian_noise
+-    operation: add
+-    mean: 0.0
+-    std: 1.0
+-  func: null
+-  bias_noise_cfg:
+-    func: isaaclab.utils.noise.noise_model:gaussian_noise
+-    operation: abs
+-    mean: 0.0
+-    std: 1.0
+-  sample_bias_per_component: true
+-action_space: 12
+-num_actions: null
+-action_noise_model:
+-  class_type: isaaclab.utils.noise.noise_model:NoiseModelWithAdditiveBias
+-  noise_cfg:
+-    func: isaaclab.utils.noise.noise_model:gaussian_noise
+-    operation: add
+-    mean: 0.0
+-    std: 0.05
+-  func: null
+-  bias_noise_cfg:
+-    func: isaaclab.utils.noise.noise_model:gaussian_noise
+-    operation: abs
+-    mean: 0.0
+-    std: 0.015
+-  sample_bias_per_component: true
+-rerender_on_reset: false
+-num_rerenders_on_reset: 0
+-wait_for_textures: true
+-xr: null
+-log_dir: /home/gturrisi/isaaclab_ws_home/basic-locomotion-isaaclab/logs/rsl_rl/rough_direct/2026-10-08_11-51-23
+-video_recorders: []
+-viewer:
+-  eye: !!python/tuple
+-  - 7.5
+-  - 7.5
+-  - 7.5
+-  lookat: !!python/tuple
+-  - 0.0
+-  - 0.0
+-  - 0.0
+-  cam_prim_path: /OmniverseKit_Persp
+-  resolution: !!python/tuple
+-  - 1280
+-  - 720
+-  origin_type: world
+-  env_index: 0
+-  asset_name: null
+-  body_name: null
+-terrain_curriculum_move_up_error_percent: 20.0
+-terrain_curriculum_move_down_error_percent: 50.0
+-action_scale: 0.5
+-use_clock_signal: true
+-single_observation_space: 56
+-use_observation_history: true
+-history_length: 5
+-use_imu: false
+-imu:
+-  class_type: isaaclab.sensors.imu.imu:Imu
+-  cloning_contexts: !!python/tuple []
+-  prim_path: /World/envs/env_.*/Robot/Geometry/base
+-  update_period: 0.0
+-  debug_vis: false
+-  offset:
+-    pos: !!python/tuple
+-    - -0.0085648
+-    - -0.0065251
+-    - -0.03696
+-    rot: !!python/tuple
+-    - 0
+-    - 0
+-    - -0.70710678
+-    - 0.70710678
+-use_concurrent_state_est: false
+-use_rma: false
+-pose_height_scanner:
+-  class_type: isaaclab.sensors.ray_caster.ray_caster:RayCaster
+-  cloning_contexts: !!python/tuple []
+-  prim_path: /World/envs/env_.*/Robot/Geometry/base
+-  update_period: 0.0
+-  debug_vis: false
+-  spawn:
+-    func: isaaclab.sim.spawners.sensors.sensors:spawn_sensor_frame
+-    visible: true
+-    semantic_tags: null
+-    copy_from_source: true
+-    spawn_path: null
+-  mesh_prim_paths:
+-  - /World/ground
+-  offset:
+-    pos: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    - 2.0
+-    rot: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    - 0.0
+-    - 1.0
+-  ray_alignment: yaw
+-  pattern_cfg:
+-    func: isaaclab.sensors.ray_caster.patterns.patterns:grid_pattern
+-    resolution: 0.2
+-    size:
+-    - 0.6
+-    - 0.6
+-    direction: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    - -1.0
+-    ordering: xy
+-  max_distance: 1000000.0
+-  global_world_only: true
+-  drift_range: !!python/tuple
+-  - 0.0
+-  - 0.0
+-  ray_cast_drift_range:
+-    x: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    y: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    z: !!python/tuple
+-    - 0.0
+-    - 0.0
+-  visualizer_cfg:
+-    prim_path: /Visuals/RayCaster
+-    markers:
+-      hit:
+-        func: isaaclab.sim.spawners.shapes.shapes:spawn_sphere
+-        visible: true
+-        semantic_tags: null
+-        copy_from_source: true
+-        spawn_path: null
+-        mass_props: null
+-        mass_props_create_if_missing: false
+-        rigid_props: null
+-        collision_props: null
+-        activate_contact_sensors: false
+-        visual_material_path: material
+-        visual_material:
+-          func: isaaclab.sim.spawners.materials.visual_materials:spawn_preview_surface
+-          visible: true
+-          semantic_tags: null
+-          copy_from_source: true
+-          spawn_path: null
+-          diffuse_color: !!python/tuple
+-          - 1.0
+-          - 0.0
+-          - 0.0
+-          emissive_color: !!python/tuple
+-          - 0.0
+-          - 0.0
+-          - 0.0
+-          roughness: 0.5
+-          metallic: 0.0
+-          opacity: 1.0
+-        physics_material_path: material
+-        physics_material: null
+-        radius: 0.02
+-    class_type: isaaclab.markers.visualization_markers:VisualizationMarkers
+-foot_height_scanner:
+-  class_type: isaaclab.sensors.ray_caster.ray_caster:RayCaster
+-  cloning_contexts: !!python/tuple []
+-  prim_path: /World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot
+-  update_period: 0.0
+-  debug_vis: false
+-  spawn:
+-    func: isaaclab.sim.spawners.sensors.sensors:spawn_sensor_frame
+-    visible: true
+-    semantic_tags: null
+-    copy_from_source: true
+-    spawn_path: null
+-  mesh_prim_paths:
+-  - /World/ground
+-  offset:
+-    pos: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    - 2.0
+-    rot: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    - 0.0
+-    - 1.0
+-  ray_alignment: yaw
+-  pattern_cfg:
+-    func: isaaclab.sensors.ray_caster.patterns.patterns:grid_pattern
+-    resolution: 0.05
+-    size:
+-    - 0.1
+-    - 0.1
+-    direction: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    - -1.0
+-    ordering: xy
+-  max_distance: 1000000.0
+-  global_world_only: true
+-  drift_range: !!python/tuple
+-  - 0.0
+-  - 0.0
+-  ray_cast_drift_range:
+-    x: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    y: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    z: !!python/tuple
+-    - 0.0
+-    - 0.0
+-  visualizer_cfg:
+-    prim_path: /Visuals/RayCaster
+-    markers:
+-      hit:
+-        func: isaaclab.sim.spawners.shapes.shapes:spawn_sphere
+-        visible: true
+-        semantic_tags: null
+-        copy_from_source: true
+-        spawn_path: null
+-        mass_props: null
+-        mass_props_create_if_missing: false
+-        rigid_props: null
+-        collision_props: null
+-        activate_contact_sensors: false
+-        visual_material_path: material
+-        visual_material:
+-          func: isaaclab.sim.spawners.materials.visual_materials:spawn_preview_surface
+-          visible: true
+-          semantic_tags: null
+-          copy_from_source: true
+-          spawn_path: null
+-          diffuse_color: !!python/tuple
+-          - 1.0
+-          - 0.0
+-          - 0.0
+-          emissive_color: !!python/tuple
+-          - 0.0
+-          - 0.0
+-          - 0.0
+-          roughness: 0.5
+-          metallic: 0.0
+-          opacity: 1.0
+-        physics_material_path: material
+-        physics_material: null
+-        radius: 0.02
+-    class_type: isaaclab.markers.visualization_markers:VisualizationMarkers
+-use_asymmetric_ppo: true
+-pattern_cfg:
+-  func: isaaclab.sensors.ray_caster.patterns.patterns:grid_pattern
+-  resolution: 0.2
+-  size:
+-  - 0.6
+-  - 0.6
+-  direction: !!python/tuple
+-  - 0.0
+-  - 0.0
+-  - -1.0
+-  ordering: xy
+-height_map_x_points: 4
+-height_map_y_points: 4
+-terrain:
+-  class_type: isaaclab.terrains.terrain_importer:TerrainImporter
+-  collision_group: -1
+-  prim_path: /World/ground
+-  num_envs: 8192
+-  terrain_type: generator
+-  terrain_generator:
+-    class_type: isaaclab.terrains.terrain_generator:TerrainGenerator
+-    seed: null
+-    curriculum: false
+-    size: !!python/tuple
+-    - 8.0
+-    - 8.0
+-    border_width: 20.0
+-    border_height: 1.0
+-    num_rows: 10
+-    num_cols: 20
+-    color_scheme: none
+-    horizontal_scale: 0.1
+-    vertical_scale: 0.005
+-    slope_threshold: 0.75
+-    sub_terrains:
+-      flat:
+-        function: isaaclab.terrains.trimesh.mesh_terrains:flat_terrain
+-        proportion: 0.2
+-        size: !!python/tuple
+-        - 8.0
+-        - 8.0
+-        convert_to_heightfield: false
+-        flat_patch_sampling: null
+-      boxes:
+-        function: isaaclab.terrains.trimesh.mesh_terrains:random_grid_terrain
+-        proportion: 0.1
+-        size: !!python/tuple
+-        - 8.0
+-        - 8.0
+-        convert_to_heightfield: false
+-        flat_patch_sampling: null
+-        grid_width: 0.45
+-        grid_height_range: !!python/tuple
+-        - 0.05
+-        - 0.1
+-        platform_width: 2.0
+-        holes: false
+-      star:
+-        function: isaaclab.terrains.trimesh.mesh_terrains:star_terrain
+-        proportion: 0.1
+-        size: !!python/tuple
+-        - 8.0
+-        - 8.0
+-        convert_to_heightfield: false
+-        flat_patch_sampling: null
+-        num_bars: 10
+-        bar_width_range: !!python/tuple
+-        - 0.15
+-        - 0.2
+-        bar_height_range: !!python/tuple
+-        - 0.05
+-        - 0.13
+-        platform_width: 2.0
+-      random_rough:
+-        function: isaaclab.terrains.height_field.hf_terrains:random_uniform_terrain
+-        proportion: 0.1
+-        size: !!python/tuple
+-        - 8.0
+-        - 8.0
+-        convert_to_heightfield: true
+-        flat_patch_sampling: null
+-        border_width: 0.25
+-        horizontal_scale: 0.1
+-        vertical_scale: 0.005
+-        slope_threshold: 0.75
+-        noise_range: !!python/tuple
+-        - 0.02
+-        - 0.06
+-        noise_step: 0.02
+-        downsampled_scale: null
+-      hf_pyramid_slope:
+-        function: isaaclab.terrains.height_field.hf_terrains:pyramid_sloped_terrain
+-        proportion: 0.1
+-        size: !!python/tuple
+-        - 8.0
+-        - 8.0
+-        convert_to_heightfield: true
+-        flat_patch_sampling: null
+-        border_width: 0.25
+-        horizontal_scale: 0.1
+-        vertical_scale: 0.005
+-        slope_threshold: 0.75
+-        slope_range: !!python/tuple
+-        - 0.2
+-        - 0.4
+-        platform_width: 2.0
+-        inverted: false
+-      hf_pyramid_slope_inv:
+-        function: isaaclab.terrains.height_field.hf_terrains:pyramid_sloped_terrain
+-        proportion: 0.1
+-        size: !!python/tuple
+-        - 8.0
+-        - 8.0
+-        convert_to_heightfield: true
+-        flat_patch_sampling: null
+-        border_width: 0.25
+-        horizontal_scale: 0.1
+-        vertical_scale: 0.005
+-        slope_threshold: 0.75
+-        slope_range: !!python/tuple
+-        - 0.2
+-        - 0.4
+-        platform_width: 2.0
+-        inverted: true
+-      pyramid_stairs:
+-        function: isaaclab.terrains.trimesh.mesh_terrains:pyramid_stairs_terrain
+-        proportion: 0.15
+-        size: !!python/tuple
+-        - 8.0
+-        - 8.0
+-        convert_to_heightfield: false
+-        flat_patch_sampling: null
+-        border_width: 1.0
+-        step_height_range: !!python/tuple
+-        - 0.05
+-        - 0.13
+-        step_width: 0.3
+-        platform_width: 3.0
+-        holes: false
+-      pyramid_stairs_inv:
+-        function: isaaclab.terrains.trimesh.mesh_terrains:inverted_pyramid_stairs_terrain
+-        proportion: 0.15
+-        size: !!python/tuple
+-        - 8.0
+-        - 8.0
+-        convert_to_heightfield: false
+-        flat_patch_sampling: null
+-        border_width: 1.0
+-        step_height_range: !!python/tuple
+-        - 0.05
+-        - 0.13
+-        step_width: 0.3
+-        platform_width: 3.0
+-        holes: false
+-    difficulty_range: !!python/tuple
+-    - 0.0
+-    - 1.0
+-    use_cache: false
+-    cache_dir: /tmp/isaaclab/terrains
+-  usd_path: null
+-  env_spacing: 4.0
+-  use_terrain_origins: true
+-  visual_material:
+-    func: isaaclab.sim.spawners.materials.visual_materials:spawn_from_mdl_file
+-    visible: true
+-    semantic_tags: null
+-    copy_from_source: true
+-    spawn_path: null
+-    mdl_path: '{NVIDIA_NUCLEUS_DIR}/Materials/Base/Architecture/Shingles_01.mdl'
+-    project_uvw: true
+-    albedo_brightness: null
+-    texture_scale: null
+-  physics_material:
+-    func: isaaclab.sim.spawners.materials.physics_materials:spawn_rigid_body_material
+-    static_friction: 1.0
+-    dynamic_friction: 1.0
+-    restitution: 0.0
+-    density: null
+-    compliant_contact_stiffness: null
+-    compliant_contact_damping: null
+-    compliant_contact_acceleration_spring: null
+-    friction_combine_mode: multiply
+-    restitution_combine_mode: multiply
+-    damping_combine_mode: null
+-    _usd_applied_schema: PhysxMaterialAPI
+-    _usd_field_exceptions: {}
+-    _usd_namespace: physxMaterial
+-  max_init_terrain_level: 10
+-  debug_vis: false
+-observation_noise_std:
+-  base_linear: !!python/tuple
+-  - 0.05
+-  - 0.01
+-  base_ang_vel: !!python/tuple
+-  - 0.05
+-  - 0.01
+-  projected_gravity: !!python/tuple
+-  - 0.05
+-  - 0.01
+-  commands: !!python/tuple
+-  - 0.01
+-  - 0.01
+-  joint_pos: !!python/tuple
+-  - 0.01
+-  - 0.01
+-  joint_vel: !!python/tuple
+-  - 0.1
+-  - 0.01
+-  actions: !!python/tuple
+-  - 0.01
+-  - 0.01
+-  clock: !!python/tuple
+-  - 0.01
+-  - 0.01
+-  height_map: !!python/tuple
+-  - 0.02
+-  - 0.01
+-  rma: !!python/tuple
+-  - 0.02
+-  - 0.01
+-robot:
+-  class_type: isaaclab.assets.articulation.articulation:Articulation
+-  cloning_contexts: null
+-  prim_path: /World/envs/env_.*/Robot
+-  spawn:
+-    func: isaaclab.sim.spawners.from_files.from_files:spawn_from_usd
+-    visible: true
+-    semantic_tags: null
+-    copy_from_source: true
+-    spawn_path: null
+-    mass_props: null
+-    deformable_props: null
+-    mass_props_create_if_missing: false
+-    rigid_props:
+-      rigid_body_enabled: null
+-      kinematic_enabled: null
+-      disable_gravity: false
+-      linear_damping: 0.0
+-      angular_damping: 0.0
+-      max_linear_velocity: 1000.0
+-      max_angular_velocity: 1000.0
+-      max_depenetration_velocity: 1.0
+-      max_contact_impulse: null
+-      enable_gyroscopic_forces: null
+-      retain_accelerations: false
+-      solver_position_iteration_count: null
+-      solver_velocity_iteration_count: null
+-      sleep_threshold: null
+-      stabilization_threshold: null
+-      _usd_applied_schema: PhysxRigidBodyAPI
+-      _usd_field_exceptions:
+-        PhysxRigidBodyAPI: !!python/tuple
+-        - physxRigidBody
+-        - - disable_gravity
+-      _usd_namespace: physxRigidBody
+-    collision_props: null
+-    activate_contact_sensors: true
+-    scale: null
+-    articulation_props:
+-      articulation_enabled: null
+-      fix_root_link: null
+-      enabled_self_collisions: true
+-      solver_position_iteration_count: 4
+-      solver_velocity_iteration_count: 0
+-      sleep_threshold: null
+-      stabilization_threshold: null
+-      _usd_applied_schema: PhysxArticulationAPI
+-      _usd_field_exceptions:
+-        PhysxArticulationAPI: !!python/tuple
+-        - physxArticulation
+-        - - articulation_enabled
+-      _usd_namespace: physxArticulation
+-    articulation_props_create_if_missing: false
+-    fix_root_link: null
+-    fixed_tendons_props: null
+-    spatial_tendons_props: null
+-    joint_drive_props: null
+-    joint_drive_props_create_if_missing: false
+-    ensure_drives_exist: false
+-    visual_material_path: material
+-    visual_material: null
+-    visual_material_bindings: {}
+-    physics_material_path: material
+-    physics_material: null
+-    usd_path: /home/gturrisi/isaaclab_ws_home/basic-locomotion-isaaclab/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/assets/../../../../robot_model/pegasus/generated_usd/pegasus.usda
+-    variants: null
+-    make_uninstanceable: false
+-  init_state:
+-    pos: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    - 0.7
+-    rot: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    - 0.0
+-    - 1.0
+-    lin_vel: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    - 0.0
+-    ang_vel: !!python/tuple
+-    - 0.0
+-    - 0.0
+-    - 0.0
+-    joint_pos:
+-      .*L_hip_joint: 0.0
+-      .*R_hip_joint: 0.0
+-      .*_thigh_joint: 0.75
+-      .*_calf_joint: -1.5
+-    joint_vel:
+-      .*: 0.0
+-  collision_group: 0
+-  debug_vis: false
+-  disable_shape_checks: null
+-  articulation_root_prim_path: null
+-  soft_joint_pos_limit_factor: 0.95
+-  joint_ordering: null
+-  body_ordering: null
+-  actuators:
+-    hip:
+-      class_type: basic_locomotion_isaaclab.actuators.pace_actuator:PaceDCMotor
+-      joint_names_expr:
+-      - .*_hip_joint
+-      actuator_effort_limit: null
+-      actuator_velocity_limit: null
+-      joint_effort_limit: null
+-      joint_velocity_limit: null
+-      effort_limit_sim: null
+-      velocity_limit_sim: null
+-      stiffness:
+-        .*: 120.0
+-      damping:
+-        .*: 6.0
+-      armature:
+-        FL_hip_joint: 0.3
+-        FR_hip_joint: 0.3
+-        RL_hip_joint: 0.3
+-        RR_hip_joint: 0.3
+-      friction:
+-        FL_hip_joint: 3.5
+-        FR_hip_joint: 2.5
+-        RL_hip_joint: 3.5
+-        RR_hip_joint: 3.5
+-      dynamic_friction:
+-        FL_hip_joint: 3.5
+-        FR_hip_joint: 2.5
+-        RL_hip_joint: 3.5
+-        RR_hip_joint: 3.5
+-      viscous_friction:
+-        FL_hip_joint: 0.1
+-        FR_hip_joint: 0.1
+-        RL_hip_joint: 0.1
+-        RR_hip_joint: 0.1
+-      effort_limit: 120.0
+-      velocity_limit: 10.47
+-      saturation_effort: 120.0
+-      encoder_bias:
+-        FL_hip_joint: 0.0
+-        FR_hip_joint: 0.0
+-        RL_hip_joint: 0.0
+-        RR_hip_joint: 0.0
+-      max_delay: 2
+-    thigh:
+-      class_type: basic_locomotion_isaaclab.actuators.pace_actuator:PaceDCMotor
+-      joint_names_expr:
+-      - .*_thigh_joint
+-      actuator_effort_limit: null
+-      actuator_velocity_limit: null
+-      joint_effort_limit: null
+-      joint_velocity_limit: null
+-      effort_limit_sim: null
+-      velocity_limit_sim: null
+-      stiffness:
+-        .*: 120.0
+-      damping:
+-        .*: 6.0
+-      armature:
+-        FL_thigh_joint: 0.3
+-        FR_thigh_joint: 0.3
+-        RL_thigh_joint: 0.3
+-        RR_thigh_joint: 0.3
+-      friction:
+-        FL_thigh_joint: 2.11
+-        FR_thigh_joint: 2.11
+-        RL_thigh_joint: 2.11
+-        RR_thigh_joint: 2.11
+-      dynamic_friction:
+-        FL_thigh_joint: 2.11
+-        FR_thigh_joint: 2.11
+-        RL_thigh_joint: 2.11
+-        RR_thigh_joint: 2.11
+-      viscous_friction:
+-        FL_thigh_joint: 0.5
+-        FR_thigh_joint: 0.2
+-        RL_thigh_joint: 0.5
+-        RR_thigh_joint: 0.5
+-      effort_limit: 120.0
+-      velocity_limit: 10.47
+-      saturation_effort: 120.0
+-      encoder_bias:
+-        FL_thigh_joint: 0.0
+-        FR_thigh_joint: 0.0
+-        RL_thigh_joint: 0.0
+-        RR_thigh_joint: 0.0
+-      max_delay: 2
+-    calf:
+-      class_type: basic_locomotion_isaaclab.actuators.pace_actuator:PaceDCMotor
+-      joint_names_expr:
+-      - .*_calf_joint
+-      actuator_effort_limit: null
+-      actuator_velocity_limit: null
+-      joint_effort_limit: null
+-      joint_velocity_limit: null
+-      effort_limit_sim: null
+-      velocity_limit_sim: null
+-      stiffness:
+-        .*: 120.0
+-      damping:
+-        .*: 6.0
+-      armature:
+-        FL_calf_joint: 0.6
+-        FR_calf_joint: 0.6
+-        RL_calf_joint: 0.6
+-        RR_calf_joint: 0.6
+-      friction:
+-        FL_calf_joint: 4.8
+-        FR_calf_joint: 4.8
+-        RL_calf_joint: 4.8
+-        RR_calf_joint: 4.8
+-      dynamic_friction:
+-        FL_calf_joint: 4.8
+-        FR_calf_joint: 4.8
+-        RL_calf_joint: 4.8
+-        RR_calf_joint: 4.8
+-      viscous_friction:
+-        FL_calf_joint: 1.15
+-        FR_calf_joint: 1.15
+-        RL_calf_joint: 1.15
+-        RR_calf_joint: 1.15
+-      effort_limit: 210.0
+-      velocity_limit: 5.18
+-      saturation_effort: 210.0
+-      encoder_bias:
+-        FL_calf_joint: 0.0
+-        FR_calf_joint: 0.0
+-        RL_calf_joint: 0.0
+-        RR_calf_joint: 0.0
+-      max_delay: 2
+-  actuator_value_resolution_debug_print: false
+-contact_sensor:
+-  class_type: isaaclab.sensors.contact_sensor.contact_sensor:ContactSensor
+-  cloning_contexts: !!python/tuple []
+-  prim_path: /World/envs/env_.*/Robot/.*
+-  update_period: 0.005
+-  debug_vis: false
+-  track_pose: false
+-  track_contact_points: false
+-  track_friction_forces: false
+-  max_contact_data_count_per_prim: null
+-  track_air_time: true
+-  force_threshold: null
+-  history_length: 3
+-  filter_prim_paths_expr: []
+-  sensor_shape_prim_expr: []
+-  filter_shape_prim_expr: []
+-  visualizer_cfg:
+-    prim_path: /Visuals/ContactSensor
+-    markers:
+-      contact:
+-        func: isaaclab.sim.spawners.shapes.shapes:spawn_sphere
+-        visible: true
+-        semantic_tags: null
+-        copy_from_source: true
+-        spawn_path: null
+-        mass_props: null
+-        mass_props_create_if_missing: false
+-        rigid_props: null
+-        collision_props: null
+-        activate_contact_sensors: false
+-        visual_material_path: material
+-        visual_material:
+-          func: isaaclab.sim.spawners.materials.visual_materials:spawn_preview_surface
+-          visible: true
+-          semantic_tags: null
+-          copy_from_source: true
+-          spawn_path: null
+-          diffuse_color: !!python/tuple
+-          - 1.0
+-          - 0.0
+-          - 0.0
+-          emissive_color: !!python/tuple
+-          - 0.0
+-          - 0.0
+-          - 0.0
+-          roughness: 0.5
+-          metallic: 0.0
+-          opacity: 1.0
+-        physics_material_path: material
+-        physics_material: null
+-        radius: 0.02
+-      no_contact:
+-        func: isaaclab.sim.spawners.shapes.shapes:spawn_sphere
+-        visible: false
+-        semantic_tags: null
+-        copy_from_source: true
+-        spawn_path: null
+-        mass_props: null
+-        mass_props_create_if_missing: false
+-        rigid_props: null
+-        collision_props: null
+-        activate_contact_sensors: false
+-        visual_material_path: material
+-        visual_material:
+-          func: isaaclab.sim.spawners.materials.visual_materials:spawn_preview_surface
+-          visible: true
+-          semantic_tags: null
+-          copy_from_source: true
+-          spawn_path: null
+-          diffuse_color: !!python/tuple
+-          - 0.0
+-          - 1.0
+-          - 0.0
+-          emissive_color: !!python/tuple
+-          - 0.0
+-          - 0.0
+-          - 0.0
+-          roughness: 0.5
+-          metallic: 0.0
+-          opacity: 1.0
+-        physics_material_path: material
+-        physics_material: null
+-        radius: 0.02
+-    class_type: isaaclab.markers.visualization_markers:VisualizationMarkers
+-  normal_force_visualizer_cfg:
+-    prim_path: /Visuals/ContactSensor
+-    markers:
+-      arrow:
+-        func: isaaclab.sim.spawners.from_files.from_files:spawn_from_usd
+-        visible: true
+-        semantic_tags: null
+-        copy_from_source: true
+-        spawn_path: null
+-        mass_props: null
+-        deformable_props: null
+-        mass_props_create_if_missing: false
+-        rigid_props: null
+-        collision_props: null
+-        activate_contact_sensors: false
+-        scale: !!python/tuple
+-        - 0.04
+-        - 0.04
+-        - 0.2
+-        articulation_props: null
+-        articulation_props_create_if_missing: false
+-        fix_root_link: null
+-        fixed_tendons_props: null
+-        spatial_tendons_props: null
+-        joint_drive_props: null
+-        joint_drive_props_create_if_missing: false
+-        ensure_drives_exist: false
+-        visual_material_path: material
+-        visual_material:
+-          func: isaaclab.sim.spawners.materials.visual_materials:spawn_preview_surface
+-          visible: true
+-          semantic_tags: null
+-          copy_from_source: true
+-          spawn_path: null
+-          diffuse_color: !!python/tuple
+-          - 0.0
+-          - 0.0
+-          - 1.0
+-          emissive_color: !!python/tuple
+-          - 0.0
+-          - 0.0
+-          - 0.0
+-          roughness: 0.5
+-          metallic: 0.0
+-          opacity: 1.0
+-        visual_material_bindings: {}
+-        physics_material_path: material
+-        physics_material: null
+-        usd_path: https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.1/Isaac/Props/UIElements/arrow_x.usd
+-        variants: null
+-        make_uninstanceable: false
+-    class_type: isaaclab.markers.visualization_markers:VisualizationMarkers
+-  friction_force_visualizer_cfg:
+-    prim_path: /Visuals/ContactSensor
+-    markers:
+-      arrow:
+-        func: isaaclab.sim.spawners.from_files.from_files:spawn_from_usd
+-        visible: true
+-        semantic_tags: null
+-        copy_from_source: true
+-        spawn_path: null
+-        mass_props: null
+-        deformable_props: null
+-        mass_props_create_if_missing: false
+-        rigid_props: null
+-        collision_props: null
+-        activate_contact_sensors: false
+-        scale: !!python/tuple
+-        - 0.04
+-        - 0.04
+-        - 0.2
+-        articulation_props: null
+-        articulation_props_create_if_missing: false
+-        fix_root_link: null
+-        fixed_tendons_props: null
+-        spatial_tendons_props: null
+-        joint_drive_props: null
+-        joint_drive_props_create_if_missing: false
+-        ensure_drives_exist: false
+-        visual_material_path: material
+-        visual_material:
+-          func: isaaclab.sim.spawners.materials.visual_materials:spawn_preview_surface
+-          visible: true
+-          semantic_tags: null
+-          copy_from_source: true
+-          spawn_path: null
+-          diffuse_color: !!python/tuple
+-          - 1.0
+-          - 0.0
+-          - 0.0
+-          emissive_color: !!python/tuple
+-          - 0.0
+-          - 0.0
+-          - 0.0
+-          roughness: 0.5
+-          metallic: 0.0
+-          opacity: 1.0
+-        visual_material_bindings: {}
+-        physics_material_path: material
+-        physics_material: null
+-        usd_path: https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/6.1/Isaac/Props/UIElements/arrow_x.usd
+-        variants: null
+-        make_uninstanceable: false
+-    class_type: isaaclab.markers.visualization_markers:VisualizationMarkers
+-  force_visualization_scale: 0.01
+-desired_joints_order:
+-- FL_hip_joint
+-- FR_hip_joint
+-- RL_hip_joint
+-- RR_hip_joint
+-- FL_thigh_joint
+-- FR_thigh_joint
+-- RL_thigh_joint
+-- RR_thigh_joint
+-- FL_calf_joint
+-- FR_calf_joint
+-- RL_calf_joint
+-- RR_calf_joint
+-use_amp: false
+-desired_base_height: 0.6
+-desired_feet_height: 0.08
+-foot_radius: 0.041
+-desired_clip_actions: 6.0
+-use_filter_actions: true
+-action_filter_alpha: 0.8
+-lin_vel_reward_scale: 2.0
+-yaw_rate_reward_scale: 0.5
+-z_vel_reward_scale: -2.0
+-ang_vel_reward_scale: -0.25
+-orientation_reward_scale: -5.0
+-height_reward_scale: 1.0
+-joints_torque_reward_scale: -2.5e-08
+-joints_accel_reward_scale: -2.5e-07
+-joints_energy_reward_scale: -1.0e-05
+-joints_hip_position_reward_scale: -0.0
+-joints_thigh_position_reward_scale: -0.0
+-joints_calf_position_reward_scale: -0.0
+-undersired_contact_reward_scale: -1.0
+-action_rate_reward_scale: -0.01
+-action_smoothness_reward_scale: -0.001
+-feet_height_clearance_aperiodic_reward_scale: 0.0
+-feet_height_clearance_mujoco_aperiodic_reward_scale: 0.0
+-feet_swing_trajectory_aperiodic_reward_scale: 0.0
+-feet_height_clearance_periodic_reward_scale: 0.0
+-feet_height_clearance_mujoco_periodic_reward_scale: 0.0
+-feet_swing_trajectory_periodic_reward_scale: 0.5
+-feet_slide_reward_scale: -0.0
+-feet_to_hip_distance_reward_scale: 1.5
+-desired_hip_offset_y: 0.148
+-desired_hip_offset_x: 0.112
+-feet_edge_reward_scale: 0.0
+-feet_edge_height_threshold: 0.05
+-feet_edge_horizontal_radius: 0.1
+-feet_edge_radius_px: 0
+-visualize_edge_map: false
+-feet_vertical_surface_contacts_reward_scale: -1.0
+-desired_step_freq: 1.4
+-desired_duty_factor: 0.65
+-feet_air_time_reward_scale: 0.25
+-feet_air_time_variance_reward_scale: -0.0
+-periodic_contact_suggestion_reward_scale: 0.5
+-desired_step_freq_max: 1.8
+-step_freq_vel_norm_low: 0.4
+-step_freq_vel_norm_high: 0.8
+-desired_phase_offset:
+-- 0.0
+-- 0.5
+-- 0.5
+-- 0.0
+-stance_contact_suggestion_reward_scale: 1.0
+-ROUGH_TERRAINS_CFG:
+-  class_type: isaaclab.terrains.terrain_generator:TerrainGenerator
+-  seed: null
+-  curriculum: false
+-  size: !!python/tuple
+-  - 8.0
+-  - 8.0
+-  border_width: 20.0
+-  border_height: 1.0
+-  num_rows: 10
+-  num_cols: 20
+-  color_scheme: none
+-  horizontal_scale: 0.1
+-  vertical_scale: 0.005
+-  slope_threshold: 0.75
+-  sub_terrains:
+-    flat:
+-      function: isaaclab.terrains.trimesh.mesh_terrains:flat_terrain
+-      proportion: 0.2
+-      size: !!python/tuple
+-      - 10.0
+-      - 10.0
+-      convert_to_heightfield: false
+-      flat_patch_sampling: null
+-    boxes:
+-      function: isaaclab.terrains.trimesh.mesh_terrains:random_grid_terrain
+-      proportion: 0.1
+-      size: !!python/tuple
+-      - 10.0
+-      - 10.0
+-      convert_to_heightfield: false
+-      flat_patch_sampling: null
+-      grid_width: 0.45
+-      grid_height_range: !!python/tuple
+-      - 0.05
+-      - 0.1
+-      platform_width: 2.0
+-      holes: false
+-    star:
+-      function: isaaclab.terrains.trimesh.mesh_terrains:star_terrain
+-      proportion: 0.1
+-      size: !!python/tuple
+-      - 10.0
+-      - 10.0
+-      convert_to_heightfield: false
+-      flat_patch_sampling: null
+-      num_bars: 10
+-      bar_width_range: !!python/tuple
+-      - 0.15
+-      - 0.2
+-      bar_height_range: !!python/tuple
+-      - 0.05
+-      - 0.13
+-      platform_width: 2.0
+-    random_rough:
+-      function: isaaclab.terrains.height_field.hf_terrains:random_uniform_terrain
+-      proportion: 0.1
+-      size: !!python/tuple
+-      - 10.0
+-      - 10.0
+-      convert_to_heightfield: true
+-      flat_patch_sampling: null
+-      border_width: 0.25
+-      horizontal_scale: 0.1
+-      vertical_scale: 0.005
+-      slope_threshold: null
+-      noise_range: !!python/tuple
+-      - 0.02
+-      - 0.06
+-      noise_step: 0.02
+-      downsampled_scale: null
+-    hf_pyramid_slope:
+-      function: isaaclab.terrains.height_field.hf_terrains:pyramid_sloped_terrain
+-      proportion: 0.1
+-      size: !!python/tuple
+-      - 10.0
+-      - 10.0
+-      convert_to_heightfield: true
+-      flat_patch_sampling: null
+-      border_width: 0.25
+-      horizontal_scale: 0.1
+-      vertical_scale: 0.005
+-      slope_threshold: null
+-      slope_range: !!python/tuple
+-      - 0.2
+-      - 0.4
+-      platform_width: 2.0
+-      inverted: false
+-    hf_pyramid_slope_inv:
+-      function: isaaclab.terrains.height_field.hf_terrains:pyramid_sloped_terrain
+-      proportion: 0.1
+-      size: !!python/tuple
+-      - 10.0
+-      - 10.0
+-      convert_to_heightfield: true
+-      flat_patch_sampling: null
+-      border_width: 0.25
+-      horizontal_scale: 0.1
+-      vertical_scale: 0.005
+-      slope_threshold: null
+-      slope_range: !!python/tuple
+-      - 0.2
+-      - 0.4
+-      platform_width: 2.0
+-      inverted: true
+-    pyramid_stairs:
+-      function: isaaclab.terrains.trimesh.mesh_terrains:pyramid_stairs_terrain
+-      proportion: 0.15
+-      size: !!python/tuple
+-      - 10.0
+-      - 10.0
+-      convert_to_heightfield: false
+-      flat_patch_sampling: null
+-      border_width: 1.0
+-      step_height_range: !!python/tuple
+-      - 0.05
+-      - 0.13
+-      step_width: 0.3
+-      platform_width: 3.0
+-      holes: false
+-    pyramid_stairs_inv:
+-      function: isaaclab.terrains.trimesh.mesh_terrains:inverted_pyramid_stairs_terrain
+-      proportion: 0.15
+-      size: !!python/tuple
+-      - 10.0
+-      - 10.0
+-      convert_to_heightfield: false
+-      flat_patch_sampling: null
+-      border_width: 1.0
+-      step_height_range: !!python/tuple
+-      - 0.05
+-      - 0.13
+-      step_width: 0.3
+-      platform_width: 3.0
+-      holes: false
+-  difficulty_range: !!python/tuple
+-  - 0.0
+-  - 1.0
+-  use_cache: false
+-  cache_dir: /tmp/isaaclab/terrains
