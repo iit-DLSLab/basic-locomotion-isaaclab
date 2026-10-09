@@ -47,6 +47,70 @@ def _compute_edge_map(self) -> tuple[torch.Tensor, float, int, int]:
     return edge_map, height_map_resolution, height_map_x_points, height_map_y_points
 
 
+def _get_feet_riser_proximity(self) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return, for each foot, the horizontal distance from the foot center to the closest riser face (the high side
+    of an edge) that the foot bottom is below (inf if there is none), and whether the foot is touching a riser face
+    above the floor at its base. This only depends on the terrain geometry, not on the contact force direction, so
+    it does not change with the friction coefficient."""
+    height_grid, height_map_resolution, _, _ = _get_edge_height_grid(self)
+
+    # Riser tops: cells higher than one of their neighbors by more than the edge threshold
+    riser_top = torch.zeros_like(height_grid, dtype=torch.bool)
+    x_steps = height_grid[:, :, 1:] - height_grid[:, :, :-1]
+    riser_top[:, :, 1:] |= x_steps > self.cfg.feet_edge_height_threshold
+    riser_top[:, :, :-1] |= -x_steps > self.cfg.feet_edge_height_threshold
+    y_steps = height_grid[:, 1:, :] - height_grid[:, :-1, :]
+    riser_top[:, 1:, :] |= y_steps > self.cfg.feet_edge_height_threshold
+    riser_top[:, :-1, :] |= -y_steps > self.cfg.feet_edge_height_threshold
+    riser_top_flat = riser_top.reshape(self.num_envs, 1, -1)
+    riser_top_height = height_grid.reshape(self.num_envs, 1, -1)
+
+    # Riser bases: the lowest neighbor of each cell, i.e. the floor in front of the riser face
+    padded_grid = F.pad(height_grid.unsqueeze(1), (1, 1, 1, 1), mode="replicate").squeeze(1)
+    riser_base_height = torch.minimum(
+        torch.minimum(padded_grid[:, 1:-1, :-2], padded_grid[:, 1:-1, 2:]),
+        torch.minimum(padded_grid[:, :-2, 1:-1], padded_grid[:, 2:, 1:-1]),
+    ).reshape(self.num_envs, 1, -1)
+
+    feet_pos_w = self._robot.data.body_pos_w[:, self._feet_ids_robot, :3]
+    feet_pos_scanner_w = feet_pos_w - self._edge_height_scanner.data.pos_w.unsqueeze(1)
+    scanner_yaw_w = math_utils.yaw_quat(self._edge_height_scanner.data.quat_w.torch).unsqueeze(1).expand(
+        -1, feet_pos_w.shape[1], -1
+    )
+    feet_xy_scanner = math_utils.quat_apply_inverse(scanner_yaw_w, feet_pos_scanner_w)[..., :2]
+
+    # Horizontal distance from the foot center to the riser face, which lies half a cell from the riser top center
+    grid_xy = self._edge_height_scanner.ray_starts[0, :, :2].to(device=self.device, dtype=feet_xy_scanner.dtype)
+    feet_to_riser_distance = torch.clamp(
+        torch.linalg.norm(feet_xy_scanner.unsqueeze(2) - grid_xy.unsqueeze(0).unsqueeze(0), dim=-1)
+        - 0.5 * height_map_resolution,
+        min=0.0,
+    )
+
+    # The foot body is the center of the foot sphere, so its bottom is foot_radius below it
+    feet_bottom_z = feet_pos_w[..., 2].unsqueeze(2) - self.cfg.foot_radius
+    height_margin = getattr(self.cfg, "feet_edge_swing_height_margin", 0.01)
+    below_riser_top = riser_top_flat & (feet_bottom_z < riser_top_height - height_margin)
+    # A foot resting on the floor in the corner of a riser is not touching the riser face
+    above_riser_base = feet_bottom_z > riser_base_height + height_margin
+
+    feet_riser_distance = torch.min(
+        torch.where(below_riser_top, feet_to_riser_distance, torch.inf), dim=2
+    ).values
+    raised_feet_riser_distance = torch.min(
+        torch.where(below_riser_top & above_riser_base, feet_to_riser_distance, torch.inf), dim=2
+    ).values
+
+    # The riser face is only known within half a cell, so a foot in contact this close to it is touching it
+    contacts_foot = (
+        torch.linalg.norm(self._contact_sensor.data.net_forces_w[:, self._feet_contact_sensor_ids, :], dim=-1) > 1.0
+    )
+    feet_riser_contacts = contacts_foot & (
+        raised_feet_riser_distance <= self.cfg.foot_radius + 0.5 * height_map_resolution
+    )
+    return feet_riser_distance, feet_riser_contacts
+
+
 def _get_feet_terrain_heights(self) -> torch.Tensor:
     """Return the mean terrain height from the local height map around each foot."""
     foot_height_maps = torch.stack(
@@ -585,51 +649,19 @@ def feet_edge_swing(self) -> torch.Tensor:
     if not _has_edge_map(self):
         return torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
 
-    # Stance is a contact loaded mostly vertically. A foot pushing against a riser is still considered in swing.
-    forces_w = self._contact_sensor.data.net_forces_w[:, self._feet_contact_sensor_ids, :]
-    forces_z = torch.abs(forces_w[..., 2])
-    forces_xy = torch.linalg.norm(forces_w[..., :2], dim=-1)
-    in_stance = (torch.linalg.norm(forces_w, dim=-1) > 1.0) & (forces_xy <= 4 * forces_z)
+    feet_riser_distance, feet_riser_contacts = _get_feet_riser_proximity(self)
 
-    height_grid, height_map_resolution, _, _ = _get_edge_height_grid(self)
-
-    # Riser tops: cells higher than one of their neighbors by more than the edge threshold
-    riser_top = torch.zeros_like(height_grid, dtype=torch.bool)
-    x_steps = height_grid[:, :, 1:] - height_grid[:, :, :-1]
-    riser_top[:, :, 1:] |= x_steps > self.cfg.feet_edge_height_threshold
-    riser_top[:, :, :-1] |= -x_steps > self.cfg.feet_edge_height_threshold
-    y_steps = height_grid[:, 1:, :] - height_grid[:, :-1, :]
-    riser_top[:, 1:, :] |= y_steps > self.cfg.feet_edge_height_threshold
-    riser_top[:, :-1, :] |= -y_steps > self.cfg.feet_edge_height_threshold
-    riser_top_flat = riser_top.reshape(self.num_envs, 1, -1)
-    riser_top_height = height_grid.reshape(self.num_envs, 1, -1)
-
-    feet_pos_w = self._robot.data.body_pos_w[:, self._feet_ids_robot, :3]
-    feet_pos_scanner_w = feet_pos_w - self._edge_height_scanner.data.pos_w.unsqueeze(1)
-    scanner_yaw_w = math_utils.yaw_quat(self._edge_height_scanner.data.quat_w.torch).unsqueeze(1).expand(
-        -1, feet_pos_w.shape[1], -1
+    # Stance is a contact with the floor. A foot touching a riser face is still considered in swing.
+    contacts_foot = (
+        torch.linalg.norm(self._contact_sensor.data.net_forces_w[:, self._feet_contact_sensor_ids, :], dim=-1) > 1.0
     )
-    feet_xy_scanner = math_utils.quat_apply_inverse(scanner_yaw_w, feet_pos_scanner_w)[..., :2]
-
-    # Horizontal distance from the foot center to the riser face, which lies half a cell from the riser top center
-    grid_xy = self._edge_height_scanner.ray_starts[0, :, :2].to(device=self.device, dtype=feet_xy_scanner.dtype)
-    feet_to_riser_distance = torch.clamp(
-        torch.linalg.norm(feet_xy_scanner.unsqueeze(2) - grid_xy.unsqueeze(0).unsqueeze(0), dim=-1)
-        - 0.5 * height_map_resolution,
-        min=0.0,
-    )
+    in_stance = contacts_foot & ~feet_riser_contacts
 
     # 1 when touching the riser face, 0 once feet_edge_swing_margin away from it
     margin = getattr(self.cfg, "feet_edge_swing_margin", 0.04)
-    too_close = torch.clamp((self.cfg.foot_radius + margin - feet_to_riser_distance) / margin, 0.0, 1.0)
+    too_close = torch.clamp((self.cfg.foot_radius + margin - feet_riser_distance) / margin, 0.0, 1.0)
 
-    # The foot body is the center of the foot sphere, so its bottom is foot_radius below it
-    feet_bottom_z = feet_pos_w[..., 2] - self.cfg.foot_radius
-    height_margin = getattr(self.cfg, "feet_edge_swing_height_margin", 0.01)
-    below_riser_top = feet_bottom_z.unsqueeze(2) < riser_top_height - height_margin
-
-    feet_edge_swing_per_foot = torch.max(too_close * below_riser_top * riser_top_flat, dim=2).values
-    feet_edge_swing = torch.sum(feet_edge_swing_per_foot * ~in_stance, dim=1)
+    feet_edge_swing = torch.sum(too_close * ~in_stance, dim=1)
     return feet_edge_swing
 
 
@@ -681,9 +713,13 @@ def _debug_vis_callback(self, event):
 
 
 def feet_vertical_surface_contacts(self) -> torch.Tensor:
-    forces_z = torch.abs(self._contact_sensor.data.net_forces_w[:, self._feet_contact_sensor_ids, 2])
-    forces_xy = torch.linalg.norm(self._contact_sensor.data.net_forces_w[:, self._feet_contact_sensor_ids, :2], dim=2)
-    feet_vertical_surface_contacts = torch.any(forces_xy > 4 * forces_z, dim=1).float()
+    """Penalize feet touching a riser face above the floor at its base, detected from the terrain geometry so that a
+    foot scraping along a riser is caught whatever the friction coefficient."""
+    if not _has_edge_map(self):
+        return torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
+
+    _, feet_riser_contacts = _get_feet_riser_proximity(self)
+    feet_vertical_surface_contacts = torch.any(feet_riser_contacts, dim=1).float()
     feet_vertical_surface_contacts *= torch.clamp(-self._robot.data.projected_gravity_b[:, 2], 0, 0.7) / 0.7
     return feet_vertical_surface_contacts
 

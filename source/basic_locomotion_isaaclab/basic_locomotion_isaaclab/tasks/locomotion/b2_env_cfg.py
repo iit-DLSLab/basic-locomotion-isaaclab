@@ -427,7 +427,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
     feet_edge_stance_reward_scale = 0.0
     feet_edge_swing_reward_scale = -1.0
     feet_edge_swing_margin = 0.04 # desired horizontal distance of the swing foot from a riser face [m]
-    feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized [m]
+    feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized, and this much above its base to count as touching it [m]
     feet_edge_height_threshold = 0.05
     feet_edge_horizontal_radius = 0.10
     feet_edge_radius_px = 0
