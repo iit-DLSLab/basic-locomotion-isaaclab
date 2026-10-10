@@ -437,6 +437,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     feet_edge_horizontal_radius = 0.10
     feet_edge_radius_px = 0
     visualize_edge_map = False
+    visualize_feet_edge_swing_zone = False # transparent red cylinders where a swing foot is penalized by feet_edge_swing
 
     feet_vertical_surface_contacts_reward_scale = -1.5
 

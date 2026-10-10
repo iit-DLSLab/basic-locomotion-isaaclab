@@ -47,11 +47,9 @@ def _compute_edge_map(self) -> tuple[torch.Tensor, float, int, int]:
     return edge_map, height_map_resolution, height_map_x_points, height_map_y_points
 
 
-def _get_feet_riser_proximity(self) -> tuple[torch.Tensor, torch.Tensor]:
-    """Return, for each foot, the horizontal distance from the foot center to the closest riser face (the high side
-    of an edge) that the foot bottom is below (inf if there is none), and whether the foot is touching a riser face
-    above the floor at its base. This only depends on the terrain geometry, not on the contact force direction, so
-    it does not change with the friction coefficient."""
+def _get_riser_grid(self) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]:
+    """Return the riser tops of the edge height grid (the high side of an edge), the height of each cell, the height
+    of the floor at its base and the grid resolution. The grids have shape (num_envs, y_points, x_points)."""
     height_grid, height_map_resolution, _, _ = _get_edge_height_grid(self)
 
     # Riser tops: cells higher than one of their neighbors by more than the edge threshold
@@ -62,15 +60,25 @@ def _get_feet_riser_proximity(self) -> tuple[torch.Tensor, torch.Tensor]:
     y_steps = height_grid[:, 1:, :] - height_grid[:, :-1, :]
     riser_top[:, 1:, :] |= y_steps > self.cfg.feet_edge_height_threshold
     riser_top[:, :-1, :] |= -y_steps > self.cfg.feet_edge_height_threshold
-    riser_top_flat = riser_top.reshape(self.num_envs, 1, -1)
-    riser_top_height = height_grid.reshape(self.num_envs, 1, -1)
 
     # Riser bases: the lowest neighbor of each cell, i.e. the floor in front of the riser face
     padded_grid = F.pad(height_grid.unsqueeze(1), (1, 1, 1, 1), mode="replicate").squeeze(1)
     riser_base_height = torch.minimum(
         torch.minimum(padded_grid[:, 1:-1, :-2], padded_grid[:, 1:-1, 2:]),
         torch.minimum(padded_grid[:, :-2, 1:-1], padded_grid[:, 2:, 1:-1]),
-    ).reshape(self.num_envs, 1, -1)
+    )
+    return riser_top, height_grid, riser_base_height, height_map_resolution
+
+
+def _get_feet_riser_proximity(self) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return, for each foot, the horizontal distance from the foot center to the closest riser face (the high side
+    of an edge) that the foot bottom is below (inf if there is none), and whether the foot is touching a riser face
+    above the floor at its base. This only depends on the terrain geometry, not on the contact force direction, so
+    it does not change with the friction coefficient."""
+    riser_top, riser_top_height, riser_base_height, height_map_resolution = _get_riser_grid(self)
+    riser_top_flat = riser_top.reshape(self.num_envs, 1, -1)
+    riser_top_height = riser_top_height.reshape(self.num_envs, 1, -1)
+    riser_base_height = riser_base_height.reshape(self.num_envs, 1, -1)
 
     feet_pos_w = self._robot.data.body_pos_w[:, self._feet_ids_robot, :3]
     feet_pos_scanner_w = feet_pos_w - self._edge_height_scanner.data.pos_w.unsqueeze(1)
@@ -666,37 +674,84 @@ def feet_edge_swing(self) -> torch.Tensor:
 
 
 def _set_debug_vis_impl(self, debug_vis: bool):
-    if not getattr(self.cfg, "visualize_edge_map", False) or not _has_edge_map(self):
-        if self._edge_map_visualizer is not None:
-            self._edge_map_visualizer.set_visibility(False)
-        return
+    show_edge_map = debug_vis and getattr(self.cfg, "visualize_edge_map", False) and _has_edge_map(self)
+    if show_edge_map and self._edge_map_visualizer is None:
+        marker_radius = getattr(self.cfg, "edge_map_visualization_dot_radius", 0.015)
+        edge_map_marker_cfg = VisualizationMarkersCfg(
+            prim_path="/Visuals/EdgeMap",
+            markers={
+                "feasible": sim_utils.SphereCfg(
+                    radius=marker_radius,
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 1.0, 1.0)),
+                ),
+                "not_feasible": sim_utils.SphereCfg(
+                    radius=marker_radius,
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 0.0)),
+                ),
+            },
+        )
+        self._edge_map_visualizer = VisualizationMarkers(edge_map_marker_cfg)
+    if self._edge_map_visualizer is not None:
+        self._edge_map_visualizer.set_visibility(show_edge_map)
 
-    if debug_vis:
-        if self._edge_map_visualizer is None:
-            marker_radius = getattr(self.cfg, "edge_map_visualization_dot_radius", 0.015)
-            edge_map_marker_cfg = VisualizationMarkersCfg(
-                prim_path="/Visuals/EdgeMap",
-                markers={
-                    "feasible": sim_utils.SphereCfg(
-                        radius=marker_radius,
-                        visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 1.0, 1.0)),
+    show_swing_zone = debug_vis and getattr(self.cfg, "visualize_feet_edge_swing_zone", False) and _has_edge_map(self)
+    if show_swing_zone and self._feet_edge_swing_visualizer is None:
+        # A swing foot is penalized by feet_edge_swing as soon as its sphere enters one of these cylinders, which
+        # surround each riser top cell up to feet_edge_swing_margin in front of the riser face. The cylinder height
+        # is set per riser when visualizing, so the prototype is 1 m high.
+        zone_radius = 0.5 * self._edge_height_scanner.cfg.pattern_cfg.resolution + getattr(
+            self.cfg, "feet_edge_swing_margin", 0.04
+        )
+        feet_edge_swing_marker_cfg = VisualizationMarkersCfg(
+            prim_path="/Visuals/FeetEdgeSwingZone",
+            markers={
+                "zone": sim_utils.CylinderCfg(
+                    radius=zone_radius,
+                    height=1.0,
+                    visual_material=sim_utils.PreviewSurfaceCfg(
+                        diffuse_color=(1.0, 0.0, 0.0),
+                        opacity=getattr(self.cfg, "feet_edge_swing_visualization_opacity", 0.3),
                     ),
-                    "not_feasible": sim_utils.SphereCfg(
-                        radius=marker_radius,
-                        visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 0.0)),
-                    ),
-                },
-            )
-            self._edge_map_visualizer = VisualizationMarkers(edge_map_marker_cfg)
-        self._edge_map_visualizer.set_visibility(True)
-    elif self._edge_map_visualizer is not None:
-        self._edge_map_visualizer.set_visibility(False)
+                ),
+            },
+        )
+        self._feet_edge_swing_visualizer = VisualizationMarkers(feet_edge_swing_marker_cfg)
+    if self._feet_edge_swing_visualizer is not None:
+        self._feet_edge_swing_visualizer.set_visibility(show_swing_zone)
 
 
 def _debug_vis_callback(self, event):
-    if self._edge_map_visualizer is None or not self._edge_map_visualizer.is_visible() or not _has_edge_map(self):
+    if not _has_edge_map(self):
         return
+    if self._edge_map_visualizer is not None and self._edge_map_visualizer.is_visible():
+        _visualize_edge_map(self)
+    if self._feet_edge_swing_visualizer is not None and self._feet_edge_swing_visualizer.is_visible():
+        _visualize_feet_edge_swing_zone(self)
 
+
+def _visualize_feet_edge_swing_zone(self):
+    riser_top, riser_top_height, riser_base_height, _ = _get_riser_grid(self)
+    riser_top = riser_top.reshape(-1)
+    riser_xy = self._edge_height_scanner.data.ray_hits_w[..., :2].reshape(-1, 2)
+    valid_riser = riser_top & torch.isfinite(riser_xy).all(dim=1)
+
+    # From the floor at the base of the riser up to the height below which feet_edge_swing penalizes the foot bottom
+    zone_top = riser_top_height.reshape(-1) - getattr(self.cfg, "feet_edge_swing_height_margin", 0.01)
+    zone_bottom = riser_base_height.reshape(-1)
+
+    # Every grid cell gets a marker so that their number does not change, the cells that are not risers are hidden
+    # with a zero scale
+    translations = torch.zeros(riser_top.shape[0], 3, device=self.device)
+    translations[valid_riser, :2] = riser_xy[valid_riser]
+    translations[:, 2] = 0.5 * (zone_top + zone_bottom)
+    scales = torch.zeros_like(translations)
+    scales[valid_riser, :2] = 1.0
+    scales[valid_riser, 2] = (zone_top - zone_bottom)[valid_riser]
+
+    self._feet_edge_swing_visualizer.visualize(translations=translations, scales=scales)
+
+
+def _visualize_edge_map(self):
     edge_map, _, _, _ = _compute_edge_map(self)
     translations = self._edge_height_scanner.data.ray_hits_w.reshape(-1, 3).clone()
     marker_indices = edge_map.reshape(-1).long()

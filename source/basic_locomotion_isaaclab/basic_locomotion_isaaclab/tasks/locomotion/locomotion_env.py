@@ -56,6 +56,7 @@ class LocomotionEnv(DirectRLEnv):
 
     def __init__(self, cfg, render_mode: str | None = None, **kwargs):
         self._edge_map_visualizer = None
+        self._feet_edge_swing_visualizer = None
         super().__init__(cfg, render_mode, **kwargs)
 
         # Joint position command (deviation from default joint positions)
@@ -233,7 +234,7 @@ class LocomotionEnv(DirectRLEnv):
         self._nominal_static_friction = self._robot.data.joint_friction_coeff.torch.clone()
         self._nominal_viscous_friction = self._robot.data.joint_viscous_friction_coeff.torch.clone()
 
-        if getattr(self.cfg, "visualize_edge_map", False):
+        if getattr(self.cfg, "visualize_edge_map", False) or getattr(self.cfg, "visualize_feet_edge_swing_zone", False):
             self.set_debug_vis(True)
 
 
