@@ -396,7 +396,7 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
     yaw_rate_reward_scale = 0.5
     z_vel_reward_scale = -2.0
     ang_vel_reward_scale = -0.25
-    orientation_reward_scale = -5.0
+    orientation_reward_scale = -10.0
     height_reward_scale = 1.0
     
 

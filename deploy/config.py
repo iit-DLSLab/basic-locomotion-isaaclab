@@ -5,7 +5,7 @@ sys.path.append(dir_path+"/../")
 sys.path.append(dir_path+"/../scripts/rsl_rl")
 
 robot = 'go2'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
-scene = 'scene_random_boxes'  # flat, random_boxes, random_pyramids, perlin
+scene = 'scene_random_boxes'  # flat, random_boxes
 
 # ----------------------------------------------------------------------------------------------------------------
 if(robot == "aliengo"):
@@ -47,7 +47,7 @@ elif(robot == "pegasus"):
     Kp_stand_up_and_down = 200.
     Kd_stand_up_and_down = 10.
 
-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_symm_blind"
+    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/blind_symm"
 
 else:
     raise ValueError(f"Robot {robot} not supported")
