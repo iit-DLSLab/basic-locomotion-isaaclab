@@ -180,7 +180,7 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
 
     use_clock_signal = True
     if(use_clock_signal):
-        observation_space += 4 # clock signal for periodic gait
+        observation_space += 8 # clock signal for periodic gait (sin and cos of the phase of each leg)
 
     single_observation_space = observation_space # Usefull for concatenating history
 
@@ -376,17 +376,16 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
                            'FL_calf_joint', 'FR_calf_joint', 'RL_calf_joint', 'RR_calf_joint']
 
     
-    # If you want to use AMP
-    use_amp = False
-    
     # Desired tracking variables
     desired_base_height = 0.30
     desired_feet_height = 0.05
+    foot_radius = 0.032 # radius of the foot collision sphere
 
 
     # Desired clip actions
     desired_clip_actions = 3.0
     use_filter_actions = True
+    action_filter_alpha = 0.8 # exponential moving average, lower is smoother but adds delay
         
 
     # Tracking reward scale
@@ -394,7 +393,7 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
     yaw_rate_reward_scale = 0.5
     z_vel_reward_scale = -2.0
     ang_vel_reward_scale = -0.25
-    orientation_reward_scale = -5.0
+    orientation_reward_scale = -10.0
     height_reward_scale = 1.0
     
 
@@ -415,25 +414,34 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
 
     # Feet reward scale
     feet_height_clearance_aperiodic_reward_scale = 0.25*0.0  
-    feet_height_clearance_periodic_reward_scale = 0.25*0.0
-    
     feet_height_clearance_mujoco_aperiodic_reward_scale = 0.25*0.0
-    feet_height_clearance_mujoco_periodic_reward_scale = 0.25
+    feet_swing_trajectory_aperiodic_reward_scale = 0.5*0.0
+    
+    feet_height_clearance_periodic_reward_scale = 0.25*0.0
+    feet_height_clearance_mujoco_periodic_reward_scale = 0.25*0.0
+    feet_swing_trajectory_periodic_reward_scale = 0.5
     
     feet_slide_reward_scale = -0.25*0.0
+
+    feet_landing_vel_reward_scale = -0.1
+    feet_landing_height = 0.02 # foot height above terrain below which the downward velocity is penalized
     
     feet_to_hip_distance_reward_scale = 1.5
     # This is used in loocmotion_env.py for the above reward
     desired_hip_offset_y = 0.095
     desired_hip_offset_x = 0.0
 
-    feet_edge_reward_scale = 0.0
+    feet_edge_stance_reward_scale = 0.0
+    feet_edge_swing_reward_scale = -1.0
+    feet_edge_swing_margin = 0.04 # desired horizontal distance of the swing foot from a riser face [m]
+    feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized, and this much above its base to count as touching it [m]
     feet_edge_height_threshold = 0.05
     feet_edge_horizontal_radius = 0.10
     feet_edge_radius_px = 0
     visualize_edge_map = False
+    visualize_feet_edge_swing_zone = False # transparent red cylinders where a swing foot is penalized by feet_edge_swing
 
-    feet_vertical_surface_contacts_reward_scale = -2.5
+    feet_vertical_surface_contacts_reward_scale = -1.5
 
     # variables used in feet air time and periodic contact suggestion reward
     desired_step_freq = 1.4 
@@ -517,6 +525,18 @@ class A2RoughBlindEnvCfg(A2FlatEnvCfg):
     )
 
 
+    # we add a height scanner for the feet edge rewards (only used in the rewards, so also for blind locomotion)
+    edge_height_scanner = RayCasterCfg(
+        prim_path="/World/envs/env_.*/Robot/Geometry/base",
+        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+        ray_alignment='yaw',
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[1.2, 1.2]),
+        debug_vis=False,
+        mesh_prim_paths=["/World/ground"],
+        global_world_only=True,
+    )
+
+
 
 @configclass
 class A2RoughVisionEnvCfg(A2RoughBlindEnvCfg):
@@ -527,9 +547,7 @@ class A2RoughVisionEnvCfg(A2RoughBlindEnvCfg):
         height_map_y_points = int(round(pattern_cfg.size[1] / pattern_cfg.resolution)) + 1
         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
 
-        self.feet_edge_reward_scale = -1.0
-
-    use_vision = True
+        self.feet_edge_stance_reward_scale = -1.0
 
     # we add a height scanner for perceptive locomotion
     perceptive_height_scanner = RayCasterCfg(
@@ -537,17 +555,6 @@ class A2RoughVisionEnvCfg(A2RoughBlindEnvCfg):
         offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 2.0)),
         ray_alignment='yaw',
         pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
-        debug_vis=False,
-        mesh_prim_paths=["/World/ground"],
-        global_world_only=True,
-    )
-
-    # we add a height scanner for feet edge reward
-    edge_height_scanner = RayCasterCfg(
-        prim_path="/World/envs/env_.*/Robot/Geometry/base",
-        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
-        ray_alignment='yaw',
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.8, 0.8]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
         global_world_only=True,

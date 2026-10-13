@@ -1,0 +1,3 @@
+string frame_id
+uint32 sequence_id
+uint64 timestamp

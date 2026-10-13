@@ -6,7 +6,7 @@ variables:
 channels:
 - conda-forge
 - nvidia
-- robostack-lyrical
+- https://prefix.dev/robostack-lyrical
 dependencies:
 - pip
 - python
@@ -14,7 +14,11 @@ dependencies:
 - cuda-nvcc 
 - ros-lyrical-desktop
 - ros-lyrical-rmw-cyclonedds-cpp
+- ros-lyrical-rosidl-generator-dds-idl
 - ros-lyrical-plotjuggler-ros
+- ros-humble-librealsense2
+- ros-humble-realsense2-camera-msgs
+- ros-humble-realsense2-camera
 - compilers 
 - cmake 
 - pkg-config 
@@ -30,3 +34,4 @@ dependencies:
   - onnxruntime
   - torch
   - scipy
+  - mujoco

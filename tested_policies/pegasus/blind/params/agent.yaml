@@ -24,9 +24,9 @@ class_name: OnPolicyRunner
 actor:
   class_name: MLPModel
   hidden_dims:
-  - 256
-  - 256
-  - 256
+  - 128
+  - 128
+  - 128
   activation: elu
   obs_normalization: false
   distribution_cfg:
@@ -36,8 +36,8 @@ actor:
 critic:
   class_name: MLPModel
   hidden_dims:
-  - 512
-  - 256
+  - 128
+  - 128
   - 128
   activation: elu
   obs_normalization: false
@@ -48,15 +48,15 @@ algorithm:
   num_mini_batches: 4
   learning_rate: 0.001
   schedule: adaptive
-  gamma: 0.97
-  lam: 0.99
+  gamma: 0.99
+  lam: 0.95
   entropy_coef: 0.005
   desired_kl: 0.01
   max_grad_norm: 1.0
   optimizer: adam
   value_loss_coef: 1.0
   use_clipped_value_loss: true
-  clip_param: 0.15
+  clip_param: 0.2
   normalize_advantage_per_mini_batch: false
   share_cnn_encoders: false
   rnd_cfg: null
@@ -103,14 +103,6 @@ morphologycal_symmetries_cfg:
   - joints_vel
   - joints_pos
   - clock_data
-  - base_lin_vel
-  - base_ang_vel
-  - gravity
-  - des_base_lin_vel_xy
-  - des_base_ang_vel_yaw
-  - joints_pos
-  - joints_vel
-  - joints_pos
   - clock_data
   - base_lin_vel
   - base_ang_vel
@@ -121,14 +113,6 @@ morphologycal_symmetries_cfg:
   - joints_vel
   - joints_pos
   - clock_data
-  - base_lin_vel
-  - base_ang_vel
-  - gravity
-  - des_base_lin_vel_xy
-  - des_base_ang_vel_yaw
-  - joints_pos
-  - joints_vel
-  - joints_pos
   - clock_data
   - base_lin_vel
   - base_ang_vel
@@ -138,6 +122,27 @@ morphologycal_symmetries_cfg:
   - joints_pos
   - joints_vel
   - joints_pos
+  - clock_data
+  - clock_data
+  - base_lin_vel
+  - base_ang_vel
+  - gravity
+  - des_base_lin_vel_xy
+  - des_base_ang_vel_yaw
+  - joints_pos
+  - joints_vel
+  - joints_pos
+  - clock_data
+  - clock_data
+  - base_lin_vel
+  - base_ang_vel
+  - gravity
+  - des_base_lin_vel_xy
+  - des_base_ang_vel_yaw
+  - joints_pos
+  - joints_vel
+  - joints_pos
+  - clock_data
   - clock_data
   - heightmap:7x9
   obs_space_names_critic:
@@ -150,14 +155,6 @@ morphologycal_symmetries_cfg:
   - joints_vel
   - joints_pos
   - clock_data
-  - base_lin_vel
-  - base_ang_vel
-  - gravity
-  - des_base_lin_vel_xy
-  - des_base_ang_vel_yaw
-  - joints_pos
-  - joints_vel
-  - joints_pos
   - clock_data
   - base_lin_vel
   - base_ang_vel
@@ -168,14 +165,6 @@ morphologycal_symmetries_cfg:
   - joints_vel
   - joints_pos
   - clock_data
-  - base_lin_vel
-  - base_ang_vel
-  - gravity
-  - des_base_lin_vel_xy
-  - des_base_ang_vel_yaw
-  - joints_pos
-  - joints_vel
-  - joints_pos
   - clock_data
   - base_lin_vel
   - base_ang_vel
@@ -185,6 +174,27 @@ morphologycal_symmetries_cfg:
   - joints_pos
   - joints_vel
   - joints_pos
+  - clock_data
+  - clock_data
+  - base_lin_vel
+  - base_ang_vel
+  - gravity
+  - des_base_lin_vel_xy
+  - des_base_ang_vel_yaw
+  - joints_pos
+  - joints_vel
+  - joints_pos
+  - clock_data
+  - clock_data
+  - base_lin_vel
+  - base_ang_vel
+  - gravity
+  - des_base_lin_vel_xy
+  - des_base_ang_vel_yaw
+  - joints_pos
+  - joints_vel
+  - joints_pos
+  - clock_data
   - clock_data
   - heightmap:7x9
   - clock_data

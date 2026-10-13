@@ -56,6 +56,7 @@ class LocomotionEnv(DirectRLEnv):
 
     def __init__(self, cfg, render_mode: str | None = None, **kwargs):
         self._edge_map_visualizer = None
+        self._feet_edge_swing_visualizer = None
         super().__init__(cfg, render_mode, **kwargs)
 
         # Joint position command (deviation from default joint positions)
@@ -64,6 +65,10 @@ class LocomotionEnv(DirectRLEnv):
             self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device
         )
         self._previous_previous_actions = torch.zeros(
+            self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device
+        )
+        # Output of the exponential moving average action filter
+        self._filtered_actions = torch.zeros(
             self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device
         )
 
@@ -136,7 +141,7 @@ class LocomotionEnv(DirectRLEnv):
                 ("joint_vel", num_joints),
                 ("actions", num_joints),
             ]
-            policy_terms = (proprio_terms + [("clock", 4 if cfg.use_clock_signal else 0)]) * cfg.history_length
+            policy_terms = (proprio_terms + [("clock", 8 if cfg.use_clock_signal else 0)]) * cfg.history_length
             # the height map takes whatever is left of the observation space
             rma_size = cfg.rma_output_space if cfg.use_rma else 0
             height_map_size = cfg.observation_space - sum(size for _, size in policy_terms) - rma_size
@@ -181,9 +186,13 @@ class LocomotionEnv(DirectRLEnv):
                 "feet_height_clearance_aperiodic",
                 "feet_height_clearance_mujoco_periodic",
                 "feet_height_clearance_mujoco_aperiodic",
+                "feet_swing_trajectory_periodic",
+                "feet_swing_trajectory_aperiodic",
                 "feet_slide",
+                "feet_landing_vel_l2",
                 "feet_to_hip_distance_l2",
-                "feet_edge",
+                "feet_edge_stance",
+                "feet_edge_swing",
                 "feet_vertical_surface_contacts",
 
                 "periodic_contact_suggestion",
@@ -225,7 +234,7 @@ class LocomotionEnv(DirectRLEnv):
         self._nominal_static_friction = self._robot.data.joint_friction_coeff.torch.clone()
         self._nominal_viscous_friction = self._robot.data.joint_viscous_friction_coeff.torch.clone()
 
-        if getattr(self.cfg, "visualize_edge_map", False):
+        if getattr(self.cfg, "visualize_edge_map", False) or getattr(self.cfg, "visualize_feet_edge_swing_zone", False):
             self.set_debug_vis(True)
 
 
@@ -254,11 +263,13 @@ class LocomotionEnv(DirectRLEnv):
             self.scene.sensors[f"{foot_name.lower()}_height_scanner"] = scanner
             self._foot_height_scanners.append(scanner)
 
-        # Add the perceptive and edge scanners only for vision-based locomotion.
-        if(getattr(self.cfg, "use_vision", False)):
+        # Add the perceptive scanner only for vision-based locomotion.
+        if(getattr(self.cfg, "perceptive_height_scanner", None) is not None):
             self._perceptive_height_scanner = RayCaster(self.cfg.perceptive_height_scanner)
             self.scene.sensors["perceptive_height_scanner"] = self._perceptive_height_scanner
 
+        # The edge scanner is only used by the feet edge rewards (never observed), so it is available for blind locomotion as well
+        if(getattr(self.cfg, "edge_height_scanner", None) is not None):
             self._edge_height_scanner = RayCaster(self.cfg.edge_height_scanner)
             self.scene.sensors["edge_height_scanner"] = self._edge_height_scanner
 
@@ -322,11 +333,11 @@ class LocomotionEnv(DirectRLEnv):
         # Clip the action
         self._actions = torch.clamp(self._actions, -self.cfg.desired_clip_actions, self.cfg.desired_clip_actions)
 
-        # Filter the action
+        # Filter the action with an exponential moving average (low-pass on the filter output, not on the raw actions)
         if(self.cfg.use_filter_actions):
-            alpha = 0.8
-            temp = alpha * self._actions + (1 - alpha) * self._previous_actions
-            self._processed_actions = self.cfg.action_scale * temp + default_joint_pos_ordered
+            alpha = self.cfg.action_filter_alpha
+            self._filtered_actions = alpha * self._actions + (1 - alpha) * self._filtered_actions
+            self._processed_actions = self.cfg.action_scale * self._filtered_actions + default_joint_pos_ordered
         else:
             self._processed_actions = self.cfg.action_scale * self._actions + default_joint_pos_ordered
 
@@ -371,11 +382,12 @@ class LocomotionEnv(DirectRLEnv):
             # Increment the phase signal by the step frequency and wrap to [0, 1)
             self._phase_signal += self.step_dt * self._step_freq
             self._phase_signal = self._phase_signal % 1.0
-            clock_data = torch.vstack([self._phase_signal[:,0], self._phase_signal[:,1], self._phase_signal[:,2], self._phase_signal[:,3]]).T
+            # Encode the phase as sin/cos so the signal stays continuous at the 1 -> 0 wrap: [sin FL..RR, cos FL..RR]
+            clock_data = torch.cat([torch.sin(2.0 * torch.pi * self._phase_signal), torch.cos(2.0 * torch.pi * self._phase_signal)], dim=1)
             
-            # for all the envs that are not moving, we put -1
+            # for all the envs that are not moving, we put -1 (outside the unit circle, so distinguishable from any phase)
             should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
-            clock_data[:, :] = clock_data[:, :]*should_move.unsqueeze(1).expand(-1, 4) + -1.0* ~should_move.unsqueeze(1).expand(-1, 4)
+            clock_data[:, :] = clock_data[:, :]*should_move.unsqueeze(1).expand(-1, 8) + -1.0* ~should_move.unsqueeze(1).expand(-1, 8)
             
 
         # Choosing the main source of observation
@@ -424,7 +436,7 @@ class LocomotionEnv(DirectRLEnv):
 
 
         # Add heightmap data to obs if needed
-        if(getattr(self.cfg, "use_vision", False)):
+        if(getattr(self.cfg, "perceptive_height_scanner", None) is not None):
             height_data = (
                 self._perceptive_height_scanner.data.pos_w[:, 2].unsqueeze(1)
                 - self._perceptive_height_scanner.data.ray_hits_w[..., 2]
@@ -455,8 +467,8 @@ class LocomotionEnv(DirectRLEnv):
         observations["policy"] = obs    
         # ------------------------------------------------------------------------------------------
 
-        # AMP related observation if used
-        if(self.cfg.use_amp):
+        # AMP related observation if used (use_amp is set by scripts/amp_rl, not in the robot cfgs)
+        if getattr(self.cfg, "use_amp", False):
             obs_amp = torch.cat(
                 [
                     tensor
@@ -501,11 +513,15 @@ class LocomotionEnv(DirectRLEnv):
         feet_air_time_variance = custom_rewards.feet_air_time_variance(self)
 
         feet_slide = custom_rewards.feet_slide(self)
-        feet_edge = custom_rewards.feet_edge(self)
+        feet_landing_vel_l2 = custom_rewards.feet_landing_vel_l2(self)
+        feet_edge_stance = custom_rewards.feet_edge_stance(self)
+        feet_edge_swing = custom_rewards.feet_edge_swing(self)
         periodic_contact_suggestion = custom_rewards.periodic_contact_suggestion(self)
         stance_contact_suggestion = custom_rewards.stance_contact_suggestion(self)
         feet_height_clearance_mujoco_aperiodic = custom_rewards.feet_height_clearance_mujoco_aperiodic(self)
         feet_height_clearance_mujoco_periodic = custom_rewards.feet_height_clearance_mujoco_periodic(self)
+        feet_swing_trajectory_periodic = custom_rewards.feet_swing_trajectory_periodic(self)
+        feet_swing_trajectory_aperiodic = custom_rewards.feet_swing_trajectory_aperiodic(self)
         feet_height_clearance_periodic = custom_rewards.feet_height_clearance_periodic(self)
         feet_height_clearance_aperiodic = custom_rewards.feet_height_clearance_aperiodic(self)
         feet_to_hip_distance_l2 = custom_rewards.feet_to_hip_distance_l2(self)
@@ -537,10 +553,14 @@ class LocomotionEnv(DirectRLEnv):
             "feet_height_clearance_periodic": feet_height_clearance_periodic * self.cfg.feet_height_clearance_periodic_reward_scale * self.step_dt,
             "feet_height_clearance_mujoco_aperiodic": feet_height_clearance_mujoco_aperiodic * self.cfg.feet_height_clearance_mujoco_aperiodic_reward_scale * self.step_dt,
             "feet_height_clearance_mujoco_periodic": feet_height_clearance_mujoco_periodic * self.cfg.feet_height_clearance_mujoco_periodic_reward_scale * self.step_dt,
+            "feet_swing_trajectory_periodic": feet_swing_trajectory_periodic * self.cfg.feet_swing_trajectory_periodic_reward_scale * self.step_dt,
+            "feet_swing_trajectory_aperiodic": feet_swing_trajectory_aperiodic * self.cfg.feet_swing_trajectory_aperiodic_reward_scale * self.step_dt,
             
             "feet_slide": feet_slide * self.cfg.feet_slide_reward_scale * self.step_dt,
+            "feet_landing_vel_l2": feet_landing_vel_l2 * self.cfg.feet_landing_vel_reward_scale * self.step_dt,
             "feet_to_hip_distance_l2": feet_to_hip_distance_l2 * self.cfg.feet_to_hip_distance_reward_scale * self.step_dt,
-            "feet_edge": feet_edge * self.cfg.feet_edge_reward_scale * self.step_dt,
+            "feet_edge_stance": feet_edge_stance * self.cfg.feet_edge_stance_reward_scale * self.step_dt,
+            "feet_edge_swing": feet_edge_swing * getattr(self.cfg, "feet_edge_swing_reward_scale", 0.0) * self.step_dt,
             "feet_vertical_surface_contacts": feet_vertical_surface_contacts * self.cfg.feet_vertical_surface_contacts_reward_scale * self.step_dt,
 
             "periodic_contact_suggestion": periodic_contact_suggestion * self.cfg.periodic_contact_suggestion_reward_scale * self.step_dt,
@@ -622,6 +642,7 @@ class LocomotionEnv(DirectRLEnv):
         self._actions[env_ids] = 0.0
         self._previous_actions[env_ids] = 0.0
         self._previous_previous_actions[env_ids] = 0.0
+        self._filtered_actions[env_ids] = 0.0
         
         # Reset commands
         custom_events._get_new_random_commands(self, env_ids)

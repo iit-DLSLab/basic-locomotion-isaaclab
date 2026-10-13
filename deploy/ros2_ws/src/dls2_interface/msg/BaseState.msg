@@ -1,18 +1,12 @@
-# Header
-string frame_id
-uint32 sequence_id
-float64 timestamp
-
+# header
+dls2_interface/DlsHeader header
 string robot_name
 
-# Base pose
-Pose pose
+# base pose
+dls2_interface/Pose pose
 
-# Base velocity
-Screw velocity
+# base velocity
+dls2_interface/Screw velocity
 
-# Base acceleration
-Screw acceleration
-
-# Stance status
-bool[] stance_status
+# base acceleration
+dls2_interface/Screw acceleration
