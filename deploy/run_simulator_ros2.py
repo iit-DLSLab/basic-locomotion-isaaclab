@@ -113,10 +113,8 @@ class SimulatorROS2(Node):
         self.last_render_time = time.time()
         self.step_num = 0
 
-        try:
-            self.use_vision = config.training_env["use_vision"]
-        except:
-            self.use_vision = False
+        # vision policies are the ones trained with the perceptive height scanner
+        self.use_vision = config.training_env.get("perceptive_height_scanner") is not None
         if(self.use_vision):
             resolution_heightmap = config.training_env["perceptive_height_scanner"]["pattern_cfg"]["resolution"]
             num_rows_heightmap = round(config.training_env["perceptive_height_scanner"]["pattern_cfg"]["size"][0]/resolution_heightmap) + 1

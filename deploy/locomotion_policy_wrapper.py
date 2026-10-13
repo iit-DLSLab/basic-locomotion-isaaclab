@@ -80,10 +80,8 @@ class LocomotionPolicyWrapper:
         single_observation_space = int(config.training_env["single_observation_space"])
         self._observation_history = np.zeros((self.history_length, single_observation_space), dtype=np.float32)
 
-        try:
-            self.use_vision = config.training_env["use_vision"]
-        except:
-            self.use_vision = False
+        # vision policies are the ones trained with the perceptive height scanner
+        self.use_vision = config.training_env.get("perceptive_height_scanner") is not None
 
         # RMA
         if(config.training_env["use_rma"] == True):

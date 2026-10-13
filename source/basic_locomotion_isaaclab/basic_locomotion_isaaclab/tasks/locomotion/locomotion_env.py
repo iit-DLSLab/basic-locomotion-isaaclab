@@ -264,7 +264,7 @@ class LocomotionEnv(DirectRLEnv):
             self._foot_height_scanners.append(scanner)
 
         # Add the perceptive scanner only for vision-based locomotion.
-        if(getattr(self.cfg, "use_vision", False)):
+        if(getattr(self.cfg, "perceptive_height_scanner", None) is not None):
             self._perceptive_height_scanner = RayCaster(self.cfg.perceptive_height_scanner)
             self.scene.sensors["perceptive_height_scanner"] = self._perceptive_height_scanner
 
@@ -436,7 +436,7 @@ class LocomotionEnv(DirectRLEnv):
 
 
         # Add heightmap data to obs if needed
-        if(getattr(self.cfg, "use_vision", False)):
+        if(getattr(self.cfg, "perceptive_height_scanner", None) is not None):
             height_data = (
                 self._perceptive_height_scanner.data.pos_w[:, 2].unsqueeze(1)
                 - self._perceptive_height_scanner.data.ray_hits_w[..., 2]

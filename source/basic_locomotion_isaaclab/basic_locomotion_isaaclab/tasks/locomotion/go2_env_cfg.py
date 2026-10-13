@@ -549,8 +549,6 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
 
         self.feet_edge_stance_reward_scale = -1.0
 
-    use_vision = True
-
     # we add a height scanner for perceptive locomotion
     perceptive_height_scanner = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base",
