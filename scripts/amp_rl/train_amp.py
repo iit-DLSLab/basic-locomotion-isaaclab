@@ -43,6 +43,7 @@ simulation_app = app_launcher.app
 
 import gymnasium as gym
 import os
+import time
 import torch
 from datetime import datetime
 
@@ -101,6 +102,10 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     agent_cfg.max_iterations = (
         args_cli.max_iterations if args_cli.max_iterations is not None else agent_cfg.max_iterations
     )
+
+    # AMP needs the "amp" observation group from the env and the AMP_PPO algorithm
+    env_cfg.use_amp = True
+    agent_cfg.algorithm.class_name = "AMP_PPO"
 
     # set the environment seed
     # note: certain randomizations occur in the environment initialization so we set the seed here
@@ -170,6 +175,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     dump_yaml(os.path.join(log_dir, "params", "agent.yaml"), agent_cfg)
 
     # run training
+    start_time = time.time()
     runner.learn(num_learning_iterations=agent_cfg.max_iterations, init_at_random_ep_len=True)
 
     print(f"Training time: {round(time.time() - start_time, 2)} seconds")

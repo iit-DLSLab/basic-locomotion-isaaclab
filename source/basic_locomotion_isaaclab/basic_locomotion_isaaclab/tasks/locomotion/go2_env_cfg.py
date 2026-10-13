@@ -376,9 +376,6 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
                            'FL_calf_joint', 'FR_calf_joint', 'RL_calf_joint', 'RR_calf_joint']
 
     
-    # If you want to use AMP
-    use_amp = False
-    
     # Desired tracking variables
     desired_base_height = 0.30
     desired_feet_height = 0.05

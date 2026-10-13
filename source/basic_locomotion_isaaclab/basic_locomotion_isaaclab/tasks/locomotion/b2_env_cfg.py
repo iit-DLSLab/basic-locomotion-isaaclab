@@ -366,9 +366,6 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
                            'FL_thigh_joint', 'FR_thigh_joint', 'RL_thigh_joint', 'RR_thigh_joint',  
                            'FL_calf_joint', 'FR_calf_joint', 'RL_calf_joint', 'RR_calf_joint']
 
-    
-    # If you want to use AMP
-    use_amp = False
 
     # Desired tracking variables
     desired_base_height = 0.485

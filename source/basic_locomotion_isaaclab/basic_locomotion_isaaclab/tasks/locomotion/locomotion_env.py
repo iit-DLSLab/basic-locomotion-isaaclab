@@ -467,8 +467,8 @@ class LocomotionEnv(DirectRLEnv):
         observations["policy"] = obs    
         # ------------------------------------------------------------------------------------------
 
-        # AMP related observation if used
-        if(self.cfg.use_amp):
+        # AMP related observation if used (use_amp is set by scripts/amp_rl, not in the robot cfgs)
+        if getattr(self.cfg, "use_amp", False):
             obs_amp = torch.cat(
                 [
                     tensor
