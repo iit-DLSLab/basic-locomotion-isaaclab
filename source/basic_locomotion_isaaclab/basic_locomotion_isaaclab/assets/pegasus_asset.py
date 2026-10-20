@@ -90,8 +90,8 @@ PEGASUS_CFG = ArticulationCfg(
         joint_pos={
             ".*L_hip_joint": 0.,
             ".*R_hip_joint": 0.,
-            ".*_thigh_joint": 0.75,
-            ".*_calf_joint": -1.5,
+            ".*_thigh_joint": 0.9,
+            ".*_calf_joint": -1.8,
         },
         joint_vel={".*": 0.0},
     ),
