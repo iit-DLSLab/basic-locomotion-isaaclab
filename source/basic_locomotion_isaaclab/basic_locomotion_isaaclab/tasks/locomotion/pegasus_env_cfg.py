@@ -348,7 +348,8 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     )
     # (noise std, bias std) for each observation term
     observation_noise_std = {
-        "base_linear": (0.05, 0.01),
+        "base_linear_acc": (0.05, 0.01),
+        "base_linear_vel": (0.05, 0.01),
         "base_ang_vel": (0.05, 0.01),
         "projected_gravity": (0.05, 0.01),
         "commands": (0.01, 0.01),
@@ -418,8 +419,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     
     feet_slide_reward_scale = -0.25 * 0.0
 
-    feet_landing_vel_reward_scale = -0.1
-    feet_landing_height = 0.03 # foot height above terrain below which the downward velocity is penalized
+    feet_landing_vel_reward_scale = -1.0
     
     feet_to_hip_distance_reward_scale = 1.5
     # This is used in loocmotion_env.py for the above reward

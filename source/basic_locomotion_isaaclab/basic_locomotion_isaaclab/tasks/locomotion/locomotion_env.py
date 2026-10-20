@@ -67,6 +67,8 @@ class LocomotionEnv(DirectRLEnv):
         self._previous_previous_actions = torch.zeros(
             self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device
         )
+        # Vertical feet velocity at the previous step, used to penalize the touchdown velocity
+        self._last_feet_vz = torch.zeros(self.num_envs, 4, device=self.device)
         # Output of the exponential moving average action filter
         self._filtered_actions = torch.zeros(
             self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device
@@ -132,8 +134,11 @@ class LocomotionEnv(DirectRLEnv):
         # The terms must follow the same order used to build the observations
         if self.cfg.observation_noise_model:
             num_joints = cfg.action_space
+            # The policy sees the IMU acceleration only with use_imu, otherwise a velocity (ground truth or
+            # concurrent SE prediction). The RMA and concurrent SE inputs always use the IMU acceleration
+            base_linear_term = "base_linear_acc" if cfg.use_imu and not cfg.use_concurrent_state_est else "base_linear_vel"
             proprio_terms = [
-                ("base_linear", 3),
+                (base_linear_term, 3),
                 ("base_ang_vel", 3),
                 ("projected_gravity", 3),
                 ("commands", 3),
@@ -148,13 +153,14 @@ class LocomotionEnv(DirectRLEnv):
             policy_terms += [("height_map", height_map_size), ("rma", rma_size)]
 
             self._observation_noise_model = self._make_observation_noise_model(policy_terms)
+            imu_proprio_terms = [("base_linear_acc", 3)] + proprio_terms[1:]
             if cfg.use_rma:
                 self._observation_noise_model_rma = self._make_observation_noise_model(
-                    proprio_terms * cfg.rma_history_length
+                    imu_proprio_terms * cfg.rma_history_length
                 )
             if cfg.use_concurrent_state_est:
                 self._observation_noise_model_concurrent_state_est = self._make_observation_noise_model(
-                    proprio_terms * cfg.concurrent_state_est_history_length
+                    imu_proprio_terms * cfg.concurrent_state_est_history_length
                 )
 
         # Logging
@@ -585,6 +591,9 @@ class LocomotionEnv(DirectRLEnv):
         )
         self._lin_vel_l1_error_sum += lin_vel_l1_error * tracks_linear_command
         self._lin_vel_command_l1_sum += lin_vel_command_l1 * tracks_linear_command
+
+        # Stored after the rewards, so that at the next step it holds the velocity before a possible touchdown
+        self._last_feet_vz[:] = self._robot.data.body_lin_vel_w[:, self._feet_ids_robot, 2]
         return reward
 
 
@@ -643,6 +652,7 @@ class LocomotionEnv(DirectRLEnv):
         self._previous_actions[env_ids] = 0.0
         self._previous_previous_actions[env_ids] = 0.0
         self._filtered_actions[env_ids] = 0.0
+        self._last_feet_vz[env_ids] = 0.0
         
         # Reset commands
         custom_events._get_new_random_commands(self, env_ids)

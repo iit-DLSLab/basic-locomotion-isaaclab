@@ -53,7 +53,7 @@ obs_space_names_actor = [
         "clock_data", # periodic clock data
         "clock_data", # periodic clock data
     ]*int(history_length)
-obs_space_names_actor += ["heightmap:7x9"]
+#obs_space_names_actor += ["heightmap:7x9"]
 
 
 # Critic OBS
@@ -69,7 +69,7 @@ obs_space_names_critic = [
         "clock_data", # periodic clock data
         "clock_data", # periodic clock data
     ]*int(history_length)
-obs_space_names_critic += ["heightmap:7x9"]
+#obs_space_names_critic += ["heightmap:7x9"]
 obs_space_names_critic += [    
         "clock_data", "clock_data", "clock_data",  # P gains
         "clock_data", "clock_data", "clock_data",  # D gains
