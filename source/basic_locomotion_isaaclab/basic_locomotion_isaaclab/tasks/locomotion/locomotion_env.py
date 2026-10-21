@@ -388,11 +388,14 @@ class LocomotionEnv(DirectRLEnv):
             # Increment the phase signal by the step frequency and wrap to [0, 1)
             self._phase_signal += self.step_dt * self._step_freq
             self._phase_signal = self._phase_signal % 1.0
+            # While standing the phase is held at the phase offset, as after a reset, so walking always
+            # starts from the same point of the gait cycle instead of a random one (possibly mid swing)
+            should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
+            self._phase_signal = torch.where(should_move.unsqueeze(1), self._phase_signal, self._phase_offset)
             # Encode the phase as sin/cos so the signal stays continuous at the 1 -> 0 wrap: [sin FL..RR, cos FL..RR]
             clock_data = torch.cat([torch.sin(2.0 * torch.pi * self._phase_signal), torch.cos(2.0 * torch.pi * self._phase_signal)], dim=1)
             
             # for all the envs that are not moving, we put -1 (outside the unit circle, so distinguishable from any phase)
-            should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
             clock_data[:, :] = clock_data[:, :]*should_move.unsqueeze(1).expand(-1, 8) + -1.0* ~should_move.unsqueeze(1).expand(-1, 8)
             
 
