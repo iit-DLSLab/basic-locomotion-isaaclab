@@ -34,6 +34,10 @@ class LocomotionPolicyWrapper:
 
         self.RL_FREQ = 1./(config.training_env["sim"]["dt"]*config.training_env["decimation"])  # Hz, frequency of the RL controller
 
+        # Max change of the velocity command per second (m/s^2 and rad/s^2), so a step from keyboard or joystick becomes a ramp
+        self.max_cmd_acc = 1.0
+        self.filtered_cmd = np.zeros(3)  # vx, vy in the heading frame and yaw rate
+
 
         # RL controller initialization -------------------------------------------------------------
         self.action_scale = config.training_env["action_scale"]
@@ -63,7 +67,7 @@ class LocomotionPolicyWrapper:
         self.step_freq = self.desired_step_freq
         self.duty_factor = config.training_env["desired_duty_factor"]
         self.phase_offset = np.array(config.training_env["desired_phase_offset"])
-        self.phase_signal = self.phase_offset
+        self.phase_signal = self.phase_offset.copy()
 
         self.desired_clip_actions = config.training_env["desired_clip_actions"]
 
@@ -149,6 +153,13 @@ class LocomotionPolicyWrapper:
 
         # Get the reference base velocity in the world frame
         ref_base_lin_vel_h = heading_orientation_SO3.T@ref_base_lin_vel
+
+        # Rate limit the command
+        target_cmd = np.array([ref_base_lin_vel_h[0], ref_base_lin_vel_h[1], ref_base_ang_vel[2]])
+        max_delta = self.max_cmd_acc / self.RL_FREQ
+        self.filtered_cmd += np.clip(target_cmd - self.filtered_cmd, -max_delta, max_delta)
+        ref_base_lin_vel_h[0:2] = self.filtered_cmd[0:2]
+        ref_base_ang_vel = np.array([ref_base_ang_vel[0], ref_base_ang_vel[1], self.filtered_cmd[2]])
         
             
         # Fill the observation vector
@@ -205,13 +216,16 @@ class LocomotionPolicyWrapper:
 
             self.phase_signal += self.step_freq * (1 / (self.RL_FREQ))
             self.phase_signal = self.phase_signal % 1.0
+            # While standing the phase is held at the phase offset, as in training
+            commands = np.array([ref_base_lin_vel_h[0], ref_base_lin_vel_h[1], ref_base_ang_vel[2]], dtype=np.float32)
+            if(np.linalg.norm(commands) < 0.01):
+                self.phase_signal = self.phase_offset.copy()
             if(self.clock_size == 8):
                 clock_data = np.concatenate((np.sin(2.0 * np.pi * self.phase_signal), np.cos(2.0 * np.pi * self.phase_signal)))
             else:
                 clock_data = self.phase_signal
             obs = np.concatenate((obs, clock_data), axis=0)
 
-            commands = np.array([ref_base_lin_vel_h[0], ref_base_lin_vel_h[1], ref_base_ang_vel[2]], dtype=np.float32)
             if(np.linalg.norm(commands) < 0.01):
                 obs[48:48+self.clock_size] = -1.0
 
