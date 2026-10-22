@@ -39,6 +39,16 @@ from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG
 import basic_locomotion_isaaclab.tasks.custom_events as custom_events
 import basic_locomotion_isaaclab.tasks.custom_curriculums as custom_curriculums
 from basic_locomotion_isaaclab.tasks.locomotion.unitree_l2_lidar import UnitreeL2PatternCfg
+from basic_locomotion_isaaclab.tasks.locomotion.realsense_d435 import RealSenseD435Cfg
+
+# Visual meshes of the robot in go2.usda, for the ray casters that see it (depth camera, LiDAR): one expression per
+# body depth, each mesh following its body. Not the collision shapes, guides that only approximate the robot.
+GO2_ROBOT_MESHES = [
+    "/World/envs/env_.*/Robot/Geometry/base/base_[0-9]",
+    "/World/envs/env_.*/Robot/Geometry/base/[FR][LR]_hip/hip_[0-9]",
+    "/World/envs/env_.*/Robot/Geometry/base/[FR][LR]_hip/[FR][LR]_thigh/thigh(_mirror)?_[0-9]",
+    "/World/envs/env_.*/Robot/Geometry/base/[FR][LR]_hip/[FR][LR]_thigh/[FR][LR]_calf/(calf(_mirror)?_[0-9]|foot)",
+]
 
 @configclass
 class EventCfg:
@@ -562,24 +572,23 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
 
     #camera_usd = CAMERA_USD_CFG
     use_depth_camera = False
+    # The RealSense D435 of the robot: intrinsics, range and noise of the depth.
+    depth_camera_d435 = RealSenseD435Cfg()
     depth_camera = MultiMeshRayCasterCameraCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base",
         update_period=1 / 60,
-        offset=MultiMeshRayCasterCameraCfg.OffsetCfg(pos=(0.33, 0.0, 0.08), rot=(-0.405579, 0.579228, -0.579228, 0.405579)),
+        # RealSense D435 mount: looking forward, 20 degrees down. The quaternion is xyzw (Isaac Lab 3) in the ROS
+        # convention, the same mount as depth_camera in iekf-quadruped-isaaclab.
+        offset=MultiMeshRayCasterCameraCfg.OffsetCfg(pos=(0.33, 0.0, 0.08), rot=(-0.579228, 0.579228, -0.405579, 0.405579)),
+        # The terrain and the robot, whose legs enter the image (GO2_ROBOT_MESHES).
         mesh_prim_paths=[
             "/World/ground",
-            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/base/visuals"),
-            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/FL_.*/visuals"),
-            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/FR_.*/visuals"),
-            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/RL_.*/visuals"),
-            #MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/RR_.*/visuals"),
+            *[MultiMeshRayCasterCameraCfg.RaycastTargetCfg(prim_expr=meshes) for meshes in GO2_ROBOT_MESHES],
         ],
-        pattern_cfg=patterns.PinholeCameraPatternCfg(
-            focal_length=24.0,
-            horizontal_aperture=20.955,
-            height=120,
-            width=240,
-        ),
+        pattern_cfg=depth_camera_d435.pattern_cfg(),
+        # As the D435, no depth beyond its range: 0 marks an invalid pixel.
+        max_distance=depth_camera_d435.max_depth,
+        depth_clipping_behavior="zero",
         debug_vis=True,
     )
 
@@ -595,13 +604,10 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
             keep_ratio=0.1,
         ),
         debug_vis=True,
+        # The terrain and the robot (GO2_ROBOT_MESHES).
         mesh_prim_paths=[
             "/World/ground",
-            #MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/base/visuals"),
-            #MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/FL_.*/visuals"),
-            #MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/FR_.*/visuals"),
-            #MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/RL_.*/visuals"),
-            #MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/RR_.*/visuals"),
+            *[MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr=meshes) for meshes in GO2_ROBOT_MESHES],
         ],
         max_distance=2.0,
     )
