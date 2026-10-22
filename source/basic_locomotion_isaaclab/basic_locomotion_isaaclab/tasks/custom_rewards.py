@@ -547,7 +547,6 @@ def feet_landing_vel_l2(self) -> torch.Tensor:
 
 
 def feet_to_hip_distance_l2(self) -> torch.Tensor:
-    should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
     rot_w2h = math_utils.matrix_from_quat(math_utils.yaw_quat(self._robot.data.root_quat_w.torch))
     feet_to_base_w = self._robot.data.body_pos_w[:, self._feet_ids_robot, :3] - self._robot.data.root_state_w[
         :, :3
@@ -565,15 +564,17 @@ def feet_to_hip_distance_l2(self) -> torch.Tensor:
     feet_to_hip_distance_y = torch.square(feet_to_base_h[:, 1] + desired_hip_offset_y.unsqueeze(0) - hip_to_base_h[:, 1])
     feet_to_hip_distance_per_foot = torch.sqrt(feet_to_hip_distance_x + feet_to_hip_distance_y)
 
+    feet_to_hip_distance = -torch.sum(feet_to_hip_distance_per_foot, dim=1) / 4.0
     # While walking only the feet in commanded stance count, otherwise the reward fights the stride during swing.
     # While standing all feet count.
-    in_stance = (self._phase_signal < self._duty_factor) | ~should_move.unsqueeze(1)
-    feet_to_hip_distance = -torch.sum(feet_to_hip_distance_per_foot * in_stance, dim=1) / torch.clamp(
-        torch.sum(in_stance, dim=1), min=1
-    )
-    feet_to_hip_distance = feet_to_hip_distance * torch.where(
-        should_move, torch.ones_like(feet_to_hip_distance), torch.full_like(feet_to_hip_distance, 3.0)
-    )
+    #should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
+    #in_stance = (self._phase_signal < self._duty_factor) | ~should_move.unsqueeze(1)
+    #feet_to_hip_distance = -torch.sum(feet_to_hip_distance_per_foot * in_stance, dim=1) / torch.clamp(
+    #    torch.sum(in_stance, dim=1), min=1
+    #)
+    #feet_to_hip_distance = feet_to_hip_distance * torch.where(
+    #    should_move, torch.ones_like(feet_to_hip_distance), torch.full_like(feet_to_hip_distance, 3.0)
+    #)
     return feet_to_hip_distance
 
 

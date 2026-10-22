@@ -53,7 +53,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="base"),
-            "mass_distribution_params": (-5.0, 5.0),
+            "mass_distribution_params": (-10.0, 5.0),
             "operation": "add",
         },
     )
@@ -373,7 +373,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
 
 
     # Desired tracking variables
-    desired_base_height = 0.60
+    desired_base_height = 0.55
     desired_feet_height = 0.05
     foot_radius = 0.041 # radius of the foot collision sphere
 
@@ -436,7 +436,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     visualize_edge_map = False
     visualize_feet_edge_swing_zone = False # transparent red cylinders where a swing foot is penalized by feet_edge_swing
 
-    feet_vertical_surface_contacts_reward_scale = -1.5
+    feet_vertical_surface_contacts_reward_scale = -2.5
 
     # variables used in feet air time and periodic contact suggestion reward
     desired_step_freq = 1.4 
@@ -457,6 +457,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
 
 import isaaclab.terrains as terrain_gen
 from isaaclab.terrains.terrain_generator_cfg import TerrainGeneratorCfg
+from basic_locomotion_isaaclab.tasks.custom_terrains import MeshOverhangBoxesTerrainCfg
 @configclass
 class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
 
@@ -474,11 +475,10 @@ class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
             "flat": terrain_gen.MeshPlaneTerrainCfg(
                 proportion=0.2
             ),
-            "boxes": terrain_gen.MeshRandomGridTerrainCfg(
-                proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.13), platform_width=2.0,
-            ),
-            "star": terrain_gen.MeshStarTerrainCfg(
-                proportion=0.1, num_bars=10, bar_width_range=(0.15, 0.20), bar_height_range=(0.05, 0.13), platform_width=2.0,
+            # scattered boxes with an overhanging top plate, to trip the swing feet
+            "overhang_boxes": MeshOverhangBoxesTerrainCfg(
+                proportion=0.2, num_boxes=50, box_width_range=(0.3, 0.6), box_height_range=(0.08, 0.18),
+                overhang_range=(0.02, 0.04), top_thickness=0.03, platform_width=1.0,
             ),
             "random_rough": terrain_gen.HfRandomUniformTerrainCfg(
                 proportion=0.1, noise_range=(0.02, 0.06), noise_step=0.02, border_width=0.25
@@ -490,11 +490,11 @@ class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
                 proportion=0.1, slope_range=(0.2, 0.4), platform_width=2.0, border_width=0.25
             ),
             "pyramid_stairs": terrain_gen.MeshPyramidStairsTerrainCfg(
-                proportion=0.15, step_height_range=(0.05, 0.16), step_width=0.3,
+                proportion=0.15, step_height_range=(0.05, 0.15), step_width=0.3,
                 platform_width=3.0, border_width=1.0, holes=False,
             ),
             "pyramid_stairs_inv": terrain_gen.MeshInvertedPyramidStairsTerrainCfg(
-                proportion=0.15, step_height_range=(0.05, 0.16), step_width=0.3,
+                proportion=0.15, step_height_range=(0.05, 0.15), step_width=0.3,
                 platform_width=3.0, border_width=1.0, holes=False,
             ),
         },
