@@ -57,11 +57,21 @@ class Console():
             return
 
         self.isDown = True
+        wasRLActivated = self.isRLActivated
         self.isRLActivated = False
         start_time = time.time()
         time_motion = 5.0
         # Interpolate from the last commanded reference, not from the measured joints
         initial_joint_positions = copy.deepcopy(self.controller_node.desired_joint_pos_leg)
+        if wasRLActivated:
+            # The policy reference was tracked with the walking gains: rescale its offset from the
+            # measured joints so the stand-down gains apply the same torque, otherwise
+            # Kp_stand_up_and_down/Kp_walking times the torque pushes the robot in the air
+            locomotion_policy = self.controller_node.locomotion_policy
+            joints_pos = copy.deepcopy(self.controller_node.legs_joints_position)
+            initial_joint_positions = joints_pos + (
+                locomotion_policy.Kp_walking / locomotion_policy.Kp_stand_up_and_down
+            ) * (initial_joint_positions - joints_pos)
         keyframe_id = mujoco.mj_name2id(self.controller_node.mjModel, mujoco.mjtObj.mjOBJ_KEY, "down")
         reference_joint_positions = self.controller_node.mjModel.key_qpos[keyframe_id][7:19]
 
