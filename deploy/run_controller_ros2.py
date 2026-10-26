@@ -375,6 +375,8 @@ class ControllerROS2(Node):
                         imu_angular_velocity=self.imu_angular_velocity,
                         imu_orientation=self.imu_orientation,
                         heightmap_data=heightmap_data)
+            # Keep track of the last reference, used e.g. by goDown to interpolate from
+            self.desired_joint_pos_leg = np.array(desired_joint_pos).flatten().copy()
             
             # Impedence Loop
             Kp = locomotion_policy.Kp_walking

@@ -12,8 +12,8 @@ if(robot == "aliengo"):
     Kp_walking = 25.0
     Kd_walking = 2.0
 
-    Kp_stand_up_and_down = 25.
-    Kd_stand_up_and_down = 2.
+    Kp_stand_up_and_down = 50.
+    Kd_stand_up_and_down = 5.
 
     policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_se_blind"
 
