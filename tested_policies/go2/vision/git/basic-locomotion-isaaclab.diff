@@ -1,0 +1,87 @@
+--- git commit ---
+190bade33c9b4b2bc4349b46363b4e4a705ba329
+
+
+--- git status ---
+HEAD detached from 75127ea
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   deploy/config.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	deploy/rosbag/rosbag2_2026_08_07-12_22_59_0.db3
+	tested_policies/pegasus/
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/deploy/config.py b/deploy/config.py
+index f6b6f08..32c5a1a 100644
+--- a/deploy/config.py
++++ b/deploy/config.py
+@@ -24,7 +24,7 @@ elif(robot == "go2"):
+     Kp_stand_up_and_down = 50.
+     Kd_stand_up_and_down = 5.
+ 
+-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/front_heightmap"
++    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-10-22_15-37-02"
+ 
+ elif(robot == "b2"):
+     Kp_walking = 100.
+@@ -47,7 +47,7 @@ elif(robot == "pegasus"):
+     Kp_stand_up_and_down = 200.
+     Kd_stand_up_and_down = 10.
+ 
+-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-10-20_17-32-27"
++    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-10-22_07-24-31"
+ 
+ else:
+     raise ValueError(f"Robot {robot} not supported")
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+index 4f651dc..6862f94 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+@@ -53,7 +53,7 @@ obs_space_names_actor = [
+         "clock_data", # periodic clock data
+         "clock_data", # periodic clock data
+     ]*int(history_length)
+-#obs_space_names_actor += ["heightmap:7x9"]
++obs_space_names_actor += ["heightmap:11x11"]
+ 
+ 
+ # Critic OBS
+@@ -69,7 +69,7 @@ obs_space_names_critic = [
+         "clock_data", # periodic clock data
+         "clock_data", # periodic clock data
+     ]*int(history_length)
+-#obs_space_names_critic += ["heightmap:7x9"]
++obs_space_names_critic += ["heightmap:11x11"]
+ obs_space_names_critic += [    
+         "clock_data", "clock_data", "clock_data",  # P gains
+         "clock_data", "clock_data", "clock_data",  # D gains
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
+index b8e326f..71eef51 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
+@@ -548,13 +548,14 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
+         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
+ 
+         self.feet_edge_stance_reward_scale = -1.0
++        self.feet_edge_swing_reward_scale = -2.0
+ 
+     # we add a height scanner for perceptive locomotion
+     perceptive_height_scanner = RayCasterCfg(
+         prim_path="/World/envs/env_.*/Robot/Geometry/base",
+-        offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 2.0)),
++        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+         ray_alignment='yaw',
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.0, 1.0]),
+         debug_vis=False,
+         mesh_prim_paths=["/World/ground"],
+         global_world_only=True,

@@ -155,12 +155,16 @@ class LocomotionEnv(DirectRLEnv):
             self._observation_noise_model = self._make_observation_noise_model(policy_terms)
             imu_proprio_terms = [("base_linear_acc", 3)] + proprio_terms[1:]
             if cfg.use_rma:
+                # the RMA does not use the IMU linear acceleration
                 self._observation_noise_model_rma = self._make_observation_noise_model(
-                    imu_proprio_terms * cfg.rma_history_length
+                    #imu_proprio_terms * cfg.rma_history_length
+                    proprio_terms[1:] * cfg.rma_history_length
                 )
             if cfg.use_concurrent_state_est:
+                # the concurrent SE does not use the IMU linear acceleration
                 self._observation_noise_model_concurrent_state_est = self._make_observation_noise_model(
-                    imu_proprio_terms * cfg.concurrent_state_est_history_length
+                    #imu_proprio_terms * cfg.concurrent_state_est_history_length
+                    proprio_terms[1:] * cfg.concurrent_state_est_history_length
                 )
 
         # Logging
