@@ -233,7 +233,7 @@ class LocomotionPolicyWrapper:
         if(config.training_env["use_concurrent_state_est"] == True):
 
             obs_concurrent_state_est = np.concatenate([
-                base_linear, # this could be imu linear acc if use_imu or linear vel from state est
+                #base_linear, # this could be imu linear acc if use_imu or linear vel from state est
                 base_ang_vel, # this could be imu angular vel if use_imu or angular vel from state est
                 base_projected_gravity,
                 ref_base_lin_vel_h[0:2],
@@ -270,7 +270,7 @@ class LocomotionPolicyWrapper:
             
         if(config.training_env["use_rma"] == True):
             obs_rma = np.concatenate([
-                base_linear,
+                #base_linear,
                 base_ang_vel,
                 base_projected_gravity,
                 ref_base_lin_vel_h[0:2],

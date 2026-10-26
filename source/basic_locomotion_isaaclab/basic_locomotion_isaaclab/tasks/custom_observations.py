@@ -21,7 +21,7 @@ def _get_concurrent_state_estimation(self):
         [
             tensor
             for tensor in (
-                self._imu.data.lin_acc_b,
+                #self._imu.data.lin_acc_b,
                 self._imu.data.ang_vel_b,
                 self._pva.data.projected_gravity_b,
                 self._commands,
@@ -77,7 +77,7 @@ def _get_rma(self):
         [
             tensor
             for tensor in (
-                self._imu.data.lin_acc_b,
+                #self._imu.data.lin_acc_b,
                 self._imu.data.ang_vel_b,
                 self._pva.data.projected_gravity_b,
                 self._commands,

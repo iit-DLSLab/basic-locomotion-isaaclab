@@ -219,8 +219,8 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
         
         concurrent_state_est_output_space = 3 #lin_vel_b
         
-        single_concurrent_state_est_observation_space = 3 # base linear acceleration
-        single_concurrent_state_est_observation_space += 3 # base angular velocity  
+        #single_concurrent_state_est_observation_space = 3 # base linear acceleration
+        single_concurrent_state_est_observation_space = 3 # base angular velocity  
         single_concurrent_state_est_observation_space += 3 # projected gravity in base frame
         single_concurrent_state_est_observation_space += 3 # command (desired linear vel in x and y, desired yaw rate)
         single_concurrent_state_est_observation_space += 12 # joint positions
@@ -253,8 +253,8 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
         rma_output_space = rma_latent_space if rma_use_latent_space else rma_privileged_observation_space
         observation_space += rma_output_space
 
-        single_rma_observation_space = 3 # base linear acceleration
-        single_rma_observation_space += 3 # base angular velocity  
+        #single_rma_observation_space = 3 # base linear acceleration
+        single_rma_observation_space = 3 # base angular velocity  
         single_rma_observation_space += 3 # projected gravity in base frame
         single_rma_observation_space += 3 # command (desired linear vel in x and y, desired yaw rate)
         single_rma_observation_space += 12 # joint positions
@@ -449,7 +449,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     feet_edge_horizontal_radius = 0.10
     feet_edge_radius_px = 0
     visualize_edge_map = False
-    visualize_feet_edge_swing_zone = False # transparent red cylinders where a swing foot is penalized by feet_edge_swing
+    visualize_feet_edge_swing_zone = True # transparent red cylinders where a swing foot is penalized by feet_edge_swing
 
     feet_vertical_surface_contacts_reward_scale = -1.5
 
@@ -558,13 +558,14 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
 
         self.feet_edge_stance_reward_scale = -1.0
+        self.feet_edge_swing_reward_scale = -2.0
 
     # we add a height scanner for perceptive locomotion
     perceptive_height_scanner = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base",
-        offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 2.0)),
+        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
         ray_alignment='yaw',
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.0, 1.0]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
         global_world_only=True,
