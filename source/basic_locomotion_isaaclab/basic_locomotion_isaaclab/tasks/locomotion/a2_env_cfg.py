@@ -363,6 +363,8 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
         "actions": (0.01, 0.01),
         "clock": (0.01, 0.01),
         "height_map": (0.02, 0.01),
+        # offset shared by all the height map cells
+        "height_map_global": (0.01, 0.02),
         "rma": (0.02, 0.01),
     }
 
@@ -548,6 +550,10 @@ class A2RoughVisionEnvCfg(A2RoughBlindEnvCfg):
         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
 
         self.feet_edge_stance_reward_scale = -1.0
+
+    # green dots on the terrain hit by the perceptive height scanner, red dots on the height map seen by the policy
+    # (with the observation noise)
+    visualize_height_map_with_noise = False
 
     # we add a height scanner for perceptive locomotion
     perceptive_height_scanner = RayCasterCfg(

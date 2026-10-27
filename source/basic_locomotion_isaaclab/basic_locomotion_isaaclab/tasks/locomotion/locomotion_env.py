@@ -49,7 +49,7 @@ from .hyqreal_env_cfg import HyQRealFlatEnvCfg, HyQRealRoughVisionEnvCfg, HyQRea
 from .b2_env_cfg import B2FlatEnvCfg, B2RoughVisionEnvCfg, B2RoughBlindEnvCfg
 from .pegasus_env_cfg import PegasusFlatEnvCfg, PegasusRoughVisionEnvCfg, PegasusRoughBlindEnvCfg
 
-from basic_locomotion_isaaclab.tasks import custom_observations, custom_rewards, custom_events
+from basic_locomotion_isaaclab.tasks import custom_observations, custom_rewards, custom_events, custom_visualizations
 from basic_locomotion_isaaclab.tasks.supervised_learning_networks import FrozenRandomMlpEncoder, create_supervised_network
 
 class LocomotionEnv(DirectRLEnv):
@@ -57,6 +57,7 @@ class LocomotionEnv(DirectRLEnv):
     def __init__(self, cfg, render_mode: str | None = None, **kwargs):
         self._edge_map_visualizer = None
         self._feet_edge_swing_visualizer = None
+        self._height_map_visualizer = None
         super().__init__(cfg, render_mode, **kwargs)
 
         # Joint position command (deviation from default joint positions)
@@ -153,6 +154,9 @@ class LocomotionEnv(DirectRLEnv):
             policy_terms += [("height_map", height_map_size), ("rma", rma_size)]
 
             self._observation_noise_model = self._make_observation_noise_model(policy_terms)
+            # Global height map offset, the same for all the cells: a bias sampled at reset plus a noise
+            # sampled at every time-step, both shared by the whole height map of an env
+            self._height_map_global_bias = torch.zeros(self.num_envs, 1, device=self.device)
             imu_proprio_terms = [("base_linear_acc", 3)] + proprio_terms[1:]
             if cfg.use_rma:
                 # the RMA does not use the IMU linear acceleration
@@ -244,7 +248,11 @@ class LocomotionEnv(DirectRLEnv):
         self._nominal_static_friction = self._robot.data.joint_friction_coeff.torch.clone()
         self._nominal_viscous_friction = self._robot.data.joint_viscous_friction_coeff.torch.clone()
 
-        if getattr(self.cfg, "visualize_edge_map", False) or getattr(self.cfg, "visualize_feet_edge_swing_zone", False):
+        if (
+            getattr(self.cfg, "visualize_edge_map", False)
+            or getattr(self.cfg, "visualize_feet_edge_swing_zone", False)
+            or getattr(self.cfg, "visualize_height_map_with_noise", False)
+        ):
             self.set_debug_vis(True)
 
 
@@ -458,6 +466,14 @@ class LocomotionEnv(DirectRLEnv):
             height_data = torch.nan_to_num(height_data, nan=0.0, posinf=1.0, neginf=-1.0)
             height_data = height_data.clip(-1.0, 1.0)
             obs = torch.cat((obs, height_data), dim=-1)   
+            # The policy also gets the global height map offset, the critic sees the clean height map
+            obs_policy = obs
+            if self.cfg.observation_noise_model:
+                global_noise_std = self.cfg.observation_noise_std["height_map_global"][0]
+                height_map_offset = self._height_map_global_bias + global_noise_std * torch.randn_like(self._height_map_global_bias)
+                obs_policy = torch.cat((obs[:, :-height_data.shape[1]], height_data + height_map_offset), dim=-1)
+        else:
+            obs_policy = obs
 
 
         # Critic OBS could be different if needed
@@ -472,12 +488,12 @@ class LocomotionEnv(DirectRLEnv):
         if(self.cfg.use_rma):
             # Predict the RMA observation
             obs_rma = custom_observations._get_rma(self)
-            obs = torch.cat((obs, obs_rma), dim=-1)
+            obs_policy = torch.cat((obs_policy, obs_rma), dim=-1)
 
 
         # Actor OBS - here after the critic to avoid duplication with rma obs
         # if asymmetric ppo is used
-        observations["policy"] = obs    
+        observations["policy"] = obs_policy    
         # ------------------------------------------------------------------------------------------
 
         # AMP related observation if used (use_amp is set by scripts/amp_rl, not in the robot cfgs)
@@ -675,6 +691,11 @@ class LocomotionEnv(DirectRLEnv):
         # Reset observation history
         self._observation_history[env_ids] *= 0.0
 
+        # Resample the global height map bias
+        if self.cfg.observation_noise_model:
+            global_bias_std = self.cfg.observation_noise_std["height_map_global"][1]
+            self._height_map_global_bias[env_ids] = global_bias_std * torch.randn(len(env_ids), 1, device=self.device)
+
         # Reset obs and noise concurrent
         if(self.cfg.use_concurrent_state_est):
             self._observation_history_concurrent_state_est[env_ids] *= 0.0
@@ -723,8 +744,8 @@ class LocomotionEnv(DirectRLEnv):
 
 
     def _set_debug_vis_impl(self, debug_vis: bool):
-        custom_rewards._set_debug_vis_impl(self, debug_vis)
+        custom_visualizations._set_debug_vis_impl(self, debug_vis)
 
 
     def _debug_vis_callback(self, event):
-        custom_rewards._debug_vis_callback(self, event)
+        custom_visualizations._debug_vis_callback(self, event)

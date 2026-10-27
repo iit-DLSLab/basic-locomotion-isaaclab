@@ -213,7 +213,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
         debug_vis=False)
 
     
-    use_concurrent_state_est = False
+    use_concurrent_state_est = True
     if(use_concurrent_state_est):
         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
         
@@ -373,6 +373,8 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
         "actions": (0.01, 0.01),
         "clock": (0.01, 0.01),
         "height_map": (0.02, 0.01),
+        # offset shared by all the height map cells
+        "height_map_global": (0.01, 0.02),
         "rma": (0.02, 0.01),
     }
 
@@ -559,6 +561,10 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
 
         self.feet_edge_stance_reward_scale = -1.0
         self.feet_edge_swing_reward_scale = -2.0
+
+    # green dots on the terrain hit by the perceptive height scanner, red dots on the height map seen by the policy
+    # (with the observation noise)
+    visualize_height_map_with_noise = True
 
     # we add a height scanner for perceptive locomotion
     perceptive_height_scanner = RayCasterCfg(
