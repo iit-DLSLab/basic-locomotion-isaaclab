@@ -190,12 +190,12 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         prim_path="/World/envs/env_.*/Robot/Geometry/base",
         offset=ImuCfg.OffsetCfg(
             pos=(-0.0085648, -0.0065251, -0.03696),
-            rot=(0, 0, -0.70710678, 0.70710678)
+            #rot=(0, 0, -0.70710678, 0.70710678)
         ), 
         debug_vis=False)
 
     
-    use_concurrent_state_est = False
+    use_concurrent_state_est = True
     if(use_concurrent_state_est):
         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
         

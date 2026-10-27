@@ -12,6 +12,7 @@ from tqdm import tqdm
 import mujoco
 import onnxruntime as ort
 import torch
+from scipy.spatial.transform import Rotation
 
 import config
 
@@ -142,6 +143,16 @@ class LocomotionPolicyWrapper:
 
         # Update Observation ----------------------        
         if(config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]):
+            if(config.robot == "pegasus"):
+                # The Pegasus IMU is mounted rotated by -90 deg around z w.r.t. the base (see the "imu" site in
+                # pegasus.xml), while the policy is trained with the IMU aligned to the base: bring the readings
+                # into the base frame.
+                base_to_imu_rotation = Rotation.from_euler("z", -90.0, degrees=True)
+                imu_linear_acceleration = base_to_imu_rotation.apply(imu_linear_acceleration)
+                imu_angular_velocity = base_to_imu_rotation.apply(imu_angular_velocity)
+                base_rotation = Rotation.from_quat(np.roll(imu_orientation, -1)) * base_to_imu_rotation.inv()
+                imu_orientation = np.roll(base_rotation.as_quat(), 1)
+
             base_projected_gravity = self._get_projected_gravity(imu_orientation)
             base_linear = imu_linear_acceleration
             base_ang_vel = imu_angular_velocity

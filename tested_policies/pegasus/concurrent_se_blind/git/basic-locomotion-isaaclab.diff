@@ -1,0 +1,145 @@
+--- git commit ---
+19faaaef5a4da9eb14ba1c0719f416e73074c369
+
+
+--- git status ---
+HEAD detached at origin/main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/__init__.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/__init__.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/__init__.py
+index 377cb21..b9ff5a2 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/__init__.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/__init__.py
+@@ -161,7 +161,7 @@ gym.register(
+     disable_env_checker=True,
+     kwargs={
+         "env_cfg_entry_point": HyQRealFlatEnvCfg,
+-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:FlatPPORunnerCfg",
++        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:MirroredHipFlatPPORunnerCfg",
+     },
+ )
+ 
+@@ -171,7 +171,7 @@ gym.register(
+     disable_env_checker=True,
+     kwargs={
+         "env_cfg_entry_point": HyQRealRoughBlindEnvCfg,
+-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:RoughPPORunnerCfg",
++        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:MirroredHipRoughPPORunnerCfg",
+     },
+ )
+ 
+@@ -181,7 +181,7 @@ gym.register(
+     disable_env_checker=True,
+     kwargs={
+         "env_cfg_entry_point": HyQRealRoughVisionEnvCfg,
+-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:RoughPPORunnerCfg",
++        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:MirroredHipRoughPPORunnerCfg",
+     },
+ )
+ 
+@@ -194,7 +194,7 @@ gym.register(
+     disable_env_checker=True,
+     kwargs={
+         "env_cfg_entry_point": PegasusFlatEnvCfg,
+-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:FlatPPORunnerCfg",
++        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:MirroredHipFlatPPORunnerCfg",
+     },
+ )
+ 
+@@ -204,7 +204,7 @@ gym.register(
+     disable_env_checker=True,
+     kwargs={
+         "env_cfg_entry_point": PegasusRoughBlindEnvCfg,
+-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:RoughPPORunnerCfg",
++        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:MirroredHipRoughPPORunnerCfg",
+     },
+ )
+ 
+@@ -214,6 +214,6 @@ gym.register(
+     disable_env_checker=True,
+     kwargs={
+         "env_cfg_entry_point": PegasusRoughVisionEnvCfg,
+-        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:RoughPPORunnerCfg",
++        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:MirroredHipRoughPPORunnerCfg",
+     },
+ )
+\ No newline at end of file
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+index 83dcaf7..b3f7256 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+@@ -25,6 +25,10 @@ class MorphologycalSymmetriesCfg:
+     robot_name = None
+     """The name of the robot to use inside Morphosymm."""
+ 
++    robot_cfg_overrides = None
++    """Optional fields merged on top of Morphosymm's robot config (e.g. ``{"reflection_Q_js": [[1] * 12]}``).
++    Joint-space fields are expressed in Morphosymm's default joint order, not in ``joints_order``."""
++
+     state_dependent_std = False
+     """Whether the actor emits its action covariance directly, instead of learning a fixed one."""
+ 
+@@ -106,4 +110,13 @@ morphologycal_symmetries_cfg = MorphologycalSymmetriesCfg(
+         action_space_names = action_space_names,
+         joints_order = joints_order,
+         robot_name = robot_name,
++    )
++
++
++# Robots whose hip joint frames are mirrored between left and right legs (Pegasus, HyQReal): a positive hip angle
++# is an abduction on every leg, so the sagittal reflection must not flip the hip sign as it does on Unitree robots.
++# Used by MirroredHipFlatPPORunnerCfg / MirroredHipRoughPPORunnerCfg in agents/rsl_rl_ppo_cfg.py, which are assigned
++# to the Pegasus and HyQReal tasks in tasks/locomotion/__init__.py.
++mirrored_hip_morphologycal_symmetries_cfg = morphologycal_symmetries_cfg.replace(
++        robot_cfg_overrides = {"reflection_Q_js": [[1] * 12]},
+     )
+\ No newline at end of file
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+index 9f95025..323693f 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/rsl_rl_ppo_cfg.py
+@@ -92,3 +92,15 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+ 
+     # Morphosymm-rl Related Stuff
+     morphologycal_symmetries_cfg = morphosymm_cfg.morphologycal_symmetries_cfg
++
++
++@configclass
++class MirroredHipFlatPPORunnerCfg(FlatPPORunnerCfg):
++    # Morphosymm-rl Related Stuff (Pegasus, HyQReal)
++    morphologycal_symmetries_cfg = morphosymm_cfg.mirrored_hip_morphologycal_symmetries_cfg
++
++
++@configclass
++class MirroredHipRoughPPORunnerCfg(RoughPPORunnerCfg):
++    # Morphosymm-rl Related Stuff (Pegasus, HyQReal)
++    morphologycal_symmetries_cfg = morphosymm_cfg.mirrored_hip_morphologycal_symmetries_cfg
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+index ebf6f99..d420186 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+@@ -190,12 +190,12 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
+         prim_path="/World/envs/env_.*/Robot/Geometry/base",
+         offset=ImuCfg.OffsetCfg(
+             pos=(-0.0085648, -0.0065251, -0.03696),
+-            rot=(0, 0, -0.70710678, 0.70710678)
++            #rot=(0, 0, -0.70710678, 0.70710678)
+         ), 
+         debug_vis=False)
+ 
+     
+-    use_concurrent_state_est = False
++    use_concurrent_state_est = True
+     if(use_concurrent_state_est):
+         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
+         

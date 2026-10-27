@@ -97,7 +97,8 @@ joints_order = [
 
 
 # Robot Name
-robot_name = "a1"
+#robot_name = "a1" # Aliengo, Go2, A2, B2
+robot_name = "a1-mirrored-hip" # Pegasus, HyQReal
 
 
 morphologycal_symmetries_cfg = MorphologycalSymmetriesCfg(
