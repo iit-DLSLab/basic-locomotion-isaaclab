@@ -22,11 +22,20 @@ class RealSenseD435Cfg:
     with the principal point within 0.12 px of the image center, where it is here and in MuJoCo.
     """
 
+    stream_width: int = 848
+    """Width of the depth stream of the camera [px] (depth_module.depth_profile of deploy/camera_connect.sh)."""
+
+    stream_height: int = 480
+    """Height of the depth stream of the camera [px]."""
+
+    decimation: int = 8
+    """Decimation of the stream on the robot (decimate_depth of deploy/run_sensor2heightmap_ros2.py)."""
+
     width: int = 106
-    """Image width [px]."""
+    """Image width [px], stream_width / decimation."""
 
     height: int = 60
-    """Image height [px]."""
+    """Image height [px], stream_height / decimation."""
 
     focal_length: float = 53.19
     """Focal length fx = fy [px]."""
