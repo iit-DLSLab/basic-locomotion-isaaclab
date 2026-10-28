@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+import math
+
 import torch
 from typing import TYPE_CHECKING, Literal
 
@@ -283,9 +285,17 @@ def randomize_pace_actuator_delay(
             actuator.update_time_lags(delays, env_ids)
 
 
-def _sample_random_commands(self, env_ids: torch.Tensor | None = None) -> torch.Tensor:
+def _sample_random_commands(self, env_ids: torch.Tensor | None = None, duration_s: float = 12.0) -> torch.Tensor:
     num_commands = self.num_envs if env_ids is None else env_ids.shape[0]
     commands = torch.empty(num_commands, self._commands.shape[1], device=self.device, dtype=self._commands.dtype)
+    if getattr(self.cfg, "forward_commands", False):
+        # terrain-reconstruction data: always walking forward, turning by at most 90 deg over the command's duration
+        # (no turning on the spot or walking backward, where the ground under the robot was never in view)
+        heading_change = torch.empty(num_commands, device=self.device).uniform_(-0.5 * math.pi, 0.5 * math.pi)
+        commands[:, 0].uniform_(0.3, 0.8)
+        commands[:, 1] = 0.0
+        commands[:, 2] = (heading_change / duration_s).clamp(-0.5, 0.5)
+        return commands
     commands.uniform_(-1.0, 1.0)
     commands[:, 0] *= 0.8
     commands[:, 1] *= 0.25
@@ -294,8 +304,11 @@ def _sample_random_commands(self, env_ids: torch.Tensor | None = None) -> torch.
 
 
 def _get_new_random_commands(self, env_ids: torch.Tensor | None = None):
+    if getattr(self.cfg, "external_commands", False):
+        return  # set from outside, e.g. by a keyboard
+    forward = getattr(self.cfg, "forward_commands", False)
     if env_ids is not None:
-        self._commands[env_ids, :3] = _sample_random_commands(self, env_ids)
+        self._commands[env_ids, :3] = _sample_random_commands(self, env_ids, (self.max_episode_length - 400) * self.step_dt)
 
     # Change direction while moving
     resample_time = self.episode_length_buf == self.max_episode_length - 400
@@ -303,14 +316,17 @@ def _get_new_random_commands(self, env_ids: torch.Tensor | None = None):
     commands_resample[:, 0] *= 0.8
     commands_resample[:, 1] *= 0.25 
     commands_resample[:, 2] *= 0.5 
+    if forward:
+        commands_resample = _sample_random_commands(self, duration_s=(400 - 150) * self.step_dt)
     self._commands[:, :3] = self._commands[:, :3] * ~resample_time.unsqueeze(1).expand(-1, 3) + commands_resample * resample_time.unsqueeze(1).expand(-1, 3)
 
-    # Stop
+    # Stop (not when walking forward only)
     rest_time = torch.logical_and(
         self.episode_length_buf >= self.max_episode_length - 250,
         self.episode_length_buf < self.max_episode_length - 150
     )
-    self._commands[:, :3] *= ~rest_time.unsqueeze(1).expand(-1, 3)
+    if not forward:
+        self._commands[:, :3] *= ~rest_time.unsqueeze(1).expand(-1, 3)
 
     # Move again
     resample_time_2 = self.episode_length_buf == self.max_episode_length - 150
@@ -318,6 +334,8 @@ def _get_new_random_commands(self, env_ids: torch.Tensor | None = None):
     commands_resample_2[:, 0] *= 0.5
     commands_resample_2[:, 1] *= 0.25 
     commands_resample_2[:, 2] *= 0.5 
+    if forward:
+        commands_resample_2 = _sample_random_commands(self, duration_s=150 * self.step_dt)
     self._commands[:, :3] = self._commands[:, :3] * ~resample_time_2.unsqueeze(1).expand(-1, 3) + commands_resample_2 * resample_time_2.unsqueeze(1).expand(-1, 3)        
 
     # Took some envs, and put to zero the vel

@@ -44,6 +44,11 @@ parser.add_argument(
 )
 parser.add_argument("--num_steps", type=int, default=1200, help="Steps to record; every env is recorded at every step.")
 parser.add_argument(
+    "--forward_commands",
+    action="store_true",
+    help="Velocity commands always forward (0.3-0.8 m/s), turning at most 90 deg per command, no pauses.",
+)
+parser.add_argument(
     "--steps_per_chunk",
     type=int,
     default=100,
@@ -251,6 +256,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         dataset_dir = os.path.join(log_dir, "terrain_reconstruction_sequences")
     env_cfg.log_dir = log_dir
     env_cfg.use_depth_camera = True
+    env_cfg.forward_commands = args_cli.forward_commands
 
     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
 
@@ -313,6 +319,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         "sequence_steps": args_cli.num_steps,
         "steps_per_chunk": args_cli.steps_per_chunk,
         "depth_dtype": args_cli.depth_dtype,
+        "commands": "forward" if args_cli.forward_commands else "default",
     }
     writer = SequenceChunkWriter(
         directory=dataset_dir,

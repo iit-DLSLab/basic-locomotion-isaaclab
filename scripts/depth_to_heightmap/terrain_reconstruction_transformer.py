@@ -12,6 +12,7 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
+from torch.utils.checkpoint import checkpoint
 from torch.utils.data import DataLoader, Dataset, RandomSampler, Subset, random_split
 from tqdm import tqdm
 
@@ -210,6 +211,26 @@ class ConditionalUNetRefiner(nn.Module):
         return self.output_projection(x)
 
 
+def _encode_frames(encoder: DepthTokenEncoder, frames: Tensor, chunk_size: int, checkpointed: bool) -> Tensor:
+    """Token maps of (N, C, H, W) frames, a chunk at a time. With ``checkpointed`` (training) only each chunk's input is
+    kept and its activations are recomputed in the backward pass: those of a few thousand frames do not fit in GPU memory."""
+    chunks = frames.split(chunk_size)
+    if checkpointed:
+        return torch.cat([checkpoint(encoder.encode_frames, chunk, use_reentrant=False) for chunk in chunks])
+    return torch.cat([encoder.encode_frames(chunk) for chunk in chunks])
+
+
+def _context_on_heightmap(context: Tensor, heightmap_size: tuple[int, int]) -> Tensor:
+    """Image-space context resampled onto the heightmap layout. Image rows = distance (top = far), image cols = lateral
+    (left -> right); heightmap rows = lateral (y from -0.4 = right to +0.4 = left), heightmap cols = distance (near to
+    far).
+    In a nutshell: IsaacLab heightmap format is the transpose of the frames format coming from the depth camera.
+    """
+    n_y, n_x = heightmap_size
+    context = F.interpolate(context, size=(n_x, n_y), mode="bilinear", align_corners=False)
+    return context.transpose(-1, -2).flip(-2, -1)  # (B, C, n_y, n_x), same layout as the heightmap
+
+
 @dataclass
 class TerrainReconstructionOutput:
     rough_heightmap: Tensor
@@ -218,8 +239,7 @@ class TerrainReconstructionOutput:
 
 
 class MultiModalTerrainReconstructor(nn.Module):
-    """Cross-attention terrain reconstructor based on the paper's two-stage design.
-
+    """
     Expected inputs:
     - depth_data: `(B, T_depth, C, H, W)` or `(B, C, H, W)`
     - robot_info: `(B, T_prop, F)` or `(B, F)`
@@ -243,9 +263,14 @@ class MultiModalTerrainReconstructor(nn.Module):
         align_refiner_context: bool = False,
         recurrent_steps: bool = False,
         refiner_context_newest_frame: bool = False,
+        dropped_proprio_features: tuple[int, ...] = (),
     ):
         super().__init__()
         self.heightmap_size = heightmap_size
+        # observation features zeroed before the network, as in RecurrentTerrainReconstructor
+        keep = torch.ones(proprio_dim)
+        keep[list(dropped_proprio_features)] = 0.0
+        self.register_buffer("proprio_keep", keep, persistent=False)
         # Turn the image-space depth context into the heightmap layout before the refiner (see forward).
         # False keeps the original behaviour, so checkpoints trained without it still load and evaluate the same.
         self.align_refiner_context = align_refiner_context
@@ -325,16 +350,23 @@ class MultiModalTerrainReconstructor(nn.Module):
     ) -> TerrainReconstructionOutput:
         """depth_data `(B, N, C, H, W)` holds the frames the windows share, depth_index `(L, T_depth)` picks each step's window
         and robot_info is `(B, L, T_prop, F)`; the outputs are then `(B, L, 1, h, w)`."""
+        robot_info = robot_info * self.proprio_keep
         if depth_index is not None:
             batch_size, segment_length = robot_info.shape[:2]
-            token_maps = self.depth_encoder.encode_frames(depth_data.flatten(0, 1)).unflatten(0, depth_data.shape[:2])
+            # the frames of a segment, shared by its windows, each encoded once
+            token_maps = _encode_frames(
+                self.depth_encoder, depth_data.flatten(0, 1), 256, self.training and torch.is_grad_enabled()
+            ).unflatten(0, depth_data.shape[:2])
             token_maps = token_maps[:, depth_index].flatten(0, 1)  # (B * L, T_depth, D, h, w)
             proprio_history = robot_info.flatten(0, 1)
         else:
             depth_sequence = self._prepare_depth_sequence(depth_data)
             proprio_history = self._prepare_proprio_history(robot_info)
             batch_size, segment_length = depth_sequence.shape[0], 1
-            token_maps = self.depth_encoder.encode_frames(depth_sequence.flatten(0, 1)).unflatten(0, depth_sequence.shape[:2])
+            # a chunk at a time: long windows of many envs (rollouts) do not fit in GPU memory at once
+            token_maps = _encode_frames(self.depth_encoder, depth_sequence.flatten(0, 1), 1024, False).unflatten(
+                0, depth_sequence.shape[:2]
+            )
 
         depth_tokens, depth_context = self.depth_encoder.tokens_from_maps(token_maps)
         proprio_tokens = self.proprio_encoder(proprio_history)
@@ -355,11 +387,7 @@ class MultiModalTerrainReconstructor(nn.Module):
         #print(f"[FORWARD]: {rough_heightmap.shape=}", flush=True)
         #print(f"[FORWARD]: {depth_context.shape=}", flush=True)
         if self.align_refiner_context:
-            # image rows = distance (top = far), image cols = lateral (left -> right); heightmap rows = lateral
-            # (y from -0.4 = right to +0.4 = left), heightmap cols = distance (x from near to far)
-            n_y, n_x = self.heightmap_size
-            depth_context = F.interpolate(depth_context, size=(n_x, n_y), mode="bilinear", align_corners=False)
-            depth_context = depth_context.transpose(-1, -2).flip(-2, -1)  # (B, C, n_y, n_x), same layout as the heightmap
+            depth_context = _context_on_heightmap(depth_context, self.heightmap_size)
         else:
             depth_context = F.interpolate(depth_context, size=self.heightmap_size, mode="bilinear", align_corners=False)
         #print(f"[FORWARD]: {depth_context.shape=}", flush=True)
@@ -376,6 +404,161 @@ class MultiModalTerrainReconstructor(nn.Module):
             refined_heightmap=refined_heightmap,
             hidden_state=hidden_state,
         )
+
+
+class RecurrentTerrainReconstructor(nn.Module):
+    """One control step at a time, with the GRU state carried across steps as the only memory.
+
+    A step takes the current depth frame and the current 'common' observation, nothing older. ``fusion`` merges them
+    into the GRU input: "attention", the proprioceptive token and a few learned queries read the frame's token map
+    through cross-attention; "mlp", the token map (fewer channels) and the proprioceptive token concatenated through an
+    MLP. With one frame there is nothing to attend over in time, and the camera is fixed to the body, so each map
+    position always looks at about the same ground: fixed weights can do. The result updates the GRU state, and the
+    heightmap is decoded from the state (then refined with the current frame, in the heightmap layout). Terrain seen
+    earlier, e.g. the ground now under the robot's head, can only come from the state. ``hidden_state`` goes from one
+    call to the next; None = start of an episode. The modules shared with MultiModalTerrainReconstructor have the same
+    names and shapes, so a window model can initialise them.
+
+    Called like the window model with windows of one step: one step, depth_data (B, 1, C, H, W) or (B, C, H, W) and
+    robot_info (B, 1, F) or (B, F); or a segment of L steps, depth_data (B, L, C, H, W), depth_index (L, 1) and
+    robot_info (B, L, 1, F), with outputs (B, L, 1, h, w).
+    """
+
+    recurrent_steps = True  # it carries a state across calls: training segments start with a burn-in
+    frames_per_chunk = 256  # frames encoded at once
+
+    def __init__(
+        self,
+        proprio_dim: int,
+        depth_channels: int = 1,
+        heightmap_size: tuple[int, int] = (9, 7),
+        embed_dim: int = 128,
+        proprio_hidden_dim: int = 256,
+        num_attention_heads: int = 4,
+        num_cross_attention_layers: int = 2,
+        frame_queries: int = 8,
+        recurrent_hidden_dim: int = 192,
+        token_grid_size: tuple[int, int] = (6, 8),
+        refinement_context_channels: int = 32,
+        refinement_base_channels: int = 32,
+        dropout: float = 0.1,
+        dropped_proprio_features: tuple[int, ...] = (),
+        fusion: str = "attention",
+        frame_channels: int = 16,
+    ):
+        super().__init__()
+        self.heightmap_size = heightmap_size
+        # observation features zeroed before the network (e.g. the velocity commands, which say nothing about the
+        # terrain); zeroed rather than removed, so a model trained with them can initialise this one
+        keep = torch.ones(proprio_dim)
+        keep[list(dropped_proprio_features)] = 0.0
+        self.register_buffer("proprio_keep", keep, persistent=False)
+        self.depth_encoder = DepthTokenEncoder(depth_channels, embed_dim, token_grid_size, refinement_context_channels)
+        self.proprio_encoder = ProprioceptiveHistoryEncoder(proprio_dim, embed_dim, proprio_hidden_dim)
+        self.fusion = fusion
+        if fusion == "mlp":
+            self.frame_reduction = nn.Conv2d(embed_dim, frame_channels, kernel_size=1)
+            fused_dim = frame_channels * token_grid_size[0] * token_grid_size[1] + embed_dim
+            self.step_mlp = nn.Sequential(
+                nn.LayerNorm(fused_dim), nn.Linear(fused_dim, 2 * embed_dim), nn.GELU(), nn.Linear(2 * embed_dim, embed_dim)
+            )
+        elif fusion == "attention":
+            # a single query (the proprioceptive token) takes a weighted average of the image tokens: too narrow for
+            # the terrain ahead, which the state has to keep until the robot gets there, so a few learned queries read
+            # it too
+            self.frame_queries = nn.Parameter(0.02 * torch.randn(frame_queries, embed_dim))
+            self.cross_attention_blocks = nn.ModuleList(
+                [CrossAttentionBlock(embed_dim, num_attention_heads, dropout) for _ in range(num_cross_attention_layers)]
+            )
+            self.step_projection = nn.Sequential(
+                nn.LayerNorm((frame_queries + 1) * embed_dim), nn.Linear((frame_queries + 1) * embed_dim, embed_dim)
+            )
+        else:
+            raise ValueError(f"Unknown fusion: {fusion}")
+        self.memory = nn.GRU(input_size=embed_dim, hidden_size=recurrent_hidden_dim, batch_first=True)
+        self.rough_decoder = nn.Sequential(
+            nn.LayerNorm(recurrent_hidden_dim),
+            nn.Linear(recurrent_hidden_dim, recurrent_hidden_dim * 2),
+            nn.GELU(),
+            nn.Linear(recurrent_hidden_dim * 2, heightmap_size[0] * heightmap_size[1]),
+        )
+        self.refinement_context_projection = nn.Sequential(
+            nn.Conv2d(refinement_context_channels, refinement_base_channels, kernel_size=3, padding=1),
+            nn.GELU(),
+        )
+        self.refiner = ConditionalUNetRefiner(1 + refinement_base_channels, refinement_base_channels)
+
+    def forward(
+        self,
+        depth_data: Tensor,
+        robot_info: Tensor,
+        hidden_state: Tensor | None = None,
+        depth_index: Tensor | None = None,
+    ) -> TerrainReconstructionOutput:
+        if depth_index is None:  # one control step
+            if depth_data.dim() == 5 and depth_data.shape[1] != 1:
+                raise ValueError("The recurrent model takes one depth frame per step.")
+            frames = depth_data.reshape(-1, 1, *depth_data.shape[-3:])
+            proprio = robot_info.reshape(-1, 1, robot_info.shape[-1])
+        else:  # a segment: the frame and the observation of each step
+            frames, proprio = depth_data[:, depth_index[:, -1]], robot_info[:, :, -1]
+        batch_size, steps = proprio.shape[:2]
+        proprio = proprio * self.proprio_keep
+
+        token_maps = _encode_frames(
+            self.depth_encoder, frames.flatten(0, 1), self.frames_per_chunk, self.training and torch.is_grad_enabled()
+        )  # (B * L, D, h, w)
+        proprio_token = self.proprio_encoder(proprio.flatten(0, 1).unsqueeze(1))  # (B * L, 1, D)
+        if self.fusion == "mlp":
+            depth_context = self.depth_encoder.context_projection(token_maps)
+            frame = self.frame_reduction(token_maps).flatten(1)
+            step_input = self.step_mlp(torch.cat((frame, proprio_token.flatten(1)), dim=1))
+        else:
+            depth_tokens, depth_context = self.depth_encoder.tokens_from_maps(token_maps.unsqueeze(1))
+            queries = torch.cat((proprio_token, self.frame_queries.expand(batch_size * steps, -1, -1)), dim=1)
+            for block in self.cross_attention_blocks:
+                queries = block(queries, depth_tokens)
+            step_input = self.step_projection(queries.flatten(1))
+        memory, hidden_state = self.memory(step_input.view(batch_size, steps, -1), hidden_state)
+
+        rough_heightmap = self.rough_decoder(memory.flatten(0, 1)).view(-1, 1, *self.heightmap_size)
+        depth_context = _context_on_heightmap(self.refinement_context_projection(depth_context), self.heightmap_size)
+        refined_heightmap = rough_heightmap + self.refiner(torch.cat((rough_heightmap, depth_context), dim=1))
+        if depth_index is not None:
+            rough_heightmap = rough_heightmap.unflatten(0, (batch_size, steps))
+            refined_heightmap = refined_heightmap.unflatten(0, (batch_size, steps))
+        return TerrainReconstructionOutput(
+            rough_heightmap=rough_heightmap,
+            refined_heightmap=refined_heightmap,
+            hidden_state=hidden_state,
+        )
+
+
+def build_terrain_reconstructor(model_config: dict) -> nn.Module:
+    """The model a checkpoint's ``model_config`` describes (without an "architecture" key: a window model)."""
+    config = dict(model_config)
+    if config.pop("architecture", "window") == "recurrent":
+        return RecurrentTerrainReconstructor(**config)
+    return MultiModalTerrainReconstructor(**config)
+
+
+# The 'common' observation (locomotion_env._get_observations) stacks the last frames, oldest first, of 52 values: base
+# linear velocity 3, base angular velocity 3, projected gravity 3, velocity command 3, joint positions 12, joint
+# velocities 12, actions 12, gait clock 4.
+COMMON_OBS_FRAME = 52
+VELOCITY_COMMAND_FEATURES = range(9, 12)
+
+
+def velocity_command_features(proprio_dim: int) -> tuple[int, ...]:
+    """Positions of the velocity commands in every frame of the 'common' observation."""
+    if proprio_dim % COMMON_OBS_FRAME:
+        raise ValueError(f"A 'common' observation has frames of {COMMON_OBS_FRAME} values, not {proprio_dim} in all.")
+    return tuple(frame * COMMON_OBS_FRAME + i for frame in range(proprio_dim // COMMON_OBS_FRAME) for i in VELOCITY_COMMAND_FEATURES)
+
+
+# Steps of an episode before a rollout step is scored: the window models need 49 (50 proprioceptive steps); a recurrent
+# model is scored on the same steps, so that the numbers compare.
+WINDOW_MODEL_HISTORY = 49
 
 
 def compute_reconstruction_losses(
@@ -576,6 +759,9 @@ class SequenceTerrainReconstructionDataset(Dataset):
             "proprio_history_length": proprio_history_length,
             "segment_length": segment_length,
         }
+        # velocity commands of the recordings (runs collected before the option existed used the default ones)
+        commands = {run["chunks"][0]["metadata"].get("commands", "default") for run in self.runs}
+        self.metadata["commands"] = commands.pop() if len(commands) == 1 else "mixed"
 
     def _rows(self, run: int, name: str, start: int, stop: int, env: int) -> Tensor:
         """Steps start .. stop-1 of one env, across chunk boundaries."""
@@ -618,7 +804,12 @@ class SequenceTerrainReconstructionDataset(Dataset):
 
 
 def _load_dataset(
-    path: str | Sequence[str], target_key: str, depth_history_stride: int, segment_length: int = 1
+    path: str | Sequence[str],
+    target_key: str,
+    depth_history_stride: int,
+    segment_length: int = 1,
+    depth_history_length: int = 5,
+    proprio_history_length: int = 50,
 ) -> Dataset:
     """Sequence directories -> SequenceTerrainReconstructionDataset, dataset files -> SavedTerrainReconstructionDataset."""
     paths = [path] if isinstance(path, (str, Path)) else list(path)
@@ -628,6 +819,8 @@ def _load_dataset(
             target_key=target_key,
             depth_history_stride=depth_history_stride,
             segment_length=segment_length,
+            depth_history_length=depth_history_length,
+            proprio_history_length=proprio_history_length,
         )
     return SavedTerrainReconstructionDataset(dataset_path=paths, target_key=target_key)
 
@@ -735,13 +928,21 @@ def train_terrain_reconstructor(
     max_grad_norm: float | None = None,
     resume_path: str | Path | None = None,
     resume_info: dict | None = None,
+    memory_learning_rate: float | None = None,
 ) -> list[dict[str, float]]:
     """Train the reconstructor. With ``restore_best`` and a validation loader, the model ends with the weights
     of the epoch with the lowest validation refined loss instead of the last epoch. With ``resume_path`` the training
-    state is saved there after every epoch (with ``resume_info``), and an existing file is continued from."""
+    state is saved there after every epoch (with ``resume_info``), and an existing file is continued from.
+    ``memory_learning_rate`` sets a separate learning rate for the memory across steps."""
     device = torch.device(device)
     model.to(device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+    parameters = model.parameters()
+    if memory_learning_rate is not None:
+        # a memory added to a trained model learns too slowly at the fine-tuning rate of the rest
+        memory = [p for name, p in model.named_parameters() if name.startswith("step_memory")]
+        rest = [p for name, p in model.named_parameters() if not name.startswith("step_memory")]
+        parameters = [{"params": rest}, {"params": memory, "lr": memory_learning_rate}]
+    optimizer = torch.optim.AdamW(parameters, lr=learning_rate, weight_decay=weight_decay)
     if lr_schedule == "cosine":
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs, eta_min=0.01 * learning_rate)
     elif lr_schedule == "constant":
@@ -854,6 +1055,7 @@ def run_terrain_reconstruction(
     align_refiner_context: bool = False,
     test_dataset_path: str | Sequence[str] | None = None,
     depth_history_stride: int = 1,
+    depth_history_length: int = 5,
     segment_length: int = 1,
     burn_in: int = 0,
     recurrent_steps: bool = False,
@@ -862,6 +1064,10 @@ def run_terrain_reconstruction(
     refiner_context_newest_frame: bool = False,
     init_checkpoint: str | None = None,
     learning_rate: float = 3e-4,
+    memory_learning_rate: float | None = None,
+    architecture: str = "window",
+    drop_velocity_commands: bool = False,
+    fusion: str = "attention",
 ) -> None:
     dataset_paths = [Path(p).expanduser().resolve() for p in ([path] if isinstance(path, (str, Path)) else path)]
     for dataset_path in dataset_paths:
@@ -874,7 +1080,20 @@ def run_terrain_reconstruction(
     torch.manual_seed(0)
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    dataset = _load_dataset([str(p) for p in dataset_paths], target_key, depth_history_stride, segment_length)
+    proprio_history_length = 50
+    if architecture == "recurrent":
+        # one frame and one observation per step; the state carries the rest, so it trains on sequences only
+        depth_history_length = proprio_history_length = 1
+        if segment_length < 2:
+            raise ValueError("The recurrent model trains on segments: set segment_length > 1.")
+    dataset = _load_dataset(
+        [str(p) for p in dataset_paths],
+        target_key,
+        depth_history_stride,
+        segment_length,
+        depth_history_length,
+        proprio_history_length,
+    )
     if isinstance(dataset, SequenceTerrainReconstructionDataset):
         # consecutive steps are near duplicates: validate on whole envs never seen in training
         is_valid = dataset.env_ids % 5 == 4
@@ -906,10 +1125,22 @@ def run_terrain_reconstruction(
         "proprio_dim": sample_robot_info.shape[-1],
         "depth_channels": sample_depth.shape[-3],
         "heightmap_size": tuple(sample_target.shape[-2:]),
-        "align_refiner_context": align_refiner_context,
-        "recurrent_steps": recurrent_steps,
-        "refiner_context_newest_frame": refiner_context_newest_frame,
     }
+    dropped = velocity_command_features(model_config["proprio_dim"]) if drop_velocity_commands else ()
+    if architecture == "recurrent":
+        model_config.update(architecture="recurrent", fusion=fusion)
+        if dropped:
+            model_config["dropped_proprio_features"] = dropped
+    elif fusion != "attention":
+        raise ValueError("--fusion is implemented for the recurrent architecture only.")
+    else:
+        model_config.update(
+            align_refiner_context=align_refiner_context,
+            recurrent_steps=recurrent_steps,
+            refiner_context_newest_frame=refiner_context_newest_frame,
+        )
+        if dropped:
+            model_config["dropped_proprio_features"] = dropped
 
     train_heightmaps = dataset.heightmaps[train_dataset.indices]
     target_normalization = {
@@ -917,17 +1148,30 @@ def run_terrain_reconstruction(
         "std": max(train_heightmaps.std().item(), 1e-6),
     }
     if init_checkpoint:
-        # continue from a trained model, e.g. one without memory to add it: its architecture flags and weights (a new
-        # memory across steps starts at zero), and its normalization, so its outputs keep their meaning
+        # continue from a trained model: its weights for the modules the two models share (a window model can start a
+        # recurrent one), and its normalization, so its outputs keep their meaning
         init = torch.load(init_checkpoint, map_location="cpu", weights_only=False)
-        model_config = {**init["model_config"], "recurrent_steps": recurrent_steps}
+        if architecture == "window":
+            # the same architecture, with its flags; a memory across steps can be added
+            model_config = {**init["model_config"], "recurrent_steps": recurrent_steps}
+            if dropped:
+                model_config["dropped_proprio_features"] = dropped
         target_normalization = init["target_normalization"]
-    model = MultiModalTerrainReconstructor(**model_config)
+    model = build_terrain_reconstructor(model_config)
     if init_checkpoint:
         missing, unexpected = model.load_state_dict(init["model_state_dict"], strict=False)
-        if unexpected or any(not key.startswith("step_memory") for key in missing):
+        new_modules = ("step_memory", "frame_queries", "step_projection", "frame_reduction", "step_mlp")
+        # an attention model can start an MLP one: its attention fusion is left out
+        replaced = ("frame_queries", "cross_attention_blocks", "step_projection") if fusion == "mlp" else ()
+        unexpected = [key for key in unexpected if not key.startswith(replaced)]
+        if unexpected or any(not key.startswith(new_modules) for key in missing):
             raise ValueError(f"{init_checkpoint} does not match the model: missing {missing}, unexpected {unexpected}")
-        print(f"[INFO] Initialised from {init_checkpoint}" + (f", new memory across steps ({len(missing)} tensors)" if missing else ""))
+        new = sorted({key.split(".")[0] for key in missing})
+        print(f"[INFO] Initialised from {init_checkpoint}" + (f", new: {', '.join(new)}" if new else ""))
+        if "step_memory_projection.weight" in missing:
+            # small instead of zero: the memory GRU gets a gradient from the first step without disturbing the
+            # trained model (with a zero projection it gets none until the projection has grown)
+            nn.init.normal_(model.step_memory_projection.weight, std=1e-3)
     # MAE of always predicting the per-cell train mean: the model must beat this to be useful.
     baseline_mae = (dataset.heightmaps[valid_dataset.indices] - train_heightmaps.mean(dim=0, keepdim=True)).abs().mean().item()
     print(
@@ -935,6 +1179,8 @@ def run_terrain_reconstruction(
         f"constant-prediction baseline val MAE: {baseline_mae * 1000:.2f} mm"
     )
     train_settings = {"rough_loss_type": "l1", "lr_schedule": "cosine", "restore_best": True, "learning_rate": learning_rate}
+    if memory_learning_rate is not None:
+        train_settings["memory_learning_rate"] = memory_learning_rate
     if segment_length > 1:
         train_settings.update(burn_in=burn_in, max_grad_norm=1.0)
 
@@ -1009,15 +1255,18 @@ def run_terrain_reconstruction(
     # timesteps with training and is optimistic, the refiner even more so.
     test_metrics = {}
     if test_dataset_path:
-        test_dataset = _load_dataset(test_dataset_path, target_key, depth_history_stride)
-        train_stride = dataset.metadata.get("depth_history_stride")
-        test_stride = test_dataset.metadata.get("depth_history_stride")
-        if train_stride != test_stride:
-            raise ValueError(f"Test set depth stride {test_stride} differs from the training set stride {train_stride}.")
+        test_dataset = _load_dataset(
+            test_dataset_path, target_key, depth_history_stride, 1, depth_history_length, proprio_history_length
+        )
+        for key in ("depth_history_stride", "depth_history_length"):
+            if dataset.metadata.get(key) != test_dataset.metadata.get(key):
+                raise ValueError(f"Test set {key} {test_dataset.metadata.get(key)} differs from the training set's {dataset.metadata.get(key)}.")
         if isinstance(test_dataset, SequenceTerrainReconstructionDataset):
             # step by step through the recorded episodes, as on the robot, carrying the memory across steps
+            score_history = WINDOW_MODEL_HISTORY if architecture == "recurrent" else None
+
             def predict_test() -> dict[str, Tensor]:
-                return _predict_rollouts(model, test_dataset, device, target_normalization)
+                return _predict_rollouts(model, test_dataset, device, target_normalization, score_history)
         else:
             test_loader = DataLoader(test_dataset, batch_size=4 * batch_size, shuffle=False, num_workers=num_workers)
 
@@ -1026,7 +1275,7 @@ def run_terrain_reconstruction(
         test_metrics = _evaluate_refiner_breakdown(model, predict_test)
         print(
             f"[INFO] Test MAE {test_metrics['test/mae_m'] * 1000:.2f} mm (non-flat {test_metrics['test/non_flat_mae_m'] * 1000:.2f}, "
-            f"flat {test_metrics['test/flat_mae_m'] * 1000:.2f}, n={len(test_dataset)}) | refiner: rough alone "
+            f"flat {test_metrics['test/flat_mae_m'] * 1000:.2f}, n={test_metrics['test/samples']}) | refiner: rough alone "
             f"{test_metrics['test/rough_mae_m'] * 1000:.2f} mm, gain {test_metrics['test/refiner_gain_m'] * 1000:+.2f} mm, "
             f"of which from the image {test_metrics['test/refiner_image_gain_m'] * 1000:+.2f} mm"
         )
@@ -1218,14 +1467,18 @@ def _predict_rollouts(
     dataset: SequenceTerrainReconstructionDataset,
     device: str | torch.device,
     target_normalization: dict[str, float],
+    score_history: int | None = None,
 ) -> dict[str, Tensor]:
     """Predictions through every recorded step in order, as on the robot: all envs of a run at once, the memory across
     steps carried from one step to the next and restarted at the first clean window after a reset.
 
     Returns rough, refined and target in metres (N, h, w) on the steps with a clean window, with their run, step, env
-    and memory age (N,): the number of steps the memory had already seen, 0 at its restart.
+    and memory age (N,): the number of steps the memory had already seen, 0 at its restart. With ``score_history``,
+    only steps with at least that many earlier steps of the same episode are returned (e.g. a recurrent model scored
+    on the steps of a window model).
     """
     mean, std = target_normalization["mean"], target_normalization["std"]
+    min_age = 0 if score_history is None else score_history - dataset.history
     outputs = {key: [] for key in ("rough", "refined", "target", "run", "step", "env", "age")}
     model.eval()
     with torch.no_grad():
@@ -1255,7 +1508,7 @@ def _predict_rollouts(
                 )
                 hidden_state = prediction.hidden_state
 
-                envs = clean.nonzero().flatten()
+                envs = (age >= min_age).nonzero().flatten()
                 outputs["rough"].append(prediction.rough_heightmap[envs.to(device), 0].cpu() * std + mean)
                 outputs["refined"].append(prediction.refined_heightmap[envs.to(device), 0].cpu() * std + mean)
                 outputs["target"].append(dataset.step_rows(run, dataset.target_key, step)[envs, 0].float())
@@ -1428,10 +1681,16 @@ def _parse_args() -> argparse.Namespace:
         help="Rotate the depth context into the heightmap layout (rows = lateral, cols = distance) before the refiner.",
     )
     parser.add_argument(
+        "--depth_history_length",
+        type=int,
+        default=5,
+        help="Sequence datasets only: number of depth frames per sample.",
+    )
+    parser.add_argument(
         "--depth_history_stride",
         type=int,
         default=1,
-        help="Sequence datasets only: steps between the 5 depth frames of a sample (1 -> 80 ms, 10 -> 0.8 s).",
+        help="Sequence datasets only: steps between consecutive depth frames (with 5 frames: 1 -> 80 ms, 10 -> 0.8 s).",
     )
     parser.add_argument(
         "--segment_length",
@@ -1444,6 +1703,25 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--recurrent_steps", action="store_true", help="Add the memory carried across control steps (a second GRU)."
+    )
+    parser.add_argument(
+        "--architecture",
+        choices=("window", "recurrent"),
+        default="window",
+        help="window: input windows of depth frames and observations; recurrent: one frame and one observation per "
+        "step, with the GRU state carried across steps (trains on segments).",
+    )
+    parser.add_argument(
+        "--fusion",
+        choices=("attention", "mlp"),
+        default="attention",
+        help="Recurrent architecture: how the frame and the observation are merged before the GRU (cross-attention "
+        "with learned queries, or an MLP on the concatenated frame features and observation token).",
+    )
+    parser.add_argument(
+        "--drop_velocity_commands",
+        action="store_true",
+        help="Zero the velocity commands in the observation (they say nothing about the terrain).",
     )
     parser.add_argument(
         "--samples_per_epoch", type=int, default=None, help="Random training samples (segments) per epoch; default all."
@@ -1464,6 +1742,9 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--learning_rate", type=float, default=3e-4, help="Peak learning rate (cosine schedule).")
     parser.add_argument(
+        "--memory_learning_rate", type=float, default=None, help="Peak learning rate of the memory across steps, if different."
+    )
+    parser.add_argument(
         "--test_dataset_path",
         type=str,
         nargs="+",
@@ -1476,6 +1757,8 @@ def _parse_args() -> argparse.Namespace:
 __all__ = [
     "FakeTerrainReconstructionDataset",
     "MultiModalTerrainReconstructor",
+    "RecurrentTerrainReconstructor",
+    "build_terrain_reconstructor",
     "SavedTerrainReconstructionDataset",
     "TerrainReconstructionOutput",
     "compute_reconstruction_losses",
@@ -1504,6 +1787,7 @@ if __name__ == "__main__":
             align_refiner_context=args.align_refiner_context,
             test_dataset_path=args.test_dataset_path,
             depth_history_stride=args.depth_history_stride,
+            depth_history_length=args.depth_history_length,
             segment_length=args.segment_length,
             burn_in=args.burn_in,
             recurrent_steps=args.recurrent_steps,
@@ -1512,6 +1796,10 @@ if __name__ == "__main__":
             refiner_context_newest_frame=args.refiner_context_newest_frame,
             init_checkpoint=args.init_checkpoint,
             learning_rate=args.learning_rate,
+            memory_learning_rate=args.memory_learning_rate,
+            architecture=args.architecture,
+            drop_velocity_commands=args.drop_velocity_commands,
+            fusion=args.fusion,
         )
     else:
         run_fake_data_smoke_test(
