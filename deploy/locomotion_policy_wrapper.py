@@ -72,7 +72,7 @@ class LocomotionPolicyWrapper:
 
         # When walking starts the clock jumps from the standing value (-1) to the phase, and the policy answers with
         # a jolt of the joint targets. Blend the clock from -1 to the phase over this time (s) after a start.
-        self.clock_blend_time = 0.4
+        self.clock_blend_time = 0.3
         self.time_since_start = 0.0
 
         self.desired_clip_actions = config.training_env["desired_clip_actions"]
