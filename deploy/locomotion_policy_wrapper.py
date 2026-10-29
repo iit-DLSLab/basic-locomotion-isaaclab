@@ -70,6 +70,11 @@ class LocomotionPolicyWrapper:
         self.phase_offset = np.array(config.training_env["desired_phase_offset"])
         self.phase_signal = self.phase_offset.copy()
 
+        # When walking starts the clock jumps from the standing value (-1) to the phase, and the policy answers with
+        # a jolt of the joint targets. Blend the clock from -1 to the phase over this time (s) after a start.
+        self.clock_blend_time = 0.4
+        self.time_since_start = 0.0
+
         self.desired_clip_actions = config.training_env["desired_clip_actions"]
 
         self.use_filter_actions = config.training_env["use_filter_actions"]
@@ -239,6 +244,14 @@ class LocomotionPolicyWrapper:
 
             if(np.linalg.norm(commands) < 0.01):
                 obs[48:48+self.clock_size] = -1.0
+                # When walking starts the clock jumps from the standing value (-1) to the phase, and the policy answers with
+                # a jolt of the joint targets. Blend the clock from -1 to the phase over this time (s) after a start.
+                # This does not happen in training, but it is a good idea to avoid the jolt in deployment.
+                self.time_since_start = 0.0
+            else:
+                self.time_since_start += 1.0 / self.RL_FREQ
+                blend = min(1.0, self.time_since_start / max(self.clock_blend_time, 1e-6))
+                obs[48:48+self.clock_size] = blend * obs[48:48+self.clock_size] - (1.0 - blend)
 
 
         if(config.training_env["use_concurrent_state_est"] == True):
