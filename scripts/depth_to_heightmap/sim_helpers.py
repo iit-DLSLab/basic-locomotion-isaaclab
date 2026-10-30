@@ -89,8 +89,9 @@ def marker_legend(mode: str = "tiles", show_ground_truth: bool = False, threshol
         "tiles": f"tiles = predicted heightmap, coloured by error: green <{t1} cm | ground too high: yellow {t1}-{t2}, "
         f"orange {t2}-{t3}, red >{t3} | too low: cyan, blue, purple",
         "spheres": "blue spheres = predicted ground height (the error is their distance from the terrain)",
+        "hidden": "heightmap not drawn",
     }[mode]
-    return legend + (" | white dots = true ground" if show_ground_truth else "")
+    return legend + (" | white dots = true ground" if show_ground_truth and mode != "hidden" else "")
 
 
 class HeightmapSurface:
@@ -101,12 +102,13 @@ class HeightmapSurface:
       missed); cyan / blue / purple = drawn too low (thresholds ``ERROR_THRESHOLDS``). The tiles float 1 cm above their
       height, so that a correct one does not flicker in the terrain.
     - "spheres": the prediction alone, a blue sphere per cell resting on its predicted ground height.
+    - "hidden": nothing drawn.
 
     With ``show_ground_truth``, small white dots mark the true ground: hidden under a correct tile or sphere, visible
     next to a wrong one.
     """
 
-    MODES = ("tiles", "spheres")
+    MODES = ("tiles", "spheres", "hidden")
     # 0 close, 1-3 too high, 4-6 too low (growing error)
     ERROR_COLORS = ((0.1, 0.9, 0.1), (1.0, 0.9, 0.1), (1.0, 0.5, 0.05), (0.9, 0.05, 0.05),
                     (0.2, 0.9, 1.0), (0.1, 0.35, 1.0), (0.5, 0.1, 0.8))
@@ -142,7 +144,7 @@ class HeightmapSurface:
         self.tiles.set_visibility(visible and self.mode == "tiles")
         self.spheres.set_visibility(visible and self.mode == "spheres")
         if self.truth is not None:
-            self.truth.set_visibility(visible)
+            self.truth.set_visibility(visible and self.mode != "hidden")
 
     def next_mode(self) -> None:
         """Switch to the next way of drawing; applied at the next update (safe from a keyboard callback)."""
@@ -173,10 +175,10 @@ class HeightmapSurface:
             self.tiles.visualize(
                 translations=centers[valid], orientations=heading.expand(int(valid.sum()), 4), marker_indices=indices[valid]
             )
-        else:
+        elif self.mode == "spheres":
             # spheres resting on the predicted surface, not half buried in it
             centers = torch.cat((ray_hits[:, :2], (predicted_z + self.radius).unsqueeze(1)), dim=1)
             self.spheres.visualize(translations=centers[valid])
-        if self.truth is not None:
+        if self.truth is not None and self.mode != "hidden":
             self.truth.visualize(translations=ray_hits[valid] + torch.tensor([0.0, 0.0, 0.009], device=ray_hits.device))
         return error.view_as(predicted)

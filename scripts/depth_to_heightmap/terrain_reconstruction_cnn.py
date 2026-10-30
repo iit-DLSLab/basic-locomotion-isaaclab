@@ -1,23 +1,125 @@
 from __future__ import annotations
 
 import argparse
+import bisect
+import math
+from collections.abc import Sequence
 from pathlib import Path
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, Dataset, random_split
 
 from terrain_reconstruction_transformer import (
     ConditionalUNetRefiner,
     ConvNormAct,
-    FakeTerrainReconstructionDataset,
     ProprioceptiveHistoryEncoder,
-    SavedTerrainReconstructionDataset,
     TerrainReconstructionOutput,
     compute_reconstruction_losses,
     train_terrain_reconstructor,
 )
+
+
+# datasets of single windows (5 depth frames, 50 observations), the format of the first collections
+class FakeTerrainReconstructionDataset(Dataset):
+    def __init__(
+        self,
+        num_samples: int = 128,
+        depth_history: int = 5,
+        proprio_history: int = 50,
+        proprio_dim: int = 48,
+        depth_image_size: tuple[int, int] = (64, 80),
+        heightmap_size: tuple[int, int] = (20, 20),
+        seed: int = 0,
+    ):
+        super().__init__()
+        generator = torch.Generator().manual_seed(seed)
+
+        self.depth_data = torch.rand(num_samples, depth_history, 1, *depth_image_size, generator=generator) * 2.0 - 1.0
+        self.robot_info = torch.randn(num_samples, proprio_history, proprio_dim, generator=generator)
+        self.heightmaps = self._build_targets(heightmap_size=heightmap_size)
+
+    def _build_targets(self, heightmap_size: tuple[int, int]) -> Tensor:
+        batch_size = self.depth_data.shape[0]
+        height, width = heightmap_size
+
+        x_grid = torch.linspace(-1.0, 1.0, width).view(1, 1, 1, width)
+        y_grid = torch.linspace(-1.0, 1.0, height).view(1, 1, height, 1)
+
+        depth_summary = F.interpolate(
+            self.depth_data.mean(dim=1),
+            size=heightmap_size,
+            mode="bilinear",
+            align_corners=False,
+        )
+        last_robot_state = self.robot_info[:, -1]
+        mean_robot_state = self.robot_info.mean(dim=1)
+
+        pitch_like = last_robot_state[:, 0].view(batch_size, 1, 1, 1)
+        roll_like = last_robot_state[:, 1].view(batch_size, 1, 1, 1)
+        velocity_like = mean_robot_state[:, 2].view(batch_size, 1, 1, 1)
+        gait_like = last_robot_state[:, 3].view(batch_size, 1, 1, 1)
+
+        target = (
+            0.65 * depth_summary
+            + 0.15 * pitch_like * x_grid
+            + 0.15 * roll_like * y_grid
+            + 0.05 * velocity_like * torch.sin(math.pi * (x_grid + gait_like))
+            + 0.05 * torch.cos(math.pi * (y_grid - gait_like))
+        )
+        return target.clamp(-2.0, 2.0)
+
+    def __len__(self) -> int:
+        return self.depth_data.shape[0]
+
+    def __getitem__(self, index: int) -> tuple[Tensor, Tensor, Tensor]:
+        return self.depth_data[index], self.robot_info[index], self.heightmaps[index]
+
+
+class _ConcatenatedRows:
+    """Rows of same-shaped tensors concatenated along dim 0 without copying them (they stay memory-mapped)."""
+
+    def __init__(self, tensors: list[Tensor]):
+        self.tensors = tensors
+        self.offsets = [0]
+        for tensor in tensors:
+            self.offsets.append(self.offsets[-1] + tensor.shape[0])
+        self.shape = torch.Size((self.offsets[-1], *tensors[0].shape[1:]))
+
+    def __getitem__(self, index: int) -> Tensor:
+        shard = bisect.bisect_right(self.offsets, index) - 1
+        return self.tensors[shard][index - self.offsets[shard]]
+
+
+class SavedTerrainReconstructionDataset(Dataset):
+
+    def __init__(self, dataset_path: str | Sequence[str], target_key: str = "heightmaps"):
+        super().__init__()
+        dataset_paths = [dataset_path] if isinstance(dataset_path, (str, Path)) else list(dataset_path)
+        shards = [torch.load(str(path), map_location="cpu", mmap=True) for path in dataset_paths]
+
+        required_keys = {"depth_data", "robot_info", target_key}
+        for path, shard in zip(dataset_paths, shards):
+            missing_keys = required_keys.difference(shard)
+            if missing_keys:
+                missing = ", ".join(sorted(missing_keys))
+                raise KeyError(f"Dataset at {path} is missing required keys: {missing}")
+
+        self.depth_data = _ConcatenatedRows([shard["depth_data"] for shard in shards])
+        self.robot_info = _ConcatenatedRows([shard["robot_info"] for shard in shards])
+        self.heightmaps = torch.cat([shard[target_key].float() for shard in shards])
+        self.metadata = shards[0].get("metadata", {})
+
+        dataset_size = self.depth_data.shape[0]
+        if self.robot_info.shape[0] != dataset_size or self.heightmaps.shape[0] != dataset_size:
+            raise ValueError("depth_data, robot_info, and heightmaps must all contain the same number of samples.")
+
+    def __len__(self) -> int:
+        return self.depth_data.shape[0]
+
+    def __getitem__(self, index: int) -> tuple[Tensor, Tensor, Tensor]:
+        return self.depth_data[index].float(), self.robot_info[index].float(), self.heightmaps[index]
 
 
 class DepthFeatureEncoder(nn.Module):

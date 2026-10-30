@@ -7,7 +7,7 @@
 
 Every step of every env is recorded (one depth frame, the 'common' observation, the heightmap target, the reset flag
 and the camera/scanner poses) and written time-major, ``(steps, envs, ...)``, to chunk files in ``--dataset_path``.
-History windows and depth strides are built at training time from these sequences.
+The training segments (consecutive steps of one env) are cut from these sequences at training time.
 """
 
 """Launch Isaac Sim Simulator first."""
@@ -222,9 +222,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     Per step and env: ``depth_data`` (1, H, W), ``robot_info`` (the 'common' observation), ``heightmaps`` (1, rows,
     cols), ``dones`` (the episode ended at this step: Isaac Lab has already reset the env, so this step belongs to
     the next episode), and the world pose of the camera and of the heightmap scanner (to rebuild relative poses
-    later). A training window over steps t-K..t is valid only if none of them has ``dones``: this also drops the
-    reset step itself, whose sensor data may still show the previous episode. Episodes shorter than K+1 steps give
-    no windows.
+    later). A training segment is valid only if none of its steps has ``dones``: this also drops the reset step
+    itself, whose sensor data may still show the previous episode.
     """
     task_name = args_cli.task.split(":")[-1]
     train_task_name = task_name.replace("-Play", "")
