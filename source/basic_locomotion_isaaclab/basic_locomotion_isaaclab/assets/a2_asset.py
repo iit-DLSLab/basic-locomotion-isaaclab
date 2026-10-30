@@ -22,8 +22,8 @@ damping = 2.0
 
 A2_HIP_ACTUATOR_CFG = PaceDCMotorCfg(
     joint_names_expr=[".*_hip_joint"],
-    saturation_effort=23.7,
-    effort_limit=23.7,
+    saturation_effort=120.0,
+    effort_limit=120.0,
     velocity_limit=30.1,
     stiffness={".*": stiffness},  # P gain in Nm/rad
     damping={".*": damping},  # D gain in Nm s/rad
@@ -40,8 +40,8 @@ A2_HIP_ACTUATOR_CFG = PaceDCMotorCfg(
 
 A2_THIGH_ACTUATOR_CFG = PaceDCMotorCfg(
     joint_names_expr=[".*_thigh_joint"],
-    saturation_effort=23.7,
-    effort_limit=23.7,
+    saturation_effort=120.0,
+    effort_limit=120.0,
     velocity_limit=30.1,
     stiffness={".*": stiffness},  # P gain in Nm/rad
     damping={".*": damping},  # D gain in Nm s/rad
@@ -58,8 +58,8 @@ A2_THIGH_ACTUATOR_CFG = PaceDCMotorCfg(
 
 A2_CALF_ACTUATOR_CFG = PaceDCMotorCfg(
     joint_names_expr=[".*_calf_joint"],
-    saturation_effort=45.43,
-    effort_limit=45.43,
+    saturation_effort=180.0,
+    effort_limit=180.0,
     velocity_limit=15.7,
     stiffness={".*": stiffness},  # P gain in Nm/rad
     damping={".*": damping},  # D gain in Nm s/rad
