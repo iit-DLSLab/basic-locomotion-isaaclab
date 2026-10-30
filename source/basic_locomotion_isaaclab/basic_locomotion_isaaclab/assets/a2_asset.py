@@ -16,8 +16,8 @@ dynamic_friction = [1.7108004093170166, 1.8500726222991943, 5.998956203460693, 1
 bias = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 delay = 2
 
-
-stiffness = 40.0
+# PD gains
+stiffness = 50.0
 damping = 2.0
 
 A2_HIP_ACTUATOR_CFG = PaceDCMotorCfg(

@@ -242,16 +242,20 @@ class LocomotionPolicyWrapper:
                 clock_data = self.phase_signal
             obs = np.concatenate((obs, clock_data), axis=0)
 
-            if(np.linalg.norm(commands) < 0.01):
-                obs[48:48+self.clock_size] = -1.0
-                # When walking starts the clock jumps from the standing value (-1) to the phase, and the policy answers with
-                # a jolt of the joint targets. Blend the clock from -1 to the phase over this time (s) after a start.
-                # This does not happen in training, but it is a good idea to avoid the jolt in deployment.
-                self.time_since_start = 0.0
-            else:
-                self.time_since_start += 1.0 / self.RL_FREQ
-                blend = min(1.0, self.time_since_start / max(self.clock_blend_time, 1e-6))
-                obs[48:48+self.clock_size] = blend * obs[48:48+self.clock_size] - (1.0 - blend)
+            # While standing the clock is the one of the phase offset (all feet in stance), as in training,
+            # so there is no jump of the clock when walking starts
+
+            # OLD: clock set to -1 while standing, blended to the phase after a start
+            #if(np.linalg.norm(commands) < 0.01):
+            #    obs[48:48+self.clock_size] = -1.0
+            #    # When walking starts the clock jumps from the standing value (-1) to the phase, and the policy answers with
+            #    # a jolt of the joint targets. Blend the clock from -1 to the phase over this time (s) after a start.
+            #    # This does not happen in training, but it is a good idea to avoid the jolt in deployment.
+            #    self.time_since_start = 0.0
+            #else:
+            #    self.time_since_start += 1.0 / self.RL_FREQ
+            #    blend = min(1.0, self.time_since_start / max(self.clock_blend_time, 1e-6))
+            #    obs[48:48+self.clock_size] = blend * obs[48:48+self.clock_size] - (1.0 - blend)
 
 
         if(config.training_env["use_concurrent_state_est"] == True):

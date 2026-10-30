@@ -405,11 +405,12 @@ class LocomotionEnv(DirectRLEnv):
             should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
             self._phase_signal = torch.where(should_move.unsqueeze(1), self._phase_signal, self._phase_offset)
             # Encode the phase as sin/cos so the signal stays continuous at the 1 -> 0 wrap: [sin FL..RR, cos FL..RR]
+            # While standing this is the clock of the phase offset (all feet in stance, since offsets < duty factor)
             clock_data = torch.cat([torch.sin(2.0 * torch.pi * self._phase_signal), torch.cos(2.0 * torch.pi * self._phase_signal)], dim=1)
-            
-            # for all the envs that are not moving, we put -1 (outside the unit circle, so distinguishable from any phase)
-            clock_data[:, :] = clock_data[:, :]*should_move.unsqueeze(1).expand(-1, 8) + -1.0* ~should_move.unsqueeze(1).expand(-1, 8)
-            
+
+            # OLD: for all the envs that are not moving, we put -1 (outside the unit circle, so distinguishable from any phase)
+            #clock_data[:, :] = clock_data[:, :]*should_move.unsqueeze(1).expand(-1, 8) + -1.0* ~should_move.unsqueeze(1).expand(-1, 8)
+
 
         # Choosing the main source of observation
         if(self.cfg.use_concurrent_state_est):

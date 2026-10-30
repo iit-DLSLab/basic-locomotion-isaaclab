@@ -15,6 +15,10 @@ dynamic_friction = [3.50, 2.11, 4.8, 2.50, 2.11, 4.8, 3.50, 2.11, 4.8, 3.50, 2.1
 bias = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 delay = 2
 
+# PD gains kept from the previous B2 configuration
+stiffness = 120.0
+damping = 6.0
+
 PEGASUS_HIP_ACTUATOR_CFG = PaceDCMotorCfg(
     joint_names_expr=[".*_hip_joint"],
     saturation_effort=120.0,
