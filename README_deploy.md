@@ -1,11 +1,17 @@
 ## Installation Deploy using Conda
 
-1. install [miniforge](https://github.com/conda-forge/miniforge/releases) (x86_64 or arm64 depending on your platform) or [pixi](https://pixi.prefix.dev/latest/installation/) - the latter for full reproducibility.
+1. install [pixi](https://pixi.prefix.dev/latest/installation/) - for full reproducibility - or [miniforge](https://github.com/conda-forge/miniforge/releases) (x86_64 or arm64 depending on your platform).
 
 2. create an environment using the file in the folder [deploy/installation](https://github.com/iit-DLSLab/basic-locomotion-dls-isaaclab/tree/main/deploy/installation):
 
 
 ```bash
+# for pixi using ROS2 humble
+pixi shell --manifest-path deploy/installation/pixi.toml -e humble
+
+# for pixi using ROS2 lyrical
+pixi shell --manifest-path deploy/installation/pixi.toml -e lyrical
+
 # for conda using ROS2 humble
 conda env create -f deploy/installation/mamba_environment_humble.yaml
 conda activate basic_locomotion_isaaclab_env
@@ -13,12 +19,6 @@ conda activate basic_locomotion_isaaclab_env
 # for conda using ROS2 lyrical
 conda env create -f deploy/installation/mamba_environment_lyrical.yaml
 conda activate basic_locomotion_isaaclab_env
-
-# for pixi using ROS2 humble
-pixi shell --manifest-path deploy/installation/pixi.toml -e humble
-
-# for pixi using ROS2 lyrical
-pixi shell --manifest-path deploy/installation/pixi.toml -e lyrical
 ```
 
 3. suggestion - add in your .bashrc some alias to run the activate/shell commands. You will run them multiple time!
