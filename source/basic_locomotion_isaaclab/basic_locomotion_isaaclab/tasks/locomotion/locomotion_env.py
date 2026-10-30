@@ -49,6 +49,7 @@ from .hyqreal_env_cfg import HyQRealFlatEnvCfg, HyQRealRoughVisionEnvCfg, HyQRea
 from .b2_env_cfg import B2FlatEnvCfg, B2RoughVisionEnvCfg, B2RoughBlindEnvCfg
 from .pegasus_env_cfg import PegasusFlatEnvCfg, PegasusRoughVisionEnvCfg, PegasusRoughBlindEnvCfg
 
+from basic_locomotion_isaaclab.tasks.locomotion.unitree_l2_lidar import UnitreeL2Lidar
 from basic_locomotion_isaaclab.tasks import custom_observations, custom_rewards, custom_events, custom_visualizations
 from basic_locomotion_isaaclab.tasks.supervised_learning_networks import FrozenRandomMlpEncoder, create_supervised_network
 
@@ -300,7 +301,7 @@ class LocomotionEnv(DirectRLEnv):
 
         # we add the Unitree L2 LiDAR if needed for vision-based locomotion
         if(getattr(self.cfg, "use_unitree_l2_lidar", False)):
-            self._unitree_l2_lidar = MultiMeshRayCaster(self.cfg.unitree_l2_lidar)
+            self._unitree_l2_lidar = UnitreeL2Lidar(self.cfg.unitree_l2_lidar)
             self.scene.sensors["unitree_l2_lidar"] = self._unitree_l2_lidar
 
         # we add an imu

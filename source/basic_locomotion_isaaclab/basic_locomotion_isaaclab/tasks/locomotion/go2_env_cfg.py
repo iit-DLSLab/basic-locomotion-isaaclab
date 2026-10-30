@@ -602,14 +602,12 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
     use_unitree_l2_lidar = False
     unitree_l2_lidar = MultiMeshRayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base",
-        update_period=1 / 5.55,
-        offset=MultiMeshRayCasterCfg.OffsetCfg(pos=(0.31, 0.0, 0.02)),
+        # one update per published message (15.4 Hz)
+        update_period=UnitreeL2PatternCfg().message_period,
+        # mounted upside down and pitched forward by 15 deg (Go2 radar joint, rpy=(0, 2.8782, 0))
+        offset=MultiMeshRayCasterCfg.OffsetCfg(pos=(0.31, 0.0, 0.02), rot=(0.0, 0.99134, 0.0, 0.13132)),
         ray_alignment="base",
-        pattern_cfg=UnitreeL2PatternCfg(
-            vertical_fov_orientation="down",
-            enable_downsample=True,
-            keep_ratio=0.1,
-        ),
+        pattern_cfg=UnitreeL2PatternCfg(),
         debug_vis=True,
         # The terrain and the robot (GO2_ROBOT_MESHES).
         mesh_prim_paths=[
