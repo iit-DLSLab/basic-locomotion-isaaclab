@@ -18,7 +18,7 @@ delay = 2
 
 # PD gains
 stiffness = 50.0
-damping = 2.0
+damping = 3.0
 
 A2_HIP_ACTUATOR_CFG = PaceDCMotorCfg(
     joint_names_expr=[".*_hip_joint"],

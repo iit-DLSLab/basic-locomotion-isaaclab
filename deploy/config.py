@@ -33,6 +33,13 @@ elif(robot == "b2"):
     Kp_stand_up_and_down = 50.
     Kd_stand_up_and_down = 5.
 
+elif(robot == "a2"):
+    Kp_walking = 50.
+    Kd_walking = 3.
+
+    Kp_stand_up_and_down = 50.
+    Kd_stand_up_and_down = 5.
+
 elif(robot == "hyqreal2"):
     Kp_walking = 175.
     Kd_walking = 20.
