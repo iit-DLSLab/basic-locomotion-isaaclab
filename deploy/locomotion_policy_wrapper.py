@@ -160,7 +160,11 @@ class LocomotionPolicyWrapper:
                 imu_orientation = np.roll(base_rotation.as_quat(), 1)
 
             base_projected_gravity = self._get_projected_gravity(imu_orientation)
-            base_linear = imu_linear_acceleration
+            if(config.training_env["base_state_source"] == "imu"):
+                # In training the IMU linear acceleration is zeroed (see locomotion_env.py), so do the same here
+                base_linear = np.zeros(3)
+            else:
+                base_linear = imu_linear_acceleration
             base_ang_vel = imu_angular_velocity
         else:
             base_projected_gravity = self._get_projected_gravity(base_quat_wxyz)
