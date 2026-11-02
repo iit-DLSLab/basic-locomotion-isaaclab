@@ -101,7 +101,7 @@ class LocomotionPolicyWrapper:
             self._observation_history_rma = np.zeros((self.rma_history_length, single_rma_observation_space), dtype=np.float32)
 
         # Learned State Estimator
-        if(config.training_env["use_concurrent_state_est"] == True):
+        if(config.training_env["base_state_source"] == "concurrent_se"):
             self._concurrent_state_est_network = load_network(config.concurrent_state_est_network, device='cpu')
             single_concurrent_state_est_observation_space = int(config.training_env["single_concurrent_state_est_observation_space"])
             concurrent_state_est_history_length = int(config.training_env.get("concurrent_state_est_history_length", self.history_length))
@@ -148,7 +148,7 @@ class LocomotionPolicyWrapper:
             heightmap_data=None):
 
         # Update Observation ----------------------        
-        if(config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]):
+        if(config.training_env["base_state_source"] != "ground_truth"):
             if(config.robot == "pegasus"):
                 # The Pegasus IMU is mounted rotated by -90 deg around z w.r.t. the base (see the "imu" site in
                 # pegasus.xml), while the policy is trained with the IMU aligned to the base: bring the readings
@@ -191,8 +191,8 @@ class LocomotionPolicyWrapper:
         joints_vel_RL = joints_vel_leg[6:9]
         joints_vel_RR = joints_vel_leg[9:12]
         obs = np.concatenate([
-            base_linear, # this could be imu linear acc if use_imu or linear vel from state est
-            base_ang_vel, # this could be imu angular vel if use_imu or angular vel from state est
+            base_linear, # this could be imu linear acc if base_state_source is "imu" or linear vel from state est
+            base_ang_vel, # this could be imu angular vel if base_state_source is "imu" or angular vel from state est
             base_projected_gravity,
             ref_base_lin_vel_h[0:2],
             [ref_base_ang_vel[2]],
@@ -259,11 +259,11 @@ class LocomotionPolicyWrapper:
             #    obs[48:48+self.clock_size] = blend * obs[48:48+self.clock_size] - (1.0 - blend)
 
 
-        if(config.training_env["use_concurrent_state_est"] == True):
+        if(config.training_env["base_state_source"] == "concurrent_se"):
 
             obs_concurrent_state_est = np.concatenate([
-                #base_linear, # this could be imu linear acc if use_imu or linear vel from state est
-                base_ang_vel, # this could be imu angular vel if use_imu or angular vel from state est
+                #base_linear, # this could be imu linear acc if base_state_source is "imu" or linear vel from state est
+                base_ang_vel, # this could be imu angular vel if base_state_source is "imu" or angular vel from state est
                 base_projected_gravity,
                 ref_base_lin_vel_h[0:2],
                 [ref_base_ang_vel[2]],

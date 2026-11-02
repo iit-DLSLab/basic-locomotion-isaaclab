@@ -185,7 +185,6 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
     else:
         history_length = 1
 
-    use_imu = False
     # an imu sensor in case we don't want any state estimator (for now we can't use sites from the xml)
     imu = ImuCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base", 
@@ -195,8 +194,8 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
         debug_vis=False)
 
     
-    use_concurrent_state_est = True
-    if(use_concurrent_state_est):
+    base_state_source = "concurrent_se"  # "ground_truth" | "imu" | "concurrent_se"
+    if(base_state_source == "concurrent_se"):
         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
         
         concurrent_state_est_output_space = 3 #lin_vel_b
