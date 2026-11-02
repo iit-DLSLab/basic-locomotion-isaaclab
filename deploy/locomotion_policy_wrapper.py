@@ -104,7 +104,8 @@ class LocomotionPolicyWrapper:
         if(config.training_env["use_concurrent_state_est"] == True):
             self._concurrent_state_est_network = load_network(config.concurrent_state_est_network, device='cpu')
             single_concurrent_state_est_observation_space = int(config.training_env["single_concurrent_state_est_observation_space"])
-            self._observation_history_concurrent_state_est = np.zeros((self.history_length, single_concurrent_state_est_observation_space), dtype=np.float32)
+            concurrent_state_est_history_length = int(config.training_env.get("concurrent_state_est_history_length", self.history_length))
+            self._observation_history_concurrent_state_est = np.zeros((concurrent_state_est_history_length, single_concurrent_state_est_observation_space), dtype=np.float32)
 
 
         # Desired joint vector
