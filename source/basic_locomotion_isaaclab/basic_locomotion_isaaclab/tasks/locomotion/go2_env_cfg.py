@@ -473,6 +473,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
 import isaaclab.terrains as terrain_gen
 from isaaclab.terrains.terrain_generator_cfg import TerrainGeneratorCfg
+from basic_locomotion_isaaclab.tasks.custom_terrains import MeshOverhangBoxesTerrainCfg
 @configclass
 class Go2RoughBlindEnvCfg(Go2FlatEnvCfg):
 
@@ -490,12 +491,17 @@ class Go2RoughBlindEnvCfg(Go2FlatEnvCfg):
             "flat": terrain_gen.MeshPlaneTerrainCfg(
                 proportion=0.2
             ),
-            "boxes": terrain_gen.MeshRandomGridTerrainCfg(
-                proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.10), platform_width=2.0,
+            # scattered boxes with an overhanging top plate, to trip the swing feet
+            "overhang_boxes": MeshOverhangBoxesTerrainCfg(
+                proportion=0.2, num_boxes=50, box_width_range=(0.3, 0.6), box_height_range=(0.05, 0.18),
+                overhang_range=(0.02, 0.04), top_thickness=0.03, platform_width=1.0,
             ),
-            "star": terrain_gen.MeshStarTerrainCfg(
-                proportion=0.1, num_bars=10, bar_width_range=(0.15, 0.20), bar_height_range=(0.05, 0.15), platform_width=2.0,
-            ),
+            #"boxes": terrain_gen.MeshRandomGridTerrainCfg(
+            #    proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.10), platform_width=2.0,
+            #),
+            #"star": terrain_gen.MeshStarTerrainCfg(
+            #    proportion=0.1, num_bars=10, bar_width_range=(0.15, 0.20), bar_height_range=(0.05, 0.15), platform_width=2.0,
+            #),
             "random_rough": terrain_gen.HfRandomUniformTerrainCfg(
                 proportion=0.1, noise_range=(0.02, 0.06), noise_step=0.02, border_width=0.25
             ),
