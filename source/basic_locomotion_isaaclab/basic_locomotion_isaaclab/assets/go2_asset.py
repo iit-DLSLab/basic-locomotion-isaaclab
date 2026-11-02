@@ -9,23 +9,23 @@ from isaaclab.assets.articulation import ArticulationCfg
 
 from basic_locomotion_isaaclab.assets import ISAAC_ASSET_DIR
 
-armature = [0.017503729090094566, 0.02336602471768856, 0.03732568025588989, 0.022362561896443367, 0.021544823423027992, 0.03847520425915718, 0.020267240703105927, 0.024585673585534096, 0.03516065329313278, 0.021125180646777153, 0.020762519910931587, 0.036424197256565094]
-viscous_friction = [0.20631209015846252, 0.21986860036849976, 0.23434531688690186, 0.24403011798858643, 0.1983535885810852, 0.2536759078502655, 0.2501899302005768, 0.24066618084907532, 0.46991124749183655, 0.29485926032066345, 0.22589823603630066, 0.21030187606811523]
-dynamic_friction = [0.288801908493042, 0.2260836958885193, 0.9928773045539856, 0.21979475021362305, 0.243381530046463, 0.4719296097755432, 0.17030715942382812, 0.17484217882156372, 0.9999997615814209, 0.2757018804550171, 0.2683635354042053, 0.7479071617126465]
+# Order: FL_hip, FL_thigh, FL_calf, FR_hip, FR_thigh, FR_calf, RL_hip, RL_thigh, RL_calf, RR_hip, RR_thigh, RR_calf
+armature = [0.015399526804685593, 0.02050127647817135, 0.037081241607666016, 0.018103286623954773, 0.019743947312235832, 0.03752225264906883, 0.017827438190579414, 0.01892966590821743, 0.03460302576422691, 0.01647171564400196, 0.018195493146777153, 0.03529830649495125]
+viscous_friction = [0.19811680912971497, 0.259413480758667, 0.23080530762672424, 0.2374870777130127, 0.23283368349075317, 0.22543010115623474, 0.2243238091468811, 0.24681055545806885, 0.13911908864974976, 0.222743958234787, 0.2360401153564453, 0.20377448201179504]
+dynamic_friction = [0.29993337392807007, 0.22318589687347412, 0.6745705008506775, 0.25826162099838257, 0.2497260570526123, 0.507129430770874, 0.17222875356674194, 0.20518887042999268, 1.1109280586242676, 0.23757243156433105, 0.22198569774627686, 0.49201714992523193]
 bias = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-delay = 2
+bias = 1
 
-# PD gains
-stiffness = 25.0
-damping = 1.5
+Kp = 25.0
+Kd = 1.5
 
 GO2_HIP_ACTUATOR_CFG = PaceDCMotorCfg(
     joint_names_expr=[".*_hip_joint"],
     saturation_effort=23.7,
     effort_limit=23.7,
     velocity_limit=30.1,
-    stiffness={".*": stiffness},  # P gain in Nm/rad
-    damping={".*": damping},  # D gain in Nm s/rad
+    stiffness={".*": Kp},  # P gain in Nm/rad
+    damping={".*": Kd},  # D gain in Nm s/rad
     encoder_bias={"FL_hip_joint": bias[0], "FR_hip_joint": bias[3], "RL_hip_joint": bias[6], "RR_hip_joint": bias[9]},  # encoder bias in radians
     # note: modeling coulomb friction if friction = dynamic_friction
     # > in newer Isaac Sim versions, friction is renamed to static_friction
@@ -42,8 +42,8 @@ GO2_THIGH_ACTUATOR_CFG = PaceDCMotorCfg(
     saturation_effort=23.7,
     effort_limit=23.7,
     velocity_limit=30.1,
-    stiffness={".*": stiffness},  # P gain in Nm/rad
-    damping={".*": damping},  # D gain in Nm s/rad
+    stiffness={".*": Kp},  # P gain in Nm/rad
+    damping={".*": Kd},  # D gain in Nm s/rad
     encoder_bias={"FL_thigh_joint": bias[1], "FR_thigh_joint": bias[4], "RL_thigh_joint": bias[7], "RR_thigh_joint": bias[10]},  # encoder bias in radians
     # note: modeling coulomb friction if friction = dynamic_friction
     # > in newer Isaac Sim versions, friction is renamed to static_friction
@@ -60,8 +60,8 @@ GO2_CALF_ACTUATOR_CFG = PaceDCMotorCfg(
     saturation_effort=45.43,
     effort_limit=45.43,
     velocity_limit=15.7,
-    stiffness={".*": stiffness},  # P gain in Nm/rad
-    damping={".*": damping},  # D gain in Nm s/rad
+    stiffness={".*": Kp},  # P gain in Nm/rad
+    damping={".*": Kd},  # D gain in Nm s/rad
     encoder_bias={"FL_calf_joint": bias[2], "FR_calf_joint": bias[5], "RL_calf_joint": bias[8], "RR_calf_joint": bias[11]},  # encoder bias in radians
     # note: modeling coulomb friction if friction = dynamic_friction
     # > in newer Isaac Sim versions, friction is renamed to static_friction
