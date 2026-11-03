@@ -286,7 +286,7 @@ class ControllerROS2(Node):
         
         if self.locomotion_policy.use_vision:
             # base_state is needed to transform markers from base_link to world coordinates.
-            if not self.first_message_base_arrived or not self.first_message_heightmap_arrived:
+            if not self.first_message_heightmap_arrived:
                 return
         
         # Update the mujoco model
