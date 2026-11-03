@@ -18,8 +18,8 @@ bias = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 delay = 2
 
 # PD gains kept from the previous B2 configuration
-stiffness = 100.0
-damping = 5.0
+stiffness = 120.0
+damping = 6.0
 
 B2_HIP_ACTUATOR_CFG = PaceDCMotorCfg(
     joint_names_expr=[".*_hip_joint"],

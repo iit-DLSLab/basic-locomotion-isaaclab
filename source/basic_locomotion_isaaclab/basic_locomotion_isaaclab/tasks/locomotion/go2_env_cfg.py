@@ -203,7 +203,6 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
         history_length = 1
 
 
-    use_imu = False
     # an imu sensor in case we don't want any state estimator (for now we can't use sites from the xml)
     imu = ImuCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base", 
@@ -213,8 +212,8 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
         debug_vis=False)
 
     
-    use_concurrent_state_est = True
-    if(use_concurrent_state_est):
+    base_state_source = "concurrent_se"  # "ground_truth" | "imu" | "concurrent_se"
+    if(base_state_source == "concurrent_se"):
         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
         
         concurrent_state_est_output_space = 3 #lin_vel_b
@@ -473,6 +472,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
 import isaaclab.terrains as terrain_gen
 from isaaclab.terrains.terrain_generator_cfg import TerrainGeneratorCfg
+from basic_locomotion_isaaclab.tasks.custom_terrains import MeshOverhangBoxesTerrainCfg
 @configclass
 class Go2RoughBlindEnvCfg(Go2FlatEnvCfg):
 
@@ -490,12 +490,17 @@ class Go2RoughBlindEnvCfg(Go2FlatEnvCfg):
             "flat": terrain_gen.MeshPlaneTerrainCfg(
                 proportion=0.2
             ),
-            "boxes": terrain_gen.MeshRandomGridTerrainCfg(
-                proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.10), platform_width=2.0,
+            # scattered boxes with an overhanging top plate, to trip the swing feet
+            "overhang_boxes": MeshOverhangBoxesTerrainCfg(
+                proportion=0.2, num_boxes=50, box_width_range=(0.3, 0.6), box_height_range=(0.05, 0.18),
+                overhang_range=(0.02, 0.04), top_thickness=0.03, platform_width=1.0,
             ),
-            "star": terrain_gen.MeshStarTerrainCfg(
-                proportion=0.1, num_bars=10, bar_width_range=(0.15, 0.20), bar_height_range=(0.05, 0.15), platform_width=2.0,
-            ),
+            #"boxes": terrain_gen.MeshRandomGridTerrainCfg(
+            #    proportion=0.1, grid_width=0.45, grid_height_range=(0.05, 0.10), platform_width=2.0,
+            #),
+            #"star": terrain_gen.MeshStarTerrainCfg(
+            #    proportion=0.1, num_bars=10, bar_width_range=(0.15, 0.20), bar_height_range=(0.05, 0.15), platform_width=2.0,
+            #),
             "random_rough": terrain_gen.HfRandomUniformTerrainCfg(
                 proportion=0.1, noise_range=(0.02, 0.06), noise_step=0.02, border_width=0.25
             ),
@@ -602,14 +607,12 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
     use_unitree_l2_lidar = False
     unitree_l2_lidar = MultiMeshRayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base",
-        update_period=1 / 5.55,
-        offset=MultiMeshRayCasterCfg.OffsetCfg(pos=(0.31, 0.0, 0.02)),
+        # one update per published message (15.4 Hz)
+        update_period=UnitreeL2PatternCfg().message_period,
+        # mounted upside down and pitched forward by 15 deg (Go2 radar joint, rpy=(0, 2.8782, 0))
+        offset=MultiMeshRayCasterCfg.OffsetCfg(pos=(0.31, 0.0, 0.02), rot=(0.0, 0.99134, 0.0, 0.13132)),
         ray_alignment="base",
-        pattern_cfg=UnitreeL2PatternCfg(
-            vertical_fov_orientation="down",
-            enable_downsample=True,
-            keep_ratio=0.1,
-        ),
+        pattern_cfg=UnitreeL2PatternCfg(),
         debug_vis=True,
         # The terrain and the robot (GO2_ROBOT_MESHES).
         mesh_prim_paths=[

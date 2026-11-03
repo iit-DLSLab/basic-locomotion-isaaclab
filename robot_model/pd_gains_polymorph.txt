@@ -1,0 +1,33 @@
+Automatic PD-gain design (PolyMorph, arXiv:2610.19615, Sec. "PD-gain design")
+
+  lambda = sum_{i=1..3} M_ii(q0)            (base translational block -> lambda = 3 * total mass)
+  Kp     = alpha^2 * lambda                 alpha = 0.8, same Kp for all joints
+  Kd_i   = 2 * zeta * sqrt(M_ii(q0) * Kp)   zeta = 0.8, M_ii = joint diagonal of the mass matrix
+  Kd     = median_i(Kd_i)                   same Kd for all joints
+
+Computed with MuJoCo (robot_model/<robot>/<robot>.xml, floating base),
+nominal posture q0: hip 0.0, thigh 0.9, calf -1.8.
+M_ii includes the armature (MuJoCo adds dof_armature to the mass matrix diagonal).
+
+Kd column "IsaacLab armature" uses the armature list in assets/<robot>_asset.py (the one used in training).
+
+robot      mass[kg]  Kp      Kd(no arm.)  Kd(XML arm.)  Kd(IsaacLab arm.)  current Kp/Kd
+go2        15.29     29.35   1.28         1.66          1.84               20 / 1.5
+a2         40.15     77.09   3.78         4.53          4.80               40 / 2.0
+aliengo    24.72     47.46   2.06         2.33          2.13               25 / 2.0
+b2         83.58     160.47  8.60         10.72         9.08               100 / 5.0
+hyqreal2   126.77    243.41  14.54        14.75         14.75              300 / 20
+pegasus    83.16     159.66  10.22        16.38         16.10              120 / 6.0
+
+Per-joint Kd (IsaacLab armature), hip / thigh / calf:
+go2        1.85 / 1.83 / 1.82
+a2         4.84 / 4.95 / 3.66
+aliengo    2.13 / 2.43 / 1.92
+b2         9.07 / 9.47 / 5.47
+hyqreal2   15.31 / 14.75 / 9.73
+pegasus    15.07 / 16.10 / 16.44
+
+Notes:
+- b2_asset.py reuses the go2 armature list (likely a placeholder); the XML armature (0.1) may be more realistic.
+- pegasus armature (0.3 / 0.6) dominates the link inertia; without it Kd ~ 10.
+- The paper uses the URDF inertia without armature (column "no arm.").

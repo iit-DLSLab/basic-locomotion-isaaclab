@@ -49,6 +49,7 @@ from .hyqreal_env_cfg import HyQRealFlatEnvCfg, HyQRealRoughVisionEnvCfg, HyQRea
 from .b2_env_cfg import B2FlatEnvCfg, B2RoughVisionEnvCfg, B2RoughBlindEnvCfg
 from .pegasus_env_cfg import PegasusFlatEnvCfg, PegasusRoughVisionEnvCfg, PegasusRoughBlindEnvCfg
 
+from basic_locomotion_isaaclab.tasks.locomotion.unitree_l2_lidar import UnitreeL2Lidar
 from basic_locomotion_isaaclab.tasks import custom_observations, custom_rewards, custom_events, custom_visualizations
 from basic_locomotion_isaaclab.tasks.supervised_learning_networks import FrozenRandomMlpEncoder, create_supervised_network
 
@@ -121,7 +122,7 @@ class LocomotionEnv(DirectRLEnv):
             self._observation_history_rma = torch.zeros(self.num_envs, cfg.rma_history_length, cfg.single_rma_observation_space, device=self.device)
 
         # Learned State Estimator
-        if(cfg.use_concurrent_state_est == True):
+        if(cfg.base_state_source == "concurrent_se"):
             self._concurrent_state_est_network = create_supervised_network(
                 cfg.concurrent_state_est_observation_space,
                 cfg.concurrent_state_est_output_space,
@@ -135,9 +136,9 @@ class LocomotionEnv(DirectRLEnv):
         # The terms must follow the same order used to build the observations
         if self.cfg.observation_noise_model:
             num_joints = cfg.action_space
-            # The policy sees the IMU acceleration only with use_imu, otherwise a velocity (ground truth or
+            # The policy sees the IMU acceleration only with base_state_source "imu", otherwise a velocity (ground truth or
             # concurrent SE prediction). The RMA and concurrent SE inputs always use the IMU acceleration
-            base_linear_term = "base_linear_acc" if cfg.use_imu and not cfg.use_concurrent_state_est else "base_linear_vel"
+            base_linear_term = "base_linear_acc" if cfg.base_state_source == "imu" else "base_linear_vel"
             proprio_terms = [
                 (base_linear_term, 3),
                 ("base_ang_vel", 3),
@@ -164,7 +165,7 @@ class LocomotionEnv(DirectRLEnv):
                     #imu_proprio_terms * cfg.rma_history_length
                     proprio_terms[1:] * cfg.rma_history_length
                 )
-            if cfg.use_concurrent_state_est:
+            if cfg.base_state_source == "concurrent_se":
                 # the concurrent SE does not use the IMU linear acceleration
                 self._observation_noise_model_concurrent_state_est = self._make_observation_noise_model(
                     #imu_proprio_terms * cfg.concurrent_state_est_history_length
@@ -300,7 +301,7 @@ class LocomotionEnv(DirectRLEnv):
 
         # we add the Unitree L2 LiDAR if needed for vision-based locomotion
         if(getattr(self.cfg, "use_unitree_l2_lidar", False)):
-            self._unitree_l2_lidar = MultiMeshRayCaster(self.cfg.unitree_l2_lidar)
+            self._unitree_l2_lidar = UnitreeL2Lidar(self.cfg.unitree_l2_lidar)
             self.scene.sensors["unitree_l2_lidar"] = self._unitree_l2_lidar
 
         # we add an imu
@@ -405,21 +406,22 @@ class LocomotionEnv(DirectRLEnv):
             should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
             self._phase_signal = torch.where(should_move.unsqueeze(1), self._phase_signal, self._phase_offset)
             # Encode the phase as sin/cos so the signal stays continuous at the 1 -> 0 wrap: [sin FL..RR, cos FL..RR]
+            # While standing this is the clock of the phase offset (all feet in stance, since offsets < duty factor)
             clock_data = torch.cat([torch.sin(2.0 * torch.pi * self._phase_signal), torch.cos(2.0 * torch.pi * self._phase_signal)], dim=1)
-            
-            # for all the envs that are not moving, we put -1 (outside the unit circle, so distinguishable from any phase)
-            clock_data[:, :] = clock_data[:, :]*should_move.unsqueeze(1).expand(-1, 8) + -1.0* ~should_move.unsqueeze(1).expand(-1, 8)
-            
+
+            # OLD: for all the envs that are not moving, we put -1 (outside the unit circle, so distinguishable from any phase)
+            #clock_data[:, :] = clock_data[:, :]*should_move.unsqueeze(1).expand(-1, 8) + -1.0* ~should_move.unsqueeze(1).expand(-1, 8)
+
 
         # Choosing the main source of observation
-        if(self.cfg.use_concurrent_state_est):
+        if(self.cfg.base_state_source == "concurrent_se"):
             # If concurrent SE/Learned State Estimator, we predict linear and angular vel from IMU
             base_linear = custom_observations._get_concurrent_state_estimation(self)
             base_ang_vel = self._imu.data.ang_vel_b
             projected_gravity_b = self._pva.data.projected_gravity_b
-        elif(self.cfg.use_imu):
+        elif(self.cfg.base_state_source == "imu"):
             # Using directly the IMU
-            base_linear = self._imu.data.lin_acc_b
+            base_linear = self._imu.data.lin_acc_b * 0.0 # we don't use the IMU linear acceleration for now, since it is too noisy and not very useful for locomotion
             base_ang_vel = self._imu.data.ang_vel_b
             projected_gravity_b = self._pva.data.projected_gravity_b
         else:
@@ -697,7 +699,7 @@ class LocomotionEnv(DirectRLEnv):
             self._height_map_global_bias[env_ids] = global_bias_std * torch.randn(len(env_ids), 1, device=self.device)
 
         # Reset obs and noise concurrent
-        if(self.cfg.use_concurrent_state_est):
+        if(self.cfg.base_state_source == "concurrent_se"):
             self._observation_history_concurrent_state_est[env_ids] *= 0.0
             if self.cfg.observation_noise_model:
                 self._observation_noise_model_concurrent_state_est.reset(env_ids)

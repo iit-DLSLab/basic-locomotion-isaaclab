@@ -277,7 +277,7 @@ class ControllerROS2(Node):
         
 
         # Safety check to not do anything until a first base and blind state are received
-        if(config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]):
+        if(config.training_env["base_state_source"] != "ground_truth"):
             if(self.first_message_imu_arrived==False or self.first_message_joints_arrived==False):
                 return
         else:
@@ -295,7 +295,7 @@ class ControllerROS2(Node):
         self.mjData.qpos[0:3] = copy.deepcopy(self.position)
         self.mjData.qvel[0:3] = copy.deepcopy(self.linear_velocity)
 
-        if(config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]):
+        if(config.training_env["base_state_source"] != "ground_truth"):
             self.mjData.qpos[3:7] = copy.deepcopy(self.imu_orientation)
             self.mjData.qvel[3:6] = copy.deepcopy(self.imu_angular_velocity)
         else:

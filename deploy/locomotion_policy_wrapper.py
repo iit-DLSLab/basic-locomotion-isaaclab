@@ -101,10 +101,11 @@ class LocomotionPolicyWrapper:
             self._observation_history_rma = np.zeros((self.rma_history_length, single_rma_observation_space), dtype=np.float32)
 
         # Learned State Estimator
-        if(config.training_env["use_concurrent_state_est"] == True):
+        if(config.training_env["base_state_source"] == "concurrent_se"):
             self._concurrent_state_est_network = load_network(config.concurrent_state_est_network, device='cpu')
             single_concurrent_state_est_observation_space = int(config.training_env["single_concurrent_state_est_observation_space"])
-            self._observation_history_concurrent_state_est = np.zeros((self.history_length, single_concurrent_state_est_observation_space), dtype=np.float32)
+            concurrent_state_est_history_length = int(config.training_env.get("concurrent_state_est_history_length", self.history_length))
+            self._observation_history_concurrent_state_est = np.zeros((concurrent_state_est_history_length, single_concurrent_state_est_observation_space), dtype=np.float32)
 
 
         # Desired joint vector
@@ -147,7 +148,7 @@ class LocomotionPolicyWrapper:
             heightmap_data=None):
 
         # Update Observation ----------------------        
-        if(config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]):
+        if(config.training_env["base_state_source"] != "ground_truth"):
             if(config.robot == "pegasus"):
                 # The Pegasus IMU is mounted rotated by -90 deg around z w.r.t. the base (see the "imu" site in
                 # pegasus.xml), while the policy is trained with the IMU aligned to the base: bring the readings
@@ -159,7 +160,11 @@ class LocomotionPolicyWrapper:
                 imu_orientation = np.roll(base_rotation.as_quat(), 1)
 
             base_projected_gravity = self._get_projected_gravity(imu_orientation)
-            base_linear = imu_linear_acceleration
+            if(config.training_env["base_state_source"] == "imu"):
+                # In training the IMU linear acceleration is zeroed (see locomotion_env.py), so do the same here
+                base_linear = np.zeros(3)
+            else:
+                base_linear = imu_linear_acceleration
             base_ang_vel = imu_angular_velocity
         else:
             base_projected_gravity = self._get_projected_gravity(base_quat_wxyz)
@@ -190,8 +195,8 @@ class LocomotionPolicyWrapper:
         joints_vel_RL = joints_vel_leg[6:9]
         joints_vel_RR = joints_vel_leg[9:12]
         obs = np.concatenate([
-            base_linear, # this could be imu linear acc if use_imu or linear vel from state est
-            base_ang_vel, # this could be imu angular vel if use_imu or angular vel from state est
+            base_linear, # this could be imu linear acc if base_state_source is "imu" or linear vel from state est
+            base_ang_vel, # this could be imu angular vel if base_state_source is "imu" or angular vel from state est
             base_projected_gravity,
             ref_base_lin_vel_h[0:2],
             [ref_base_ang_vel[2]],
@@ -242,23 +247,27 @@ class LocomotionPolicyWrapper:
                 clock_data = self.phase_signal
             obs = np.concatenate((obs, clock_data), axis=0)
 
-            if(np.linalg.norm(commands) < 0.01):
-                obs[48:48+self.clock_size] = -1.0
-                # When walking starts the clock jumps from the standing value (-1) to the phase, and the policy answers with
-                # a jolt of the joint targets. Blend the clock from -1 to the phase over this time (s) after a start.
-                # This does not happen in training, but it is a good idea to avoid the jolt in deployment.
-                self.time_since_start = 0.0
-            else:
-                self.time_since_start += 1.0 / self.RL_FREQ
-                blend = min(1.0, self.time_since_start / max(self.clock_blend_time, 1e-6))
-                obs[48:48+self.clock_size] = blend * obs[48:48+self.clock_size] - (1.0 - blend)
+            # While standing the clock is the one of the phase offset (all feet in stance), as in training,
+            # so there is no jump of the clock when walking starts
+
+            # OLD: clock set to -1 while standing, blended to the phase after a start
+            #if(np.linalg.norm(commands) < 0.01):
+            #    obs[48:48+self.clock_size] = -1.0
+            #    # When walking starts the clock jumps from the standing value (-1) to the phase, and the policy answers with
+            #    # a jolt of the joint targets. Blend the clock from -1 to the phase over this time (s) after a start.
+            #    # This does not happen in training, but it is a good idea to avoid the jolt in deployment.
+            #    self.time_since_start = 0.0
+            #else:
+            #    self.time_since_start += 1.0 / self.RL_FREQ
+            #    blend = min(1.0, self.time_since_start / max(self.clock_blend_time, 1e-6))
+            #    obs[48:48+self.clock_size] = blend * obs[48:48+self.clock_size] - (1.0 - blend)
 
 
-        if(config.training_env["use_concurrent_state_est"] == True):
+        if(config.training_env["base_state_source"] == "concurrent_se"):
 
             obs_concurrent_state_est = np.concatenate([
-                #base_linear, # this could be imu linear acc if use_imu or linear vel from state est
-                base_ang_vel, # this could be imu angular vel if use_imu or angular vel from state est
+                #base_linear, # this could be imu linear acc if base_state_source is "imu" or linear vel from state est
+                base_ang_vel, # this could be imu angular vel if base_state_source is "imu" or angular vel from state est
                 base_projected_gravity,
                 ref_base_lin_vel_h[0:2],
                 [ref_base_ang_vel[2]],

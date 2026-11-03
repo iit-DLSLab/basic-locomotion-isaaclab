@@ -92,7 +92,7 @@ class PlayMujoco:
             self.legs_joints_position = qpos[7:19].copy()
             self.legs_joints_velocity = qvel[6:18].copy()
 
-            if config.training_env["use_imu"] or config.training_env["use_concurrent_state_est"]:
+            if config.training_env["base_state_source"] != "ground_truth":
                 imu_linear_acceleration = self.mjData.sensordata[0:3]
                 imu_angular_velocity = self.mjData.sensordata[3:6]
                 imu_orientation = self.mjData.sensordata[9:13]
