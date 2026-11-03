@@ -1,0 +1,91 @@
+--- git commit ---
+ccd85acb24044a0193a70d18582431b4bb7261cf
+
+
+--- git status ---
+On branch feat/new_start_stop
+Your branch is up to date with 'origin/feat/new_start_stop'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   deploy/config.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/assets/go2_asset.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	tested_policies/
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/deploy/config.py b/deploy/config.py
+index ef55bab..cc12999 100644
+--- a/deploy/config.py
++++ b/deploy/config.py
+@@ -4,7 +4,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
+ sys.path.append(dir_path+"/../")
+ sys.path.append(dir_path+"/../scripts/rsl_rl")
+ 
+-robot = 'go2'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
++robot = 'pegasus'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
+ scene = 'scene_random_boxes'  # flat, random_boxes
+ 
+ # ----------------------------------------------------------------------------------------------------------------
+@@ -54,7 +54,7 @@ elif(robot == "pegasus"):
+     Kp_stand_up_and_down = 200.
+     Kd_stand_up_and_down = 10.
+ 
+-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_se_blind"
++    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-11-02_09-53-33"
+ 
+ else:
+     raise ValueError(f"Robot {robot} not supported")
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/assets/go2_asset.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/assets/go2_asset.py
+index 6c76d21..de37a3a 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/assets/go2_asset.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/assets/go2_asset.py
+@@ -14,7 +14,7 @@ armature = [0.015399526804685593, 0.02050127647817135, 0.037081241607666016, 0.0
+ viscous_friction = [0.19811680912971497, 0.259413480758667, 0.23080530762672424, 0.2374870777130127, 0.23283368349075317, 0.22543010115623474, 0.2243238091468811, 0.24681055545806885, 0.13911908864974976, 0.222743958234787, 0.2360401153564453, 0.20377448201179504]
+ dynamic_friction = [0.29993337392807007, 0.22318589687347412, 0.6745705008506775, 0.25826162099838257, 0.2497260570526123, 0.507129430770874, 0.17222875356674194, 0.20518887042999268, 1.1109280586242676, 0.23757243156433105, 0.22198569774627686, 0.49201714992523193]
+ bias = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+-bias = 1
++delay = 1
+ 
+ Kp = 25.0
+ Kd = 1.5
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+index 10d4700..43dd74e 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+@@ -53,7 +53,7 @@ obs_space_names_actor = [
+         "clock_data", # periodic clock data
+         "clock_data", # periodic clock data
+     ]*int(history_length)
+-#obs_space_names_actor += ["heightmap:11x11"]
++obs_space_names_actor += ["heightmap:11x11"]
+ 
+ 
+ # Critic OBS
+@@ -69,7 +69,7 @@ obs_space_names_critic = [
+         "clock_data", # periodic clock data
+         "clock_data", # periodic clock data
+     ]*int(history_length)
+-#obs_space_names_critic += ["heightmap:11x11"]
++obs_space_names_critic += ["heightmap:11x11"]
+ obs_space_names_critic += [    
+         "clock_data", "clock_data", "clock_data",  # P gains
+         "clock_data", "clock_data", "clock_data",  # D gains
+@@ -97,8 +97,8 @@ joints_order = [
+ 
+ 
+ # Robot Name
+-#robot_name = "a1" # Aliengo, Go2, A2, B2
+-robot_name = "a1-mirrored-hip" # Pegasus, HyQReal
++robot_name = "a1" # Aliengo, Go2, A2, B2
++#robot_name = "a1-mirrored-hip" # Pegasus, HyQReal
+ 
+ 
+ morphologycal_symmetries_cfg = MorphologycalSymmetriesCfg(
