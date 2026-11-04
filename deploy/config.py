@@ -24,7 +24,8 @@ elif(robot == "go2"):
     Kp_stand_up_and_down = 50.
     Kd_stand_up_and_down = 5.
 
-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/front_heightmap"
+    # phase1_go2 (model_2999), the policy whose data trained the LiDAR reconstructor: use the two together
+    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/lidar_recon"
 
 elif(robot == "b2"):
     Kp_walking = 100.
@@ -56,7 +57,7 @@ else:
 
 # Perceptive policies: the heightmap reconstructed from the Unitree L2 (/utlidar/cloud) by this TorchScript
 # (exported by scripts/l2_lidar_to_heightmap/lidar_reconstructor.py), instead of the /height_scan_markers scan. None: the scan.
-lidar_reconstructor_path = None
+lidar_reconstructor_path = dir_path + "/../tested_policies/" + robot + "/lidar_recon/exported/lidar_bag_rnn_mlp.ts"
 # Optional calibration of the robot's L2 for it (calibrate_mount.py --output: mount and range error). None: the
 # mount of lidar_grid.py and no range correction.
 lidar_calibration_path = None
