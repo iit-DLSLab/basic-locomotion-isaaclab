@@ -170,6 +170,15 @@ class ControllerROS2(Node):
         self.desired_joint_pos_leg = goDown_qpos[7:19].copy()
         self.legs_joints_position = goDown_qpos[7:19].copy()
 
+        # Startup ramp: interpolate from the measured joints to the "down" keyframe,
+        # otherwise the first command jumps there with the stand up gains
+        self.startup_ramp_duration = 3.0
+        self.startup_ramp_start_time = None
+        self.startup_ramp_initial_joint_pos = None
+        self.startup_ramp_final_joint_pos = goDown_qpos[7:19].copy()
+        self.startup_ramp_last_joint_pos = self.desired_joint_pos_leg.copy()
+        self.startup_ramp_done = False
+
 
         # Interactive Command Line ----------------------------
         from console import Console
@@ -374,6 +383,23 @@ class ControllerROS2(Node):
             Kd = locomotion_policy.Kd_walking
 
         else:
+            # Startup ramp, starting from the first measured joints. If goUp/goDown changed the
+            # reference in the meantime, they have their own ramp and this one stops
+            if not self.startup_ramp_done:
+                if not np.array_equal(self.desired_joint_pos_leg, self.startup_ramp_last_joint_pos):
+                    self.startup_ramp_done = True
+                else:
+                    if self.startup_ramp_start_time is None:
+                        self.startup_ramp_start_time = time.time()
+                        self.startup_ramp_initial_joint_pos = joints_pos_leg.copy()
+                    alpha = min((time.time() - self.startup_ramp_start_time) / self.startup_ramp_duration, 1.0)
+                    self.desired_joint_pos_leg = (
+                        (1 - alpha) * self.startup_ramp_initial_joint_pos + alpha * self.startup_ramp_final_joint_pos
+                    )
+                    self.startup_ramp_last_joint_pos = self.desired_joint_pos_leg.copy()
+                    if alpha >= 1.0:
+                        self.startup_ramp_done = True
+
             desired_joint_pos = self.desired_joint_pos_leg
 
             # Impedence Loop
