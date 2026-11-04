@@ -354,6 +354,8 @@ def feet_height_clearance_aperiodic(self) -> torch.Tensor:
     feet_z_target_error = (
         self.cfg.desired_feet_height
         + feet_terrain_height
+        # The foot body is the center of the foot sphere: the target is for the foot bottom, foot_radius below it
+        + self.cfg.foot_radius
         - self._robot.data.body_pos_w[:, self._feet_ids_robot, 2]
     )
     feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
@@ -373,6 +375,8 @@ def feet_height_clearance_periodic(self) -> torch.Tensor:
     feet_z_target_error = (
         self.cfg.desired_feet_height
         + feet_terrain_height
+        # The foot body is the center of the foot sphere: the target is for the foot bottom, foot_radius below it
+        + self.cfg.foot_radius
         - self._robot.data.body_pos_w[:, self._feet_ids_robot, 2]
     )
     feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
@@ -405,7 +409,7 @@ def feet_height_clearance_mujoco_aperiodic(self) -> torch.Tensor:
 
     self._swing_peak *= ~is_contact
     self._swing_peak = torch.max(self._swing_peak, self._robot.data.body_pos_w[:, self._feet_ids_robot, 2].clone())
-    feet_z_target_error_mujoco = self.cfg.desired_feet_height + feet_terrain_height - self._swing_peak
+    feet_z_target_error_mujoco = self.cfg.desired_feet_height + feet_terrain_height + self.cfg.foot_radius - self._swing_peak
     feet_z_target_error_mujoco = torch.where(
         feet_z_target_error_mujoco < 0.0, feet_z_target_error_mujoco * 0.2, feet_z_target_error_mujoco
     )
@@ -431,7 +435,7 @@ def feet_height_clearance_mujoco_periodic(self) -> torch.Tensor:
         self._swing_peak_periodic, self._robot.data.body_pos_w[:, self._feet_ids_robot, 2].clone()
     )
     feet_z_target_error_mujoco_periodic = (
-        self.cfg.desired_feet_height + feet_terrain_height - self._swing_peak_periodic
+        self.cfg.desired_feet_height + feet_terrain_height + self.cfg.foot_radius - self._swing_peak_periodic
     )
     feet_z_target_error_mujoco_periodic = torch.where(
         feet_z_target_error_mujoco_periodic < 0.0,

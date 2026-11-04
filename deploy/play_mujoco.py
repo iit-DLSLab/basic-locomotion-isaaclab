@@ -112,23 +112,26 @@ class PlayMujoco:
                 offset_world_frame = self.heightmap_offset["pos"] @ heading_orientation_SO3.T
                 self.heightmap.update_height_map(base_pos + offset_world_frame, yaw=base_ori_euler_xyz[2])
 
-            if self.console.isRLActivated and step_num % round(1 / (self.locomotion_policy.RL_FREQ * self.simulation_dt)) == 0:
-                self.desired_joint_pos_leg = self.locomotion_policy.compute_control(
-                    base_pos=base_pos,
-                    base_ori_euler_xyz=base_ori_euler_xyz,
-                    base_quat_wxyz=base_quat_wxyz,
-                    base_lin_vel=base_lin_vel,
-                    base_ang_vel=base_ang_vel,
-                    heading_orientation_SO3=heading_orientation_SO3,
-                    joints_pos_leg=self.legs_joints_position,
-                    joints_vel_leg=self.legs_joints_velocity,
-                    ref_base_lin_vel=ref_base_lin_vel,
-                    ref_base_ang_vel=ref_base_ang_vel,
-                    imu_linear_acceleration=imu_linear_acceleration,
-                    imu_angular_velocity=imu_angular_velocity,
-                    imu_orientation=imu_orientation,
-                    heightmap_data=self.heightmap.data if self.locomotion_policy.use_vision else None,
-                )
+            if self.console.isRLActivated:
+                # The policy runs at RL_FREQ, the PD loop below at every simulation step: keep the walking
+                # gains on all the steps, as in training and in run_controller_ros2.py
+                if step_num % round(1 / (self.locomotion_policy.RL_FREQ * self.simulation_dt)) == 0:
+                    self.desired_joint_pos_leg = self.locomotion_policy.compute_control(
+                        base_pos=base_pos,
+                        base_ori_euler_xyz=base_ori_euler_xyz,
+                        base_quat_wxyz=base_quat_wxyz,
+                        base_lin_vel=base_lin_vel,
+                        base_ang_vel=base_ang_vel,
+                        heading_orientation_SO3=heading_orientation_SO3,
+                        joints_pos_leg=self.legs_joints_position,
+                        joints_vel_leg=self.legs_joints_velocity,
+                        ref_base_lin_vel=ref_base_lin_vel,
+                        ref_base_ang_vel=ref_base_ang_vel,
+                        imu_linear_acceleration=imu_linear_acceleration,
+                        imu_angular_velocity=imu_angular_velocity,
+                        imu_orientation=imu_orientation,
+                        heightmap_data=self.heightmap.data if self.locomotion_policy.use_vision else None,
+                    )
                 self.Kp_legs = self.locomotion_policy.Kp_walking
                 self.Kd_legs = self.locomotion_policy.Kd_walking
             else:

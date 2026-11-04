@@ -194,7 +194,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         debug_vis=False)
 
     
-    base_state_source = "imu"  # "ground_truth" | "imu" | "concurrent_se"
+    base_state_source = "concurrent_se"  # "ground_truth" | "imu" | "concurrent_se"
     if(base_state_source == "concurrent_se"):
         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
         
@@ -478,7 +478,7 @@ class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
             ),
             # scattered boxes with an overhanging top plate, to trip the swing feet
             "overhang_boxes": MeshOverhangBoxesTerrainCfg(
-                proportion=0.2, num_boxes=50, box_width_range=(0.3, 0.6), box_height_range=(0.08, 0.18),
+                proportion=0.2, num_boxes=50, box_width_range=(0.3, 0.6), box_height_range=(0.08, 0.20),
                 overhang_range=(0.02, 0.04), top_thickness=0.03, platform_width=1.0,
             ),
             "random_rough": terrain_gen.HfRandomUniformTerrainCfg(

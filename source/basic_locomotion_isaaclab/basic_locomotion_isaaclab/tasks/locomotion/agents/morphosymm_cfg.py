@@ -53,7 +53,7 @@ obs_space_names_actor = [
         "clock_data", # periodic clock data
         "clock_data", # periodic clock data
     ]*int(history_length)
-#obs_space_names_actor += ["heightmap:11x11"]
+obs_space_names_actor += ["heightmap:11x11"]
 
 
 # Critic OBS
@@ -69,7 +69,7 @@ obs_space_names_critic = [
         "clock_data", # periodic clock data
         "clock_data", # periodic clock data
     ]*int(history_length)
-#obs_space_names_critic += ["heightmap:11x11"]
+obs_space_names_critic += ["heightmap:11x11"]
 obs_space_names_critic += [    
         "clock_data", "clock_data", "clock_data",  # P gains
         "clock_data", "clock_data", "clock_data",  # D gains
@@ -97,8 +97,8 @@ joints_order = [
 
 
 # Robot Name
-#robot_name = "a1" # Aliengo, Go2, A2, B2
-robot_name = "a1-mirrored-hip" # Pegasus, HyQReal
+robot_name = "a1" # Aliengo, Go2, A2, B2
+#robot_name = "a1-mirrored-hip" # Pegasus, HyQReal
 
 
 morphologycal_symmetries_cfg = MorphologycalSymmetriesCfg(

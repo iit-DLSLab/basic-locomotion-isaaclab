@@ -2,6 +2,8 @@ import numpy as np
 import trimesh
 
 from isaaclab.terrains import SubTerrainBaseCfg
+from isaaclab.terrains.height_field import HfTerrainBaseCfg
+from isaaclab.terrains.height_field.utils import height_field_to_mesh
 from isaaclab.utils.configclass import configclass
 
 
@@ -86,3 +88,70 @@ class MeshOverhangBoxesTerrainCfg(SubTerrainBaseCfg):
 
     min_gap: float = 0.3
     """The minimum free distance between two boxes (in m)."""
+
+
+@height_field_to_mesh
+def holes_terrain(difficulty: float, cfg: "HfHolesTerrainCfg") -> np.ndarray:
+    """Generate a flat terrain with many small square holes, deep enough that a foot in a hole is catastrophic.
+
+    The holes have a fixed size, independent of the difficulty: the terrain is meant to have many edges to avoid,
+    not to be hard to cross.
+    """
+    width_pixels = int(round(cfg.size[0] / cfg.horizontal_scale))
+    length_pixels = int(round(cfg.size[1] / cfg.horizontal_scale))
+    # In the mesh a hole of N pixels is (N + 1) pixels wide, since the walls are moved to the neighboring vertices
+    hole_pixels = max(1, int(round(cfg.hole_size / cfg.horizontal_scale)) - 1)
+    gap_pixels = int(round(cfg.min_gap / cfg.horizontal_scale)) + 1
+    platform_pixels = int(round(cfg.platform_width / cfg.horizontal_scale))
+    hole_depth = int(round(cfg.hole_depth / cfg.vertical_scale))
+
+    hf_raw = np.zeros((width_pixels, length_pixels), dtype=np.int16)
+    # Cells where a hole cannot start: the central platform (grown by the hole size and the gap) and the holes placed
+    # so far (grown by the gap), so that the holes are at least min_gap apart and never touch the platform
+    blocked = np.zeros((width_pixels, length_pixels), dtype=bool)
+    center_x, center_y = width_pixels // 2, length_pixels // 2
+    half_platform = platform_pixels // 2
+    blocked[
+        max(0, center_x - half_platform - hole_pixels - gap_pixels + 1):center_x + half_platform + gap_pixels,
+        max(0, center_y - half_platform - hole_pixels - gap_pixels + 1):center_y + half_platform + gap_pixels,
+    ] = True
+
+    num_placed = 0
+    for _ in range(cfg.num_holes * 20):
+        if num_placed >= cfg.num_holes:
+            break
+        x = np.random.randint(0, width_pixels - hole_pixels + 1)
+        y = np.random.randint(0, length_pixels - hole_pixels + 1)
+        if blocked[x, y]:
+            continue
+        hf_raw[x:x + hole_pixels, y:y + hole_pixels] = -hole_depth
+        blocked[
+            max(0, x - hole_pixels - gap_pixels + 1):x + hole_pixels + gap_pixels,
+            max(0, y - hole_pixels - gap_pixels + 1):y + hole_pixels + gap_pixels,
+        ] = True
+        num_placed += 1
+
+    return hf_raw
+
+
+@configclass
+class HfHolesTerrainCfg(HfTerrainBaseCfg):
+    """Configuration for a flat terrain with many small square holes of fixed size."""
+
+    function = holes_terrain
+
+    num_holes: int = 150
+    """The number of holes to place (fewer if they do not fit)."""
+
+    hole_size: float = 0.3
+    """The side of the square holes (in m), rounded to a multiple of the horizontal scale. With a single pixel (2
+    horizontal scales) the walls cannot be vertical and the hole becomes a diagonal slit, so use at least 3."""
+
+    hole_depth: float = 1.0
+    """The depth of the holes (in m)."""
+
+    min_gap: float = 0.3
+    """The minimum flat distance between two holes, and between a hole and the platform (in m)."""
+
+    platform_width: float = 2.0
+    """The width of the flat square platform at the center of the terrain (in m)."""

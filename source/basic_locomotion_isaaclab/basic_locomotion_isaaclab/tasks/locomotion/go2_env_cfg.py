@@ -472,7 +472,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
 import isaaclab.terrains as terrain_gen
 from isaaclab.terrains.terrain_generator_cfg import TerrainGeneratorCfg
-from basic_locomotion_isaaclab.tasks.custom_terrains import MeshOverhangBoxesTerrainCfg
+from basic_locomotion_isaaclab.tasks.custom_terrains import HfHolesTerrainCfg, MeshOverhangBoxesTerrainCfg
 @configclass
 class Go2RoughBlindEnvCfg(Go2FlatEnvCfg):
 
@@ -566,6 +566,13 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
 
         self.feet_edge_stance_reward_scale = -1.0
         self.feet_edge_swing_reward_scale = -2.0
+
+        # flat terrain with many small and deep holes of fixed size, only for perceptive locomotion: lots of
+        # catastrophic edges to avoid, independent of the difficulty (proportions are normalized by the terrain generator)
+        self.terrain.terrain_generator.sub_terrains["holes"] = HfHolesTerrainCfg(
+            proportion=0.1, num_holes=150, hole_size=0.1, hole_depth=1.0, min_gap=0.3,
+            platform_width=1.5, border_width=0.25,
+        )
 
     # green dots on the terrain hit by the perceptive height scanner, red dots on the height map seen by the policy
     # (with the observation noise)
