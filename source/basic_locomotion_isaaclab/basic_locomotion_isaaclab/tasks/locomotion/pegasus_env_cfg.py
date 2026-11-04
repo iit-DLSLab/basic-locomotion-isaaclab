@@ -188,7 +188,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     imu = ImuCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base",
         offset=ImuCfg.OffsetCfg(
-            pos=(-0.0085648, -0.0065251, -0.03696),
+            pos=(-0.0077, -0.00036, -0.029),
             #rot=(0, 0, -0.70710678, 0.70710678)
         ), 
         debug_vis=False)
