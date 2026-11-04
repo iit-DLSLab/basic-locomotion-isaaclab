@@ -53,7 +53,7 @@ class EventCfg:
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="base"),
-            "mass_distribution_params": (-10.0, 5.0),
+            "mass_distribution_params": (-5.0, 5.0),
             "operation": "add",
         },
     )
@@ -194,7 +194,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         debug_vis=False)
 
     
-    base_state_source = "concurrent_se"  # "ground_truth" | "imu" | "concurrent_se"
+    base_state_source = "ground_truth"  # "ground_truth" | "imu" | "concurrent_se"
     if(base_state_source == "concurrent_se"):
         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
         
@@ -353,7 +353,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         "projected_gravity": (0.05, 0.01),
         "commands": (0.01, 0.01),
         "joint_pos": (0.01, 0.01),
-        "joint_vel": (0.1, 0.01),
+        "joint_vel": (0.15, 0.01),
         "actions": (0.01, 0.01),
         "clock": (0.01, 0.01),
         "height_map": (0.02, 0.01),
@@ -374,7 +374,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
 
 
     # Desired tracking variables
-    desired_base_height = 0.55
+    desired_base_height = 0.60
     desired_feet_height = 0.05
     foot_radius = 0.041 # radius of the foot collision sphere
 

@@ -113,10 +113,10 @@ def Xform "pegasus_description"
             prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI", "PhysicsArticulationRootAPI", "NewtonArticulationRootAPI"]
         )
         {
-            point3f physics:centerOfMass = (0.00846406, 0.00404455, -0.000762916)
-            float3 physics:diagonalInertia = (3.892899, 3.367542, 1.153365)
-            float physics:mass = 49.344
-            quatf physics:principalAxes = (-0.000031262505, 0.70832103, 0.0024725401, 0.70588607)
+            point3f physics:centerOfMass = (-0.0127, -0.0138, -0.00792)
+            float3 physics:diagonalInertia = (2.28902, 1.77859, 0.773189)
+            float physics:mass = 29.248
+            quatf physics:principalAxes = (0.007839435, 0.7071044, 0.009901266, 0.7069964)
 
             over "Box" (
                 prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -194,14 +194,54 @@ def Xform "pegasus_description"
             {
             }
 
+            def "head_tail" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (-0.0002818, 0, 0.0008594)
+                float3 physics:diagonalInertia = (1.13432, 1.12012, 0.0318361)
+                float physics:mass = 4.258
+                quatf physics:principalAxes = (0.499837, 0.499841, 0.500158, 0.500164)
+
+                def PhysicsFixedJoint "PhysicsFixedJoint"
+                {
+                    rel physics:body0 = </pegasus_description/Geometry/base>
+                    rel physics:body1 = </pegasus_description/Geometry/base/head_tail>
+                    point3f physics:localPos0 = (0, 0, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (1, 0, 0, 0)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                }
+            }
+
+            def "battery" (
+                prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+            )
+            {
+                point3f physics:centerOfMass = (-0.002, 0.04214, -0.098)
+                float3 physics:diagonalInertia = (0.300258, 0.175855, 0.156187)
+                float physics:mass = 12
+                quatf physics:principalAxes = (-0.004222219, 0.70733684, 0.003989119, 0.7068528)
+
+                def PhysicsFixedJoint "PhysicsFixedJoint"
+                {
+                    rel physics:body0 = </pegasus_description/Geometry/base>
+                    rel physics:body1 = </pegasus_description/Geometry/base/battery>
+                    point3f physics:localPos0 = (0, 0, 0)
+                    point3f physics:localPos1 = (0, 0, 0)
+                    quatf physics:localRot0 = (1, 0, 0, 0)
+                    quatf physics:localRot1 = (1, 0, 0, 0)
+                }
+            }
+
             def "FL_hip" (
                 prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
             )
             {
-                point3f physics:centerOfMass = (0.000542, -0.02662, 0.10103)
-                float3 physics:diagonalInertia = (0.00675174, 0.00530183, 0.00343653)
-                float physics:mass = 2.871
-                quatf physics:principalAxes = (0.44833893, 0.46882695, 0.52629995, 0.54972893)
+                point3f physics:centerOfMass = (-0.001306, -0.0460164, 0.0833266)
+                float3 physics:diagonalInertia = (0.00653267, 0.00567396, 0.00452946)
+                float physics:mass = 2.8481
+                quatf physics:principalAxes = (0.71876806, -0.10540101, 0.09766281, 0.6802391)
 
                 over "Capsule" (
                     prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -227,9 +267,9 @@ def Xform "pegasus_description"
                     prepend apiSchemas = ["MjcJointAPI"]
                 )
                 {
-                    uniform double mjc:armature = 0.3
-                    uniform double mjc:damping = 0.1
-                    uniform double mjc:frictionloss = 3.5022
+                    uniform double mjc:armature = 0.33
+                    uniform double mjc:damping = 0.001
+                    uniform double mjc:frictionloss = 2.6226
                     uniform token physics:axis = "Z"
                     rel physics:body0 = </pegasus_description/Geometry/base>
                     rel physics:body1 = </pegasus_description/Geometry/base/FL_hip>
@@ -245,10 +285,10 @@ def Xform "pegasus_description"
                     prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
                 )
                 {
-                    point3f physics:centerOfMass = (0.09529, 0.07115, -0.05348)
-                    float3 physics:diagonalInertia = (0.119485, 0.113691, 0.00911342)
-                    float physics:mass = 4.8923
-                    quatf physics:principalAxes = (0.26879004, 0.70650804, 0.24105401, 0.60868007)
+                    point3f physics:centerOfMass = (0.0586443, 0.0057662, 0.100631)
+                    float3 physics:diagonalInertia = (0.0910098, 0.0870745, 0.0121762)
+                    float physics:mass = 4.9298
+                    quatf physics:principalAxes = (0.3576328, 0.6491336, 0.3719768, 0.5588896)
 
                     over "Box" (
                         prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -274,13 +314,13 @@ def Xform "pegasus_description"
                         prepend apiSchemas = ["MjcJointAPI"]
                     )
                     {
-                        uniform double mjc:armature = 0.3416
-                        uniform double mjc:damping = 0.4826
-                        uniform double mjc:frictionloss = 2.1155
+                        uniform double mjc:armature = 0.33
+                        uniform double mjc:damping = 0.1958
+                        uniform double mjc:frictionloss = 2.5035
                         uniform token physics:axis = "Z"
                         rel physics:body0 = </pegasus_description/Geometry/base/FL_hip>
                         rel physics:body1 = </pegasus_description/Geometry/base/FL_hip/FL_thigh>
-                        point3f physics:localPos0 = (0, 0.1485, 0.1045)
+                        point3f physics:localPos0 = (0, -0.0095, 0.1045)
                         point3f physics:localPos1 = (0, 0, 0)
                         quatf physics:localRot0 = (0.7071068, -0.7071067, 5.551115e-17, 1.110223e-16)
                         quatf physics:localRot1 = (1, 0, 0, 0)
@@ -292,10 +332,10 @@ def Xform "pegasus_description"
                         prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
                     )
                     {
-                        point3f physics:centerOfMass = (0.245582, 0.00121522, 0.000150716)
-                        float3 physics:diagonalInertia = (0.0173389, 0.0171665, 0.000549556)
-                        float physics:mass = 0.67
-                        quatf physics:principalAxes = (-0.0018218308, 0.70505226, 0.02685771, 0.7086442)
+                        point3f physics:centerOfMass = (0.199436, 0.0458962, 0.0000239)
+                        float3 physics:diagonalInertia = (0.0129906, 0.0129673, 0.000376903)
+                        float physics:mass = 0.535
+                        quatf physics:principalAxes = (0.16552104, 0.7053702, -0.04660821, 0.68766516)
 
                         over "Box" (
                             prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -332,13 +372,13 @@ def Xform "pegasus_description"
                             prepend apiSchemas = ["MjcJointAPI"]
                         )
                         {
-                            uniform double mjc:armature = 0.6
-                            uniform double mjc:damping = 1.1445
-                            uniform double mjc:frictionloss = 4.7939
+                            uniform double mjc:armature = 1.0692
+                            uniform double mjc:damping = 0.5439
+                            uniform double mjc:frictionloss = 4.9329
                             uniform token physics:axis = "Z"
                             rel physics:body0 = </pegasus_description/Geometry/base/FL_hip/FL_thigh>
                             rel physics:body1 = </pegasus_description/Geometry/base/FL_hip/FL_thigh/FL_calf>
-                            point3f physics:localPos0 = (0.418, 0, 5.551115e-17)
+                            point3f physics:localPos0 = (0.418, -5.551115e-17, 0.139854)
                             point3f physics:localPos1 = (0, 0, 0)
                             quatf physics:localRot0 = (1, 0, 0, 0)
                             quatf physics:localRot1 = (1, 0, 0, 0)
@@ -369,7 +409,7 @@ def Xform "pegasus_description"
                             {
                                 rel physics:body0 = </pegasus_description/Geometry/base/FL_hip/FL_thigh/FL_calf>
                                 rel physics:body1 = </pegasus_description/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot>
-                                point3f physics:localPos0 = (0.427146, 0, 5.551115e-17)
+                                point3f physics:localPos0 = (0.427146, 0, -5.551115e-17)
                                 point3f physics:localPos1 = (0, 0, 0)
                                 quatf physics:localRot0 = (1, 0, 0, 0)
                                 quatf physics:localRot1 = (1, 0, 0, 0)
@@ -383,10 +423,10 @@ def Xform "pegasus_description"
                 prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
             )
             {
-                point3f physics:centerOfMass = (0.000542, 0.02662, 0.10103)
-                float3 physics:diagonalInertia = (0.00675174, 0.00530183, 0.00343653)
-                float physics:mass = 2.871
-                quatf physics:principalAxes = (0.54972893, 0.52629995, 0.46882695, 0.44833893)
+                point3f physics:centerOfMass = (-0.001306, 0.0460164, 0.0833266)
+                float3 physics:diagonalInertia = (0.00653267, 0.00567396, 0.00452946)
+                float physics:mass = 2.8481
+                quatf physics:principalAxes = (0.680239, 0.0976628, -0.105401, 0.718768)
 
                 over "Capsule" (
                     prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -412,9 +452,9 @@ def Xform "pegasus_description"
                     prepend apiSchemas = ["MjcJointAPI"]
                 )
                 {
-                    uniform double mjc:armature = 0.3
-                    uniform double mjc:damping = 0.1
-                    uniform double mjc:frictionloss = 2.2686
+                    uniform double mjc:armature = 0.33
+                    uniform double mjc:damping = 0.2111
+                    uniform double mjc:frictionloss = 2.0482
                     uniform token physics:axis = "Z"
                     rel physics:body0 = </pegasus_description/Geometry/base>
                     rel physics:body1 = </pegasus_description/Geometry/base/FR_hip>
@@ -430,10 +470,10 @@ def Xform "pegasus_description"
                     prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
                 )
                 {
-                    point3f physics:centerOfMass = (0.09529, 0.07115, 0.05348)
-                    float3 physics:diagonalInertia = (0.119485, 0.113691, 0.00911342)
-                    float physics:mass = 4.8923
-                    quatf physics:principalAxes = (-0.241054, 0.60868, -0.26879, 0.706508)
+                    point3f physics:centerOfMass = (0.0586443, 0.0057662, -0.100631)
+                    float3 physics:diagonalInertia = (0.0910098, 0.0870745, 0.0121762)
+                    float physics:mass = 4.9298
+                    quatf physics:principalAxes = (0.6491336, 0.3576328, 0.5588896, 0.3719768)
 
                     over "Box" (
                         prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -459,13 +499,13 @@ def Xform "pegasus_description"
                         prepend apiSchemas = ["MjcJointAPI"]
                     )
                     {
-                        uniform double mjc:armature = 0.314
-                        uniform double mjc:damping = 0.2063
-                        uniform double mjc:frictionloss = 2.9168
+                        uniform double mjc:armature = 0.33
+                        uniform double mjc:damping = 0.001
+                        uniform double mjc:frictionloss = 3.8363
                         uniform token physics:axis = "Z"
                         rel physics:body0 = </pegasus_description/Geometry/base/FR_hip>
                         rel physics:body1 = </pegasus_description/Geometry/base/FR_hip/FR_thigh>
-                        point3f physics:localPos0 = (0, -0.1485, 0.1045)
+                        point3f physics:localPos0 = (0, 0.0095, 0.1045)
                         point3f physics:localPos1 = (0, 0, 0)
                         quatf physics:localRot0 = (0.7071068, -0.7071067, 5.551115e-17, 1.110223e-16)
                         quatf physics:localRot1 = (1, 0, 0, 0)
@@ -477,10 +517,10 @@ def Xform "pegasus_description"
                         prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
                     )
                     {
-                        point3f physics:centerOfMass = (0.245582, 0.00121522, -0.000150716)
-                        float3 physics:diagonalInertia = (0.0173389, 0.0171665, 0.000549556)
-                        float physics:mass = 0.67
-                        quatf physics:principalAxes = (-0.02685771, 0.7086442, 0.0018218308, 0.70505226)
+                        point3f physics:centerOfMass = (0.199436, 0.0458962, -0.0000239)
+                        float3 physics:diagonalInertia = (0.0129906, 0.0129673, 0.000376903)
+                        float physics:mass = 0.535
+                        quatf physics:principalAxes = (0.04660821, 0.68766516, -0.16552104, 0.7053702)
 
                         over "Box" (
                             prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -517,13 +557,13 @@ def Xform "pegasus_description"
                             prepend apiSchemas = ["MjcJointAPI"]
                         )
                         {
-                            uniform double mjc:armature = 0.6
-                            uniform double mjc:damping = 1.2399
-                            uniform double mjc:frictionloss = 5.5299
+                            uniform double mjc:armature = 1.0692
+                            uniform double mjc:damping = 0.7097
+                            uniform double mjc:frictionloss = 5.7311
                             uniform token physics:axis = "Z"
                             rel physics:body0 = </pegasus_description/Geometry/base/FR_hip/FR_thigh>
                             rel physics:body1 = </pegasus_description/Geometry/base/FR_hip/FR_thigh/FR_calf>
-                            point3f physics:localPos0 = (0.418, 0, 0)
+                            point3f physics:localPos0 = (0.418, 0, -0.139854)
                             point3f physics:localPos1 = (0, 0, 0)
                             quatf physics:localRot0 = (1, 0, 0, 0)
                             quatf physics:localRot1 = (1, 0, 0, 0)
@@ -568,10 +608,10 @@ def Xform "pegasus_description"
                 prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
             )
             {
-                point3f physics:centerOfMass = (0.000542, -0.02662, -0.10103)
-                float3 physics:diagonalInertia = (0.00675174, 0.00530183, 0.00343653)
-                float physics:mass = 2.871
-                quatf physics:principalAxes = (0.44833893, 0.46882695, 0.52629995, 0.54972893)
+                point3f physics:centerOfMass = (-0.001306, -0.0460164, -0.0833266)
+                float3 physics:diagonalInertia = (0.00653267, 0.00567396, 0.00452946)
+                float physics:mass = 2.8481
+                quatf physics:principalAxes = (0.71876806, 0.10540101, -0.09766281, 0.6802391)
 
                 over "Capsule" (
                     prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -597,9 +637,9 @@ def Xform "pegasus_description"
                     prepend apiSchemas = ["MjcJointAPI"]
                 )
                 {
-                    uniform double mjc:armature = 0.3099
-                    uniform double mjc:damping = 0.1
-                    uniform double mjc:frictionloss = 2.0989
+                    uniform double mjc:armature = 0.33
+                    uniform double mjc:damping = 0.234
+                    uniform double mjc:frictionloss = 2.0712
                     uniform token physics:axis = "Z"
                     rel physics:body0 = </pegasus_description/Geometry/base>
                     rel physics:body1 = </pegasus_description/Geometry/base/RL_hip>
@@ -615,10 +655,10 @@ def Xform "pegasus_description"
                     prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
                 )
                 {
-                    point3f physics:centerOfMass = (0.09529, 0.07115, -0.05348)
-                    float3 physics:diagonalInertia = (0.119485, 0.113691, 0.00911342)
-                    float physics:mass = 4.8923
-                    quatf physics:principalAxes = (0.26879004, 0.70650804, 0.24105401, 0.60868007)
+                    point3f physics:centerOfMass = (0.0586443, 0.0057662, 0.100631)
+                    float3 physics:diagonalInertia = (0.0910098, 0.0870745, 0.0121762)
+                    float physics:mass = 4.9298
+                    quatf physics:principalAxes = (0.3576328, 0.6491336, 0.3719768, 0.5588896)
 
                     over "Box" (
                         prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -644,13 +684,13 @@ def Xform "pegasus_description"
                         prepend apiSchemas = ["MjcJointAPI"]
                     )
                     {
-                        uniform double mjc:armature = 0.3173
-                        uniform double mjc:damping = 0.796
-                        uniform double mjc:frictionloss = 1.7164
+                        uniform double mjc:armature = 0.33
+                        uniform double mjc:damping = 0.2563
+                        uniform double mjc:frictionloss = 2.4914
                         uniform token physics:axis = "Z"
                         rel physics:body0 = </pegasus_description/Geometry/base/RL_hip>
                         rel physics:body1 = </pegasus_description/Geometry/base/RL_hip/RL_thigh>
-                        point3f physics:localPos0 = (1.110223e-16, 0.1485, -0.1045)
+                        point3f physics:localPos0 = (2.220446e-16, -0.0095, -0.1045)
                         point3f physics:localPos1 = (0, 0, 0)
                         quatf physics:localRot0 = (0.7071068, -0.7071067, 5.551115e-17, 1.110223e-16)
                         quatf physics:localRot1 = (1, 0, 0, 0)
@@ -662,10 +702,10 @@ def Xform "pegasus_description"
                         prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
                     )
                     {
-                        point3f physics:centerOfMass = (0.245582, 0.00121522, 0.000150716)
-                        float3 physics:diagonalInertia = (0.0173389, 0.0171665, 0.000549556)
-                        float physics:mass = 0.67
-                        quatf physics:principalAxes = (-0.0018218308, 0.70505226, 0.02685771, 0.7086442)
+                        point3f physics:centerOfMass = (0.199436, 0.0458962, 0.0000239)
+                        float3 physics:diagonalInertia = (0.0129906, 0.0129673, 0.000376903)
+                        float physics:mass = 0.535
+                        quatf physics:principalAxes = (0.16552104, 0.7053702, -0.04660821, 0.68766516)
 
                         over "Box" (
                             prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -702,13 +742,13 @@ def Xform "pegasus_description"
                             prepend apiSchemas = ["MjcJointAPI"]
                         )
                         {
-                            uniform double mjc:armature = 0.6
-                            uniform double mjc:damping = 1.7338
-                            uniform double mjc:frictionloss = 4.4496
+                            uniform double mjc:armature = 1.0692
+                            uniform double mjc:damping = 1.3333
+                            uniform double mjc:frictionloss = 4.1006
                             uniform token physics:axis = "Z"
                             rel physics:body0 = </pegasus_description/Geometry/base/RL_hip/RL_thigh>
                             rel physics:body1 = </pegasus_description/Geometry/base/RL_hip/RL_thigh/RL_calf>
-                            point3f physics:localPos0 = (0.418, 0, 5.551115e-17)
+                            point3f physics:localPos0 = (0.418, -5.551115e-17, 0.139854)
                             point3f physics:localPos1 = (0, 0, 0)
                             quatf physics:localRot0 = (1, 0, 0, 0)
                             quatf physics:localRot1 = (1, 0, 0, 0)
@@ -739,7 +779,7 @@ def Xform "pegasus_description"
                             {
                                 rel physics:body0 = </pegasus_description/Geometry/base/RL_hip/RL_thigh/RL_calf>
                                 rel physics:body1 = </pegasus_description/Geometry/base/RL_hip/RL_thigh/RL_calf/RL_foot>
-                                point3f physics:localPos0 = (0.427146, 0, 5.551115e-17)
+                                point3f physics:localPos0 = (0.427146, 0, -1.110223e-16)
                                 point3f physics:localPos1 = (0, 0, 0)
                                 quatf physics:localRot0 = (1, 0, 0, 0)
                                 quatf physics:localRot1 = (1, 0, 0, 0)
@@ -753,10 +793,10 @@ def Xform "pegasus_description"
                 prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
             )
             {
-                point3f physics:centerOfMass = (0.000542, 0.02662, -0.10103)
-                float3 physics:diagonalInertia = (0.00675174, 0.00530183, 0.00343653)
-                float physics:mass = 2.871
-                quatf physics:principalAxes = (0.54972893, 0.52629995, 0.46882695, 0.44833893)
+                point3f physics:centerOfMass = (-0.001306, 0.0460164, -0.0833266)
+                float3 physics:diagonalInertia = (0.00653267, 0.00567396, 0.00452946)
+                float physics:mass = 2.8481
+                quatf physics:principalAxes = (0.680239, -0.0976628, 0.105401, 0.718768)
 
                 over "Capsule" (
                     prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -782,9 +822,9 @@ def Xform "pegasus_description"
                     prepend apiSchemas = ["MjcJointAPI"]
                 )
                 {
-                    uniform double mjc:armature = 0.3217
-                    uniform double mjc:damping = 0.1
-                    uniform double mjc:frictionloss = 2.3307
+                    uniform double mjc:armature = 0.33
+                    uniform double mjc:damping = 0.0632
+                    uniform double mjc:frictionloss = 2.4903
                     uniform token physics:axis = "Z"
                     rel physics:body0 = </pegasus_description/Geometry/base>
                     rel physics:body1 = </pegasus_description/Geometry/base/RR_hip>
@@ -800,10 +840,10 @@ def Xform "pegasus_description"
                     prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
                 )
                 {
-                    point3f physics:centerOfMass = (0.09529, 0.07115, 0.05348)
-                    float3 physics:diagonalInertia = (0.119485, 0.113691, 0.00911342)
-                    float physics:mass = 4.8923
-                    quatf physics:principalAxes = (-0.241054, 0.60868, -0.26879, 0.706508)
+                    point3f physics:centerOfMass = (0.0586443, 0.0057662, -0.100631)
+                    float3 physics:diagonalInertia = (0.0910098, 0.0870745, 0.0121762)
+                    float physics:mass = 4.9298
+                    quatf physics:principalAxes = (0.6491336, 0.3576328, 0.5588896, 0.3719768)
 
                     over "Box" (
                         prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -829,13 +869,13 @@ def Xform "pegasus_description"
                         prepend apiSchemas = ["MjcJointAPI"]
                     )
                     {
-                        uniform double mjc:armature = 0.3352
-                        uniform double mjc:damping = 0.5969
-                        uniform double mjc:frictionloss = 2.213
+                        uniform double mjc:armature = 0.33
+                        uniform double mjc:damping = 0.1404
+                        uniform double mjc:frictionloss = 2.9339
                         uniform token physics:axis = "Z"
                         rel physics:body0 = </pegasus_description/Geometry/base/RR_hip>
                         rel physics:body1 = </pegasus_description/Geometry/base/RR_hip/RR_thigh>
-                        point3f physics:localPos0 = (1.110223e-16, -0.1485, -0.1045)
+                        point3f physics:localPos0 = (2.220446e-16, 0.0095, -0.1045)
                         point3f physics:localPos1 = (0, 0, 0)
                         quatf physics:localRot0 = (0.7071068, -0.7071067, 5.551115e-17, 1.110223e-16)
                         quatf physics:localRot1 = (1, 0, 0, 0)
@@ -847,10 +887,10 @@ def Xform "pegasus_description"
                         prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
                     )
                     {
-                        point3f physics:centerOfMass = (0.245582, 0.00121522, -0.000150716)
-                        float3 physics:diagonalInertia = (0.0173389, 0.0171665, 0.000549556)
-                        float physics:mass = 0.67
-                        quatf physics:principalAxes = (-0.02685771, 0.7086442, 0.0018218308, 0.70505226)
+                        point3f physics:centerOfMass = (0.199436, 0.0458962, -0.0000239)
+                        float3 physics:diagonalInertia = (0.0129906, 0.0129673, 0.000376903)
+                        float physics:mass = 0.535
+                        quatf physics:principalAxes = (0.04660821, 0.68766516, -0.16552104, 0.7053702)
 
                         over "Box" (
                             prepend apiSchemas = ["PhysicsCollisionAPI", "NewtonCollisionAPI", "MjcCollisionAPI", "PhysicsMassAPI", "MaterialBindingAPI"]
@@ -887,13 +927,13 @@ def Xform "pegasus_description"
                             prepend apiSchemas = ["MjcJointAPI"]
                         )
                         {
-                            uniform double mjc:armature = 0.6
-                            uniform double mjc:damping = 1.6016
-                            uniform double mjc:frictionloss = 3.6588
+                            uniform double mjc:armature = 1.0692
+                            uniform double mjc:damping = 0.8434
+                            uniform double mjc:frictionloss = 4.1311
                             uniform token physics:axis = "Z"
                             rel physics:body0 = </pegasus_description/Geometry/base/RR_hip/RR_thigh>
                             rel physics:body1 = </pegasus_description/Geometry/base/RR_hip/RR_thigh/RR_calf>
-                            point3f physics:localPos0 = (0.418, 0, 0)
+                            point3f physics:localPos0 = (0.418, 0, -0.139854)
                             point3f physics:localPos1 = (0, 0, 0)
                             quatf physics:localRot0 = (1, 0, 0, 0)
                             quatf physics:localRot1 = (1, 0, 0, 0)

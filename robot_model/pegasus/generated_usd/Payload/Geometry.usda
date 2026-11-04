@@ -17,7 +17,7 @@ def Xform "pegasus_description"
         {
             quatf xformOp:orient = (1, 0, 0, 0)
             float3 xformOp:scale = (1, 1, 1)
-            double3 xformOp:translate = (0, 0, 0.5)
+            double3 xformOp:translate = (0, 0, 0.944191)
             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
             def Cube "Box"
@@ -194,6 +194,22 @@ def Xform "pegasus_description"
                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
             }
 
+            def Xform "head_tail"
+            {
+                quatf xformOp:orient = (1, 0, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
+            def Xform "battery"
+            {
+                quatf xformOp:orient = (1, 0, 0, 0)
+                float3 xformOp:scale = (1, 1, 1)
+                double3 xformOp:translate = (0, 0, 0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+            }
+
             def Xform "FL_hip"
             {
                 quatf xformOp:orient = (0.7071068, 0, 0.7071067, 0)
@@ -249,7 +265,7 @@ def Xform "pegasus_description"
                 {
                     quatf xformOp:orient = (0.7071068, -0.7071067, 0, 0)
                     float3 xformOp:scale = (1, 1, 1)
-                    double3 xformOp:translate = (0, 0.1485, 0.1045)
+                    double3 xformOp:translate = (0, -0.0095, 0.1045)
                     uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
                     def Cube "Box"
@@ -267,7 +283,7 @@ def Xform "pegasus_description"
                         double size = 2
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (0.15, 0.025, 0.025)
-                        double3 xformOp:translate = (0.25, 0.03, 0)
+                        double3 xformOp:translate = (0.25, 0.03, 0.158)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                     }
 
@@ -286,7 +302,7 @@ def Xform "pegasus_description"
                         double radius = 0.05
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (1, 1, 1)
-                        double3 xformOp:translate = (0.42, 0.015, 0)
+                        double3 xformOp:translate = (0.42, 0.015, 0.158)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                     }
 
@@ -294,7 +310,7 @@ def Xform "pegasus_description"
                     {
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (1, 1, 1)
-                        double3 xformOp:translate = (0.418, 0, 0)
+                        double3 xformOp:translate = (0.418, 0, 0.139854)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
                         def Cube "Box"
@@ -312,7 +328,7 @@ def Xform "pegasus_description"
                             double size = 2
                             quatf xformOp:orient = (6.123234e-17, 0.9887711, -0.14943801, 1.246887e-19)
                             float3 xformOp:scale = (0.125, 0.025, 0.025)
-                            double3 xformOp:translate = (0.15, -0.02, 0)
+                            double3 xformOp:translate = (0.15, -0.02, 0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -333,7 +349,7 @@ def Xform "pegasus_description"
                             double size = 2
                             quatf xformOp:orient = (6.123234e-17, 0.9887711, 0.14943801, 2.8097198e-19)
                             float3 xformOp:scale = (0.075, 0.025, 0.025)
-                            double3 xformOp:translate = (0.35, -0.04, 0)
+                            double3 xformOp:translate = (0.35, -0.04, 0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -351,7 +367,7 @@ def Xform "pegasus_description"
                             double radius = 0.041
                             quatf xformOp:orient = (1, 0, 0, 0)
                             float3 xformOp:scale = (1, 1, 1)
-                            double3 xformOp:translate = (0.427146, 0, 0)
+                            double3 xformOp:translate = (0.427146, 0, 0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -377,7 +393,7 @@ def Xform "pegasus_description"
                                 double radius = 0.041
                                 quatf xformOp:orient = (1, 0, 0, 0)
                                 float3 xformOp:scale = (1, 1, 1)
-                                double3 xformOp:translate = (0, 0, 0)
+                                double3 xformOp:translate = (0, 0, 0.018146)
                                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                             }
                         }
@@ -440,7 +456,7 @@ def Xform "pegasus_description"
                 {
                     quatf xformOp:orient = (0.7071068, -0.7071067, 0, 0)
                     float3 xformOp:scale = (1, 1, 1)
-                    double3 xformOp:translate = (0, -0.1485, 0.1045)
+                    double3 xformOp:translate = (0, 0.0095, 0.1045)
                     uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
                     def Cube "Box"
@@ -458,7 +474,7 @@ def Xform "pegasus_description"
                         double size = 2
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (0.15, 0.025, 0.025)
-                        double3 xformOp:translate = (0.25, 0.03, 0)
+                        double3 xformOp:translate = (0.25, 0.03, -0.158)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                     }
 
@@ -477,7 +493,7 @@ def Xform "pegasus_description"
                         double radius = 0.05
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (1, 1, 1)
-                        double3 xformOp:translate = (0.42, 0.015, 0)
+                        double3 xformOp:translate = (0.42, 0.015, -0.158)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                     }
 
@@ -485,7 +501,7 @@ def Xform "pegasus_description"
                     {
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (1, 1, 1)
-                        double3 xformOp:translate = (0.418, 0, 0)
+                        double3 xformOp:translate = (0.418, 0, -0.139854)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
                         def Cube "Box"
@@ -503,7 +519,7 @@ def Xform "pegasus_description"
                             double size = 2
                             quatf xformOp:orient = (6.123234e-17, 0.9887711, -0.14943801, 1.246887e-19)
                             float3 xformOp:scale = (0.125, 0.025, 0.025)
-                            double3 xformOp:translate = (0.15, -0.02, 0)
+                            double3 xformOp:translate = (0.15, -0.02, -0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -524,7 +540,7 @@ def Xform "pegasus_description"
                             double size = 2
                             quatf xformOp:orient = (6.123234e-17, 0.9887711, 0.14943801, 2.8097198e-19)
                             float3 xformOp:scale = (0.075, 0.025, 0.025)
-                            double3 xformOp:translate = (0.35, -0.04, 0)
+                            double3 xformOp:translate = (0.35, -0.04, -0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -542,7 +558,7 @@ def Xform "pegasus_description"
                             double radius = 0.041
                             quatf xformOp:orient = (1, 0, 0, 0)
                             float3 xformOp:scale = (1, 1, 1)
-                            double3 xformOp:translate = (0.427146, 0, 0)
+                            double3 xformOp:translate = (0.427146, 0, -0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -568,7 +584,7 @@ def Xform "pegasus_description"
                                 double radius = 0.041
                                 quatf xformOp:orient = (1, 0, 0, 0)
                                 float3 xformOp:scale = (1, 1, 1)
-                                double3 xformOp:translate = (0, 0, 0)
+                                double3 xformOp:translate = (0, 0, -0.018146)
                                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                             }
                         }
@@ -631,7 +647,7 @@ def Xform "pegasus_description"
                 {
                     quatf xformOp:orient = (0.7071068, -0.7071067, 0, 0)
                     float3 xformOp:scale = (1, 1, 1)
-                    double3 xformOp:translate = (0, 0.1485, -0.1045)
+                    double3 xformOp:translate = (0, -0.0095, -0.1045)
                     uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
                     def Cube "Box"
@@ -649,7 +665,7 @@ def Xform "pegasus_description"
                         double size = 2
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (0.15, 0.025, 0.025)
-                        double3 xformOp:translate = (0.25, 0.03, 0)
+                        double3 xformOp:translate = (0.25, 0.03, 0.158)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                     }
 
@@ -668,7 +684,7 @@ def Xform "pegasus_description"
                         double radius = 0.05
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (1, 1, 1)
-                        double3 xformOp:translate = (0.42, 0.015, 0)
+                        double3 xformOp:translate = (0.42, 0.015, 0.158)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                     }
 
@@ -676,7 +692,7 @@ def Xform "pegasus_description"
                     {
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (1, 1, 1)
-                        double3 xformOp:translate = (0.418, 0, 0)
+                        double3 xformOp:translate = (0.418, 0, 0.139854)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
                         def Cube "Box"
@@ -694,7 +710,7 @@ def Xform "pegasus_description"
                             double size = 2
                             quatf xformOp:orient = (6.123234e-17, 0.9887711, -0.14943801, 1.246887e-19)
                             float3 xformOp:scale = (0.125, 0.025, 0.025)
-                            double3 xformOp:translate = (0.15, -0.02, 0)
+                            double3 xformOp:translate = (0.15, -0.02, 0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -715,7 +731,7 @@ def Xform "pegasus_description"
                             double size = 2
                             quatf xformOp:orient = (6.123234e-17, 0.9887711, 0.14943801, 2.8097198e-19)
                             float3 xformOp:scale = (0.075, 0.025, 0.025)
-                            double3 xformOp:translate = (0.35, -0.04, 0)
+                            double3 xformOp:translate = (0.35, -0.04, 0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -733,7 +749,7 @@ def Xform "pegasus_description"
                             double radius = 0.041
                             quatf xformOp:orient = (1, 0, 0, 0)
                             float3 xformOp:scale = (1, 1, 1)
-                            double3 xformOp:translate = (0.427146, 0, 0)
+                            double3 xformOp:translate = (0.427146, 0, 0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -759,7 +775,7 @@ def Xform "pegasus_description"
                                 double radius = 0.041
                                 quatf xformOp:orient = (1, 0, 0, 0)
                                 float3 xformOp:scale = (1, 1, 1)
-                                double3 xformOp:translate = (0, 0, 0)
+                                double3 xformOp:translate = (0, 0, 0.018146)
                                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                             }
                         }
@@ -822,7 +838,7 @@ def Xform "pegasus_description"
                 {
                     quatf xformOp:orient = (0.7071068, -0.7071067, 0, 0)
                     float3 xformOp:scale = (1, 1, 1)
-                    double3 xformOp:translate = (0, -0.1485, -0.1045)
+                    double3 xformOp:translate = (0, 0.0095, -0.1045)
                     uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
                     def Cube "Box"
@@ -840,7 +856,7 @@ def Xform "pegasus_description"
                         double size = 2
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (0.15, 0.025, 0.025)
-                        double3 xformOp:translate = (0.25, 0.03, 0)
+                        double3 xformOp:translate = (0.25, 0.03, -0.158)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                     }
 
@@ -859,7 +875,7 @@ def Xform "pegasus_description"
                         double radius = 0.05
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (1, 1, 1)
-                        double3 xformOp:translate = (0.42, 0.015, 0)
+                        double3 xformOp:translate = (0.42, 0.015, -0.158)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                     }
 
@@ -867,7 +883,7 @@ def Xform "pegasus_description"
                     {
                         quatf xformOp:orient = (1, 0, 0, 0)
                         float3 xformOp:scale = (1, 1, 1)
-                        double3 xformOp:translate = (0.418, 0, 0)
+                        double3 xformOp:translate = (0.418, 0, -0.139854)
                         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
                         def Cube "Box"
@@ -885,7 +901,7 @@ def Xform "pegasus_description"
                             double size = 2
                             quatf xformOp:orient = (6.123234e-17, 0.9887711, -0.14943801, 1.246887e-19)
                             float3 xformOp:scale = (0.125, 0.025, 0.025)
-                            double3 xformOp:translate = (0.15, -0.02, 0)
+                            double3 xformOp:translate = (0.15, -0.02, -0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -906,7 +922,7 @@ def Xform "pegasus_description"
                             double size = 2
                             quatf xformOp:orient = (6.123234e-17, 0.9887711, 0.14943801, 2.8097198e-19)
                             float3 xformOp:scale = (0.075, 0.025, 0.025)
-                            double3 xformOp:translate = (0.35, -0.04, 0)
+                            double3 xformOp:translate = (0.35, -0.04, -0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -924,7 +940,7 @@ def Xform "pegasus_description"
                             double radius = 0.041
                             quatf xformOp:orient = (1, 0, 0, 0)
                             float3 xformOp:scale = (1, 1, 1)
-                            double3 xformOp:translate = (0.427146, 0, 0)
+                            double3 xformOp:translate = (0.427146, 0, -0.018146)
                             uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                         }
 
@@ -950,7 +966,7 @@ def Xform "pegasus_description"
                                 double radius = 0.041
                                 quatf xformOp:orient = (1, 0, 0, 0)
                                 float3 xformOp:scale = (1, 1, 1)
-                                double3 xformOp:translate = (0, 0, 0)
+                                double3 xformOp:translate = (0, 0, -0.018146)
                                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
                             }
                         }

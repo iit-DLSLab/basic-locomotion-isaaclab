@@ -10,21 +10,21 @@ from isaaclab.assets.articulation import ArticulationCfg
 from basic_locomotion_isaaclab.assets import ISAAC_ASSET_DIR
 
 armature = [0.33000001311302185, 0.33000001311302185, 1.069200038909912, 0.33000001311302185, 0.33000001311302185, 1.069200038909912, 0.33000001311302185, 0.33000001311302185, 1.069200038909912, 0.33000001311302185, 0.33000001311302185, 1.069200038909912]
-viscous_friction = [0.06482207775115967, 0.2789257764816284, 0.1129237711429596, 0.3684861958026886, 0.03938695788383484, 0.42193368077278137, 0.36256712675094604, 0.3485514521598816, 1.0806077718734741, 0.3446943461894989, 0.24758514761924744, 0.4619946777820587]
-dynamic_friction = [2.6093859672546387, 2.46897292137146, 5.2394609451293945, 2.0097317695617676, 3.761348247528076, 5.822745323181152, 2.029303789138794, 2.407942056655884, 4.2432379722595215, 2.3844542503356934, 2.903632402420044, 4.377551555633545]
+viscous_friction = [0.005596756935119629, 0.18206921219825745, 0.014777958393096924, 0.004450201988220215, 0.0016188621520996094, 0.09398746490478516, 0.11416733264923096, 0.06676074862480164, 1.0479240417480469, 0.016785472631454468, 0.044370174407958984, 0.24518939852714539]
+dynamic_friction = [2.641666889190674, 1.973103404045105, 5.192632675170898, 2.001161575317383, 3.6569206714630127, 6.265861988067627, 1.932913899421692, 2.199723720550537, 4.001255512237549, 2.372127056121826, 2.4044699668884277, 4.414863109588623]
 bias = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 delay = 1
 
-stiffness = 120.0
-damping = 6.0
+Kp = 120.0
+Kd = 6.0
 
 PEGASUS_HIP_ACTUATOR_CFG = PaceDCMotorCfg(
     joint_names_expr=[".*_hip_joint"],
     saturation_effort=120.0,
     effort_limit=120.0,
     velocity_limit=10.47,
-    stiffness={".*": 120.0},  # P gain in Nm/rad
-    damping={".*": 6.0},  # D gain in Nm s/rad
+    stiffness={".*": Kp},  # P gain in Nm/rad
+    damping={".*": Kd},  # D gain in Nm s/rad
     encoder_bias={"FL_hip_joint": bias[0], "FR_hip_joint": bias[3], "RL_hip_joint": bias[6], "RR_hip_joint": bias[9]},  # encoder bias in radians
     # note: modeling coulomb friction if friction = dynamic_friction
     # > in newer Isaac Sim versions, friction is renamed to static_friction
@@ -41,8 +41,8 @@ PEGASUS_THIGH_ACTUATOR_CFG = PaceDCMotorCfg(
     saturation_effort=120.0,
     effort_limit=120.0,
     velocity_limit=10.47,
-    stiffness={".*": 120.0},  # P gain in Nm/rad
-    damping={".*": 6.0},  # D gain in Nm s/rad
+    stiffness={".*": Kp},  # P gain in Nm/rad
+    damping={".*": Kd},  # D gain in Nm s/rad
     encoder_bias={"FL_thigh_joint": bias[1], "FR_thigh_joint": bias[4], "RL_thigh_joint": bias[7], "RR_thigh_joint": bias[10]},  # encoder bias in radians
     # note: modeling coulomb friction if friction = dynamic_friction
     # > in newer Isaac Sim versions, friction is renamed to static_friction
@@ -59,8 +59,8 @@ PEGASUS_CALF_ACTUATOR_CFG = PaceDCMotorCfg(
     saturation_effort=210.0,
     effort_limit=210.0,
     velocity_limit=5.18,
-    stiffness={".*": 120.0},  # P gain in Nm/rad
-    damping={".*": 6.0},  # D gain in Nm s/rad
+    stiffness={".*": Kp},  # P gain in Nm/rad
+    damping={".*": Kd},  # D gain in Nm s/rad
     encoder_bias={"FL_calf_joint": bias[2], "FR_calf_joint": bias[5], "RL_calf_joint": bias[8], "RR_calf_joint": bias[11]},  # encoder bias in radians
     # note: modeling coulomb friction if friction = dynamic_friction
     # > in newer Isaac Sim versions, friction is renamed to static_friction
