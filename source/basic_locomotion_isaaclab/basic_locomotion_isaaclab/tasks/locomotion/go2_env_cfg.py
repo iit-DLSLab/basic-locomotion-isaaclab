@@ -561,25 +561,31 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
         debug_vis=True,
     )
 
-    use_unitree_l2_lidar = True
+    use_unitree_l2_lidar = False
+    # The Unitree L2 LiDAR (unitree_l2_lidar.py, scan pattern and errors identified from a Go2 rosbag on
+    # feat/new_start_stop), as published on /utlidar/cloud.
     unitree_l2_lidar = MultiMeshRayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/base",
-        update_period=1 / 5.55,
-        offset=MultiMeshRayCasterCfg.OffsetCfg(pos=(0.31, 0.0, 0.02)),
+        # one update per published message (15.4 Hz)
+        update_period=UnitreeL2PatternCfg().message_period,
+        # Calibrated on the Go2 rosbag of 2026-10-30 (scripts/l2_lidar_to_heightmap/lidar_grid.py, MOUNT_*): upside down,
+        # 13.2 deg forward, its x axis at -59 deg from the base x. Quaternion xyzw.
+        offset=MultiMeshRayCasterCfg.OffsetCfg(pos=(0.28945, 0.0, 0.0507), rot=(-0.86610, 0.48649, -0.10267, 0.05160)),
         ray_alignment="base",
-        pattern_cfg=UnitreeL2PatternCfg(
-            vertical_fov_orientation="down",
-            enable_downsample=True,
-            keep_ratio=0.1,
-        ),
-        debug_vis=True,
+        pattern_cfg=UnitreeL2PatternCfg(),
+        debug_vis=False,
+        # The terrain and the legs, which hide the ground and return points as on the robot. Not the base meshes: they
+        # have no window for the sensor, whose (calibrated) origin is inside them.
         mesh_prim_paths=[
             "/World/ground",
-            #MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/base/visuals"),
-            #MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/FL_.*/visuals"),
-            #MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/FR_.*/visuals"),
-            #MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/RL_.*/visuals"),
-            #MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr="/World/envs/env_.*/Robot/RR_.*/visuals"),
+            *[
+                MultiMeshRayCasterCfg.RaycastTargetCfg(prim_expr=f"/World/envs/env_.*/Robot/{meshes}")
+                for meshes in (
+                    "[FR][LR]_hip/hip_[0-9]",
+                    "[FR][LR]_thigh/thigh(_mirror)?_[0-9]",
+                    "[FR][LR]_calf/(calf(_mirror)?_[0-9]|foot)",
+                )
+            ],
         ],
         max_distance=2.0,
     )

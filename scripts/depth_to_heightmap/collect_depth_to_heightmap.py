@@ -5,8 +5,9 @@
 
 """Collect terrain reconstruction sequences with a trained locomotion policy.
 
-Every step of every env is recorded (one depth frame, the 'common' observation, the heightmap target, the reset flag
-and the camera/scanner poses) and written time-major, ``(steps, envs, ...)``, to chunk files in ``--dataset_path``.
+Every step of every env is recorded (one depth frame, or with ``--sensor lidar`` the grid of the latest Unitree L2
+message, the 'common' observation, the heightmap target, the reset flag and the sensor/scanner poses) and written
+time-major, ``(steps, envs, ...)``, to chunk files in ``--dataset_path``.
 The training segments (consecutive steps of one env) are cut from these sequences at training time.
 """
 
@@ -43,6 +44,20 @@ parser.add_argument(
     help="Directory for the chunk files. Defaults to <checkpoint_dir>/terrain_reconstruction_sequences.",
 )
 parser.add_argument("--num_steps", type=int, default=1200, help="Steps to record; every env is recorded at every step.")
+parser.add_argument(
+    "--sensor",
+    choices=("depth", "lidar"),
+    default="depth",
+    help="depth: the depth camera image; lidar: the Unitree L2 (unitree_l2_lidar.py), its latest message put on the "
+    "grid of l2_lidar_to_heightmap/lidar_grid.py, with latency and calibration errors (sim_helpers.LidarStream).",
+)
+parser.add_argument(
+    "--lidar_errors",
+    choices=("sensor", "bag"),
+    default="sensor",
+    help="sensor: the L2 errors of unitree_l2_lidar.py; bag: also the larger ones of the Go2 rosbag "
+    "(sim_helpers.BAG_LIDAR_ERRORS).",
+)
 parser.add_argument(
     "--forward_commands",
     action="store_true",
@@ -106,6 +121,9 @@ import basic_locomotion_isaaclab.tasks  # noqa: F401
 from isaaclab_tasks.utils import get_checkpoint_path
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
+import sim_helpers
+from sim_helpers import lidar_grid
+
 
 class SequenceChunkWriter:
     """Every step of every env, time-major ``(steps, envs, ...)``, written to disk in chunks so RAM stays bounded.
@@ -127,7 +145,7 @@ class SequenceChunkWriter:
 
     def add_step(self, **tensors: torch.Tensor) -> None:
         for name, tensor in tensors.items():
-            tensor = tensor.detach().to(self.depth_dtype) if name == "depth_data" else tensor.detach()
+            tensor = tensor.detach().to(self.depth_dtype) if name in ("depth_data", "lidar_grid") else tensor.detach()
             self.steps.setdefault(name, []).append(tensor.to("cpu", copy=True))
         self.num_steps += 1
         if self.num_steps - self.chunk_first_step == self.steps_per_chunk:
@@ -254,7 +272,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     else:
         dataset_dir = os.path.join(log_dir, "terrain_reconstruction_sequences")
     env_cfg.log_dir = log_dir
-    env_cfg.use_depth_camera = True
+    env_cfg.use_depth_camera = args_cli.sensor == "depth"
+    env_cfg.use_unitree_l2_lidar = args_cli.sensor == "lidar"
     env_cfg.forward_commands = args_cli.forward_commands
 
     env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
@@ -290,15 +309,43 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     depth_camera_cfg = env.unwrapped.cfg.depth_camera
     grid_cfg = env.unwrapped.cfg.perceptive_height_scanner
     scanner = env.unwrapped._perceptive_height_scanner
+    if args_cli.sensor == "depth":
+        sensor_metadata = {
+            "camera_offset_pos": tuple(depth_camera_cfg.offset.pos),
+            "camera_offset_rot_xyzw": tuple(depth_camera_cfg.offset.rot),
+            "camera_offset_convention": depth_camera_cfg.offset.convention,
+            "camera_focal_length": depth_camera_cfg.pattern_cfg.focal_length,
+            "camera_horizontal_aperture": depth_camera_cfg.pattern_cfg.horizontal_aperture,
+            # the same for every env and step
+            "camera_intrinsics": _as_torch(env.unwrapped._depth_camera.data.intrinsic_matrices)[0].cpu(),
+            "depth_image_size": tuple(_sanitize_depth_data(env).shape[-2:]),
+            "depth_max_range": DEPTH_MAX_RANGE,
+        }
+    else:
+        lidar_errors = sim_helpers.BAG_LIDAR_ERRORS if args_cli.lidar_errors == "bag" else {}
+        lidar_stream = sim_helpers.LidarStream(env, **lidar_errors)
+        lidar_cfg = env.unwrapped.cfg.unitree_l2_lidar
+        sensor_metadata = {
+            "lidar_errors": lidar_errors,
+            "lidar_offset_pos": tuple(lidar_cfg.offset.pos),
+            "lidar_offset_rot_xyzw": tuple(lidar_cfg.offset.rot),
+            "lidar_grid": {
+                "resolution": lidar_grid.RESOLUTION, "x_range": lidar_grid.X_RANGE, "y_range": lidar_grid.Y_RANGE,
+                "channels": lidar_grid.CHANNELS, "shape": lidar_grid.grid_shape(),
+            },
+            # first heightmap cell among the grid's 10 cm cells
+            "lidar_heightmap_crop": lidar_grid.heightmap_crop(
+                grid_cfg.offset.pos[0] - grid_cfg.pattern_cfg.size[0] / 2, -grid_cfg.pattern_cfg.size[1] / 2
+            ),
+            "lidar_latency": tuple(lidar_stream.latency),
+            "lidar_mount_position_error": lidar_stream.position_error,
+            "lidar_mount_angle_error": lidar_stream.mount_angle_error,
+            "lidar_gravity_angle_error": lidar_stream.gravity_angle_error,
+        }
     metadata = {
         "format": "sequence",
-        "camera_offset_pos": tuple(depth_camera_cfg.offset.pos),
-        "camera_offset_rot_xyzw": tuple(depth_camera_cfg.offset.rot),
-        "camera_offset_convention": depth_camera_cfg.offset.convention,
-        "camera_focal_length": depth_camera_cfg.pattern_cfg.focal_length,
-        "camera_horizontal_aperture": depth_camera_cfg.pattern_cfg.horizontal_aperture,
-        # the same for every env and step
-        "camera_intrinsics": _as_torch(env.unwrapped._depth_camera.data.intrinsic_matrices)[0].cpu(),
+        "sensor": args_cli.sensor,
+        **sensor_metadata,
         "heightmap_grid": {
             "size": tuple(grid_cfg.pattern_cfg.size),
             "resolution": grid_cfg.pattern_cfg.resolution,
@@ -306,13 +353,11 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
             "center_x": grid_cfg.offset.pos[0],
         },
         "heightmap_height_offset": HEIGHTMAP_HEIGHT_OFFSET,
-        "depth_max_range": DEPTH_MAX_RANGE,
         "step_dt": env.unwrapped.step_dt,
         "task": args_cli.task,
         "checkpoint_path": resume_path,
         "seed": agent_cfg.seed,
         "robot_obs_key": "common",
-        "depth_image_size": tuple(_sanitize_depth_data(env).shape[-2:]),
         "heightmap_size": tuple(_get_heightmap_targets(env).shape[-2:]),
         "num_envs": env.unwrapped.num_envs,
         "sequence_steps": args_cli.num_steps,
@@ -331,14 +376,17 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         with torch.no_grad():
             actions = policy(obs)
             obs, _, dones, _ = env.step(actions)
-            camera_positions, camera_rotations = _get_camera_poses(env)
+            if args_cli.sensor == "depth":
+                camera_positions, camera_rotations = _get_camera_poses(env)
+                sensor_data = {"depth_data": _sanitize_depth_data(env), "camera_positions_w": camera_positions,
+                               "camera_rotations_w": camera_rotations}
+            else:
+                sensor_data = {"lidar_grid": lidar_stream.grid(dones)}
             writer.add_step(
-                depth_data=_sanitize_depth_data(env),
+                **sensor_data,
                 robot_info=obs["common"],
                 heightmaps=_get_heightmap_targets(env),
                 dones=dones.bool(),
-                camera_positions_w=camera_positions,
-                camera_rotations_w=camera_rotations,
                 scanner_positions_w=_as_torch(scanner.data.pos_w),
                 scanner_quats_w=_as_torch(scanner.data.quat_w),
             )

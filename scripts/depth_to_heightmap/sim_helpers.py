@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import math
 import os
+import sys
 from pathlib import Path
 
 import torch
+import warp as wp
 from rsl_rl.runners import DistillationRunner, OnPolicyRunner
 
 import isaaclab.sim as sim_utils
@@ -14,11 +17,20 @@ from isaaclab.utils.assets import retrieve_file_path
 from isaaclab_rl.rsl_rl import RslRlVecEnvWrapper
 from isaaclab_tasks.utils import get_checkpoint_path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "l2_lidar_to_heightmap"))
+import lidar_grid  # noqa: E402
+
 # as in collect_depth_to_heightmap.py and the task's observation
 HEIGHTMAP_HEIGHT_OFFSET = 0.5
 DEPTH_MAX_RANGE = 2.0
 # height errors (m) between the marker colours: green below the first, then 3 shades too high / too low
 ERROR_THRESHOLDS = (0.01, 0.03, 0.05)
+# LidarStream's extra L2 errors for the ones of the rosbag of 2026-10-30 (Go2 standing on flat ground), larger than
+# unitree_l2_lidar.py's: the ground comes out up to 3 cm off, with a pattern that changes with the range (range error
+# -8 cm at 0.7 m, +1 cm at 0.4 m) and with the direction (1-2 cm between neighbouring 10 cm cells), and the points of
+# a 5 cm cell scatter by ~13 mm (the sensor model: 1.5-2.5 mm). collect_depth_to_heightmap.py --lidar_errors bag.
+BAG_LIDAR_ERRORS = {"range_error": 0.04, "range_wavelength": (0.3, 1.2), "direction_error": 0.01,
+                    "point_noise": (0.008, 0.02)}
 
 
 def as_torch(value) -> torch.Tensor:
@@ -30,6 +42,132 @@ def depth_frame(env: RslRlVecEnvWrapper) -> torch.Tensor:
     depth = as_torch(env.unwrapped._depth_camera.data.output["distance_to_image_plane"])
     depth = torch.nan_to_num(depth, nan=0.0, posinf=0.0, neginf=0.0).clip(0.0, DEPTH_MAX_RANGE)
     return depth.permute(0, 3, 1, 2)
+
+
+def _small_rotations(num: int, max_angle: float, device) -> torch.Tensor:
+    """(num, 3, 3) rotations by angles uniform in +-max_angle about x, y and z (Rodrigues)."""
+    rotation_vector = (2.0 * torch.rand(num, 3, device=device) - 1.0) * max_angle
+    angle = rotation_vector.norm(dim=-1, keepdim=True).unsqueeze(-1)
+    k = torch.zeros(num, 3, 3, device=device)
+    axis = rotation_vector / rotation_vector.norm(dim=-1, keepdim=True).clamp(min=1e-9)
+    k[:, 0, 1], k[:, 0, 2], k[:, 1, 2] = -axis[:, 2], axis[:, 1], -axis[:, 0]
+    k = k - k.transpose(1, 2)
+    return torch.eye(3, device=device) + torch.sin(angle) * k + (1.0 - torch.cos(angle)) * k @ k
+
+
+class LidarStream:
+    """The L2 messages as the reconstructor gets them on the robot, put on the grid at every control step.
+
+    The sensor (unitree_l2_lidar.py) gives the messages with the errors identified from the rosbag (scan pattern and
+    timing, range noise and systematic error, missing points, motion distortion). On top of it: each message arrives
+    ``latency`` (uniform range, s) after its end, and the grid uses a mount and a gravity direction slightly off, as a
+    calibration and an IMU would be (``mount_position_error`` m, ``mount_angle_error`` and ``gravity_angle_error``
+    rad, uniform per axis, drawn at every episode start). All zero: the exact mount and gravity, no latency.
+
+    Optionally (``BAG_LIDAR_ERRORS``) more range errors, drawn at every episode start: ``range_error`` * sin(2 pi range /
+    wavelength + phase), wavelength uniform in ``range_wavelength``; an error that changes smoothly with the direction
+    of the ray, std ``direction_error``; white noise, std uniform in ``point_noise``. All in m, on the range.
+    """
+
+    DIRECTION_WAVES = 4  # the direction error: a sum of waves along random directions
+
+    def __init__(self, env: RslRlVecEnvWrapper, latency=(0.0, 0.04), mount_position_error: float = 0.01,
+                 mount_angle_error: float = math.radians(1.0), gravity_angle_error: float = math.radians(1.0),
+                 range_error: float = 0.0, range_wavelength=(0.3, 1.2), direction_error: float = 0.0,
+                 point_noise=(0.0, 0.0)):
+        self.env, self.lidar = env.unwrapped, env.unwrapped._unitree_l2_lidar
+        self.latency, self.position_error = latency, mount_position_error
+        self.mount_angle_error, self.gravity_angle_error = mount_angle_error, gravity_angle_error
+        self.range_error, self.range_wavelength, self.point_noise = range_error, range_wavelength, point_noise
+        # a wave a sin(...) has std a / sqrt(2)
+        self.direction_amplitude = direction_error / math.sqrt(self.DIRECTION_WAVES / 2)
+        num, rays, device = self.env.num_envs, self.lidar.num_rays, self.env.device
+        self.range_amplitude, self.range_wavenumber, self.range_phase, self.point_noise_std = torch.zeros(4, num, device=device)
+        self.direction_axes = torch.zeros(num, self.DIRECTION_WAVES, 3, device=device)
+        self.direction_frequency = torch.zeros(num, self.DIRECTION_WAVES, device=device)
+        self.direction_phase = torch.zeros(num, self.DIRECTION_WAVES, device=device)
+        self.points = torch.full((num, rays, 3), math.inf, device=device)  # latest message arrived
+        self.end = torch.zeros(num, device=device)  # its end, sensor time
+        self.pending = torch.full((num, rays, 3), math.inf, device=device)  # message on its way
+        self.pending_end = torch.zeros(num, device=device)
+        self.arrival = torch.full((num,), math.inf, device=device)
+        self.rotation = lidar_grid.mount_rotation(device).repeat(num, 1, 1)
+        self.position = torch.tensor(lidar_grid.MOUNT_POSITION, device=device).repeat(num, 1)
+        self.gravity_rotation = torch.eye(3, device=device).repeat(num, 1, 1)
+        self.last_update = self._sensor_time("_timestamp_last_update").clone()
+        self.reset(torch.arange(num, device=device))
+
+    def _sensor_time(self, name: str) -> torch.Tensor:
+        return wp.to_torch(getattr(self.lidar, name)).float()
+
+    def reset(self, env_ids: torch.Tensor) -> None:
+        """New episodes: no message yet, new calibration errors."""
+        num, device = len(env_ids), self.env.device
+        self.points[env_ids] = math.inf
+        self.arrival[env_ids] = math.inf
+        self.end[env_ids] = -1.0
+        self.last_update[env_ids] = self._sensor_time("_timestamp_last_update")[env_ids]
+        self.rotation[env_ids] = _small_rotations(num, self.mount_angle_error, device) @ lidar_grid.mount_rotation(device)
+        self.position[env_ids] = torch.tensor(lidar_grid.MOUNT_POSITION, device=device) + (
+            2.0 * torch.rand(num, 3, device=device) - 1.0) * self.position_error
+        self.gravity_rotation[env_ids] = _small_rotations(num, self.gravity_angle_error, device)
+        uniform = lambda low, high, *shape: low + (high - low) * torch.rand(num, *shape, device=device)  # noqa: E731
+        self.range_amplitude[env_ids] = uniform(0.0, self.range_error)
+        self.range_wavenumber[env_ids] = 2.0 * math.pi / uniform(*self.range_wavelength)
+        self.range_phase[env_ids] = uniform(0.0, 2.0 * math.pi)
+        self.point_noise_std[env_ids] = uniform(*self.point_noise)
+        axes = torch.randn(num, self.DIRECTION_WAVES, 3, device=device)
+        self.direction_axes[env_ids] = axes / axes.norm(dim=-1, keepdim=True)
+        # 3-20 rad per unit of cosine: features of ~20-120 deg, 10-60 cm on the ground at 0.5 m
+        self.direction_frequency[env_ids] = uniform(3.0, 20.0, self.DIRECTION_WAVES)
+        self.direction_phase[env_ids] = uniform(0.0, 2.0 * math.pi, self.DIRECTION_WAVES)
+
+    def _range_errors(self, points: torch.Tensor, envs: torch.Tensor) -> torch.Tensor:
+        """The extra range errors on the points (L2 frame) of a message of the envs ``envs`` (mask)."""
+        ranges = points.norm(dim=-1, keepdim=True)
+        directions = points / ranges
+        error = self.range_amplitude[envs, None, None] * torch.sin(
+            self.range_wavenumber[envs, None, None] * ranges + self.range_phase[envs, None, None])
+        waves = torch.sin(self.direction_frequency[envs, None] * (directions @ self.direction_axes[envs].transpose(1, 2))
+                          + self.direction_phase[envs, None])
+        error = error + self.direction_amplitude * waves.sum(dim=-1, keepdim=True)
+        error = error + self.point_noise_std[envs, None, None] * torch.randn_like(ranges)
+        return points * (1.0 + error / ranges)  # missing points (inf) stay not finite
+
+    def grid(self, dones: torch.Tensor) -> torch.Tensor:
+        """The grid now, (num_envs, channels, rows, cols); ``dones`` are the envs reset at this step."""
+        dones = dones.bool()
+        if dones.any():
+            self.reset(dones.nonzero().flatten())
+        now, last_update = self._sensor_time("_timestamp"), self._sensor_time("_timestamp_last_update")
+        new = (last_update != self.last_update) & ~dones
+        self.last_update = last_update.clone()
+        if new.any():
+            latency = self.latency[0] + (self.latency[1] - self.latency[0]) * torch.rand(int(new.sum()), device=now.device)
+            self.pending[new] = self._range_errors(self.lidar.points_l2[new], new)
+            self.pending_end[new] = last_update[new]
+            self.arrival[new] = last_update[new] + latency
+        arrived = self.arrival <= now + 1e-6
+        if arrived.any():
+            self.points[arrived] = self.pending[arrived]
+            self.end[arrived] = self.pending_end[arrived]
+            self.arrival[arrived] = math.inf
+        gravity = (self.gravity_rotation @ as_torch(self.env._robot.data.projected_gravity_b).unsqueeze(-1)).squeeze(-1)
+        age = torch.where(self.end >= 0.0, now - self.end, 1.0)
+        return lidar_grid.lidar_grid(self.points, gravity, age, self.rotation, self.position)
+
+
+class SensorFrames:
+    """The reconstructor's sensor input at every control step: the depth frame, or the grid of the latest LiDAR message
+    (``LidarStream``, with its latency and calibration errors). Call it at every step with the envs reset at that step."""
+
+    def __init__(self, env: RslRlVecEnvWrapper, model_config: dict):
+        self.env = env
+        lidar = model_config.get("sensor", "depth") == "lidar"
+        self.lidar = LidarStream(env, **model_config.get("lidar_errors", {})) if lidar else None
+
+    def __call__(self, dones: torch.Tensor) -> torch.Tensor:
+        return depth_frame(self.env) if self.lidar is None else self.lidar.grid(dones)
 
 
 def true_heightmap(env: RslRlVecEnvWrapper) -> torch.Tensor:
@@ -51,9 +189,12 @@ def heightmap_slice(obs, env: RslRlVecEnvWrapper) -> slice:
 
 
 def configure_from_checkpoint(env_cfg, model_metadata: dict) -> None:
-    """Depth camera and velocity commands as in the reconstructor's training data."""
-    env_cfg.use_depth_camera = True
+    """Sensor (depth camera or LiDAR) and velocity commands as in the reconstructor's training data."""
     env_cfg.forward_commands = model_metadata.get("commands") == "forward"
+    lidar = model_metadata.get("sensor", "depth") == "lidar"
+    env_cfg.use_unitree_l2_lidar, env_cfg.use_depth_camera = lidar, not lidar
+    if lidar:
+        return
     camera_cfg = env_cfg.depth_camera
     if "camera_offset_rot_xyzw" in model_metadata:
         camera_cfg.offset.pos = tuple(model_metadata["camera_offset_pos"])

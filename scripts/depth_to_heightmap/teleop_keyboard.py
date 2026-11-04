@@ -33,7 +33,7 @@ parser.add_argument(
 parser.add_argument(
     "--show_depth_rays",
     action="store_true",
-    help="Keep the depth camera's ray-hit debug visualization (red): shows which ground the camera sees.",
+    help="Keep the ray-hit debug visualization of the sensor (depth camera or LiDAR): shows which ground it sees.",
 )
 parser.add_argument(
     "--observation_noise",
@@ -97,7 +97,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     env_cfg.perceptive_height_scanner.debug_vis = False
     if checkpoint is not None:
         sim_helpers.configure_from_checkpoint(env_cfg, model_metadata)
-    env_cfg.depth_camera.debug_vis = args_cli.show_depth_rays
+    env_cfg.depth_camera.debug_vis = env_cfg.unitree_l2_lidar.debug_vis = args_cli.show_depth_rays
     # viewport behind the robot, following it
     env_cfg.sim.visualizer_cfgs = [
         KitVisualizerCfg(eye=(-1.6, -1.2, 1.0), lookat=(0.6, 0.0, 0.0), origin_type="asset", origin_track_path="robot")
@@ -119,6 +119,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         model.to(device).eval()
         mean, std = checkpoint["target_normalization"]["mean"], checkpoint["target_normalization"]["std"]
         surface = sim_helpers.HeightmapSurface(show_ground_truth=args_cli.show_ground_truth, mode=args_cli.draw)
+        sensor_frames = sim_helpers.SensorFrames(env, checkpoint["model_config"])
 
     keyboard = Se2Keyboard(Se2KeyboardCfg(v_x_sensitivity=COMMAND_LIMITS[0], v_y_sensitivity=COMMAND_LIMITS[1],
                                           omega_z_sensitivity=COMMAND_LIMITS[2], sim_device=device))
@@ -158,7 +159,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
             proprio = obs["policy"][:, :map_slice.start] if args_cli.observation_noise else obs["common"]
             if model is not None:
                 # a fresh step is skipped, as in the training data: flat map, and the memory starts from the next step
-                prediction = model(depth_data=sim_helpers.depth_frame(env)[:, None], robot_info=proprio[:, None],
+                frame = sensor_frames(torch.tensor([fresh], device=device))
+                prediction = model(depth_data=frame[:, None], robot_info=proprio[:, None],
                                    hidden_state=hidden_state)
                 hidden_state = None if fresh else prediction.hidden_state
                 flat = torch.full_like(obs["policy"][0, map_slice], mean)

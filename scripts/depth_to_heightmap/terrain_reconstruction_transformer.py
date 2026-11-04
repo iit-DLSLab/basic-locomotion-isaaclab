@@ -91,6 +91,13 @@ class DepthTokenEncoder(nn.Module):
         """(N, C, H, W) -> token maps (N, D, h, w), each frame on its own."""
         return self.token_projection(self.token_pool(self.encoder(frames)))
 
+    def token_maps(self, features: Tensor) -> Tensor:
+        """Features of ``encode_frames`` -> token maps of the fusion: the same here."""
+        return features
+
+    def on_heightmap(self, context: Tensor, heightmap_size: tuple[int, int]) -> Tensor:
+        return _context_on_heightmap(context, heightmap_size)
+
     def tokens(self, token_maps: Tensor) -> Tensor:
         """Token maps (N, D, h, w) -> tokens (N, h * w, D) with their position in the map, for the attention fusion."""
         tokens = token_maps.flatten(2).transpose(1, 2)
@@ -99,6 +106,43 @@ class DepthTokenEncoder(nn.Module):
         time_position = _sinusoidal_position_embedding(1, dim, tokens.device, tokens.dtype)
         spatial_position = _sinusoidal_position_embedding(num_tokens, dim, tokens.device, tokens.dtype)
         return self.token_norm(tokens + time_position + spatial_position)
+
+
+class LidarGridEncoder(nn.Module):
+    """LiDAR grids (N, C, H, W) of 5 cm cells (l2_lidar_to_heightmap/lidar_grid.py) -> features (N, D, H / 2, W / 2)
+    of 10 cm cells centred on the heightmap's: the heightmap is a crop of them, from ``crop`` (row, col), so the
+    refiner gets the features of each cell's own ground."""
+
+    def __init__(self, channels: int, embed_dim: int, token_grid_size: tuple[int, int], context_channels: int,
+                 crop: tuple[int, int]):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            ConvNormAct(channels, 32, kernel_size=3, padding=1),
+            # each output cell sees 4 x 4 grid cells centred on 2 x 2 of them: a 10 cm cell
+            ConvNormAct(32, 64, kernel_size=4, stride=2, padding=1),
+            ConvNormAct(64, 96, kernel_size=3, padding=1),
+            ConvNormAct(96, embed_dim, kernel_size=3, padding=1),
+        )
+        self.crop = tuple(crop)
+        self.token_pool = nn.AdaptiveAvgPool2d(token_grid_size)
+        self.token_projection = nn.Conv2d(embed_dim, embed_dim, kernel_size=1)
+        self.context_projection = nn.Sequential(
+            nn.Conv2d(embed_dim, context_channels, kernel_size=1),
+            nn.GELU(),
+        )
+        self.token_norm = nn.LayerNorm(embed_dim)
+
+    def encode_frames(self, frames: Tensor) -> Tensor:
+        return self.encoder(frames)
+
+    def token_maps(self, features: Tensor) -> Tensor:
+        return self.token_projection(self.token_pool(features))
+
+    tokens = DepthTokenEncoder.tokens
+
+    def on_heightmap(self, context: Tensor, heightmap_size: tuple[int, int]) -> Tensor:
+        row, col = self.crop
+        return context[..., row : row + heightmap_size[0], col : col + heightmap_size[1]]
 
 
 class ProprioceptiveHistoryEncoder(nn.Module):
@@ -185,7 +229,7 @@ class ConditionalUNetRefiner(nn.Module):
         return self.output_projection(x)
 
 
-def _encode_frames(encoder: DepthTokenEncoder, frames: Tensor, chunk_size: int, checkpointed: bool) -> Tensor:
+def _encode_frames(encoder: nn.Module, frames: Tensor, chunk_size: int, checkpointed: bool) -> Tensor:
     """Token maps of (N, C, H, W) frames, a chunk at a time. With ``checkpointed`` (training) only each chunk's input is
     kept and its activations are recomputed in the backward pass: those of a few thousand frames do not fit in GPU memory."""
     chunks = frames.split(chunk_size)
@@ -225,6 +269,8 @@ class RecurrentTerrainReconstructor(nn.Module):
 
     Inputs are L consecutive steps of B robots, depth_data (B, L, C, H, W) and robot_info (B, L, F); the outputs are
     (B, L, 1, h, w). On the robot L = 1 and ``hidden_state`` goes from one call to the next (None: start of an episode).
+    With ``sensor="lidar"`` depth_data are the grids of the latest LiDAR message (``LidarGridEncoder``) instead of the
+    depth frames.
     """
 
     frames_per_chunk = 256  # frames encoded at once
@@ -245,18 +291,34 @@ class RecurrentTerrainReconstructor(nn.Module):
         refinement_base_channels: int = 32,
         dropout: float = 0.1,
         dropped_proprio_features: tuple[int, ...] = (),
+        removed_proprio_features: tuple[int, ...] = (),
         fusion: str = "attention",
         frame_channels: int = 16,
+        sensor: str = "depth",
+        context_crop: tuple[int, int] = (0, 0),
     ):
         super().__init__()
         self.heightmap_size = heightmap_size
-        # observation features zeroed before the network (e.g. the velocity commands, which say nothing about the
-        # terrain); zeroed rather than removed, so a model trained with them can initialise this one
+        # observation features left out of the network's input (the base linear velocity, which the robot has only as
+        # an estimate, and the velocity commands, which say nothing about the terrain); the models trained before
+        # 2026-11-02 zeroed them instead (dropped_proprio_features)
         keep = torch.ones(proprio_dim)
         keep[list(dropped_proprio_features)] = 0.0
         self.register_buffer("proprio_keep", keep, persistent=False)
-        self.depth_encoder = DepthTokenEncoder(depth_channels, embed_dim, token_grid_size, refinement_context_channels)
-        self.proprio_encoder = ProprioceptiveHistoryEncoder(proprio_dim, embed_dim, proprio_hidden_dim)
+        removed = set(removed_proprio_features)
+        self.register_buffer(
+            "proprio_index", torch.tensor([i for i in range(proprio_dim) if i not in removed]), persistent=False
+        )
+        self.sensor = sensor
+        if sensor == "depth":
+            self.depth_encoder = DepthTokenEncoder(depth_channels, embed_dim, token_grid_size, refinement_context_channels)
+        elif sensor == "lidar":
+            self.lidar_encoder = LidarGridEncoder(
+                depth_channels, embed_dim, token_grid_size, refinement_context_channels, context_crop
+            )
+        else:
+            raise ValueError(f"Unknown sensor: {sensor}")
+        self.proprio_encoder = ProprioceptiveHistoryEncoder(len(self.proprio_index), embed_dim, proprio_hidden_dim)
         self.fusion = fusion
         if fusion == "mlp":
             self.frame_reduction = nn.Conv2d(embed_dim, frame_channels, kernel_size=1)
@@ -294,26 +356,28 @@ class RecurrentTerrainReconstructor(nn.Module):
         self, depth_data: Tensor, robot_info: Tensor, hidden_state: Tensor | None = None
     ) -> TerrainReconstructionOutput:
         batch_size, steps = robot_info.shape[:2]
-        proprio = robot_info * self.proprio_keep
+        proprio = (robot_info * self.proprio_keep)[..., self.proprio_index]
 
-        token_maps = _encode_frames(
-            self.depth_encoder, depth_data.flatten(0, 1), self.frames_per_chunk, self.training and torch.is_grad_enabled()
-        )  # (B * L, D, h, w)
+        encoder = self.depth_encoder if self.sensor == "depth" else self.lidar_encoder
+        features = _encode_frames(
+            encoder, depth_data.flatten(0, 1), self.frames_per_chunk, self.training and torch.is_grad_enabled()
+        )
+        token_maps = encoder.token_maps(features)  # (B * L, D, h, w)
         proprio_token = self.proprio_encoder(proprio.flatten(0, 1).unsqueeze(1))  # (B * L, 1, D)
         if self.fusion == "mlp":
             frame = self.frame_reduction(token_maps).flatten(1)
             step_input = self.step_mlp(torch.cat((frame, proprio_token.flatten(1)), dim=1))
         else:
             queries = torch.cat((proprio_token, self.frame_queries.expand(batch_size * steps, -1, -1)), dim=1)
-            depth_tokens = self.depth_encoder.tokens(token_maps)
+            depth_tokens = encoder.tokens(token_maps)
             for block in self.cross_attention_blocks:
                 queries = block(queries, depth_tokens)
             step_input = self.step_projection(queries.flatten(1))
         memory, hidden_state = self.memory(step_input.view(batch_size, steps, -1), hidden_state)
 
         rough_heightmap = self.rough_decoder(memory.flatten(0, 1)).view(-1, 1, *self.heightmap_size)
-        depth_context = self.refinement_context_projection(self.depth_encoder.context_projection(token_maps))
-        depth_context = _context_on_heightmap(depth_context, self.heightmap_size)
+        depth_context = self.refinement_context_projection(encoder.context_projection(features))
+        depth_context = encoder.on_heightmap(depth_context, self.heightmap_size)
         refined_heightmap = rough_heightmap + self.refiner(torch.cat((rough_heightmap, depth_context), dim=1))
         return TerrainReconstructionOutput(
             rough_heightmap=rough_heightmap.unflatten(0, (batch_size, steps)),
@@ -329,6 +393,7 @@ FUSION_MODULES = ("frame_reduction", "step_mlp", "frame_queries", "cross_attenti
 def build_terrain_reconstructor(model_config: dict) -> nn.Module:
     """The model a checkpoint's ``model_config`` describes."""
     config = dict(model_config)
+    config.pop("lidar_errors", None)  # the simulated L2's, not the model's
     if config.pop("architecture", "window") != "recurrent":
         raise ValueError("Window (transformer) checkpoints are no longer supported: only the recurrent model is.")
     return RecurrentTerrainReconstructor(**config)
@@ -338,14 +403,35 @@ def build_terrain_reconstructor(model_config: dict) -> nn.Module:
 # linear velocity 3, base angular velocity 3, projected gravity 3, velocity command 3, joint positions 12, joint
 # velocities 12, actions 12, gait clock 4.
 COMMON_OBS_FRAME = 52
+LINEAR_VELOCITY_FEATURES = range(0, 3)
 VELOCITY_COMMAND_FEATURES = range(9, 12)
 
 
-def velocity_command_features(proprio_dim: int) -> tuple[int, ...]:
-    """Positions of the velocity commands in every frame of the 'common' observation."""
+def common_obs_features(proprio_dim: int, features: Sequence[int]) -> tuple[int, ...]:
+    """Positions of the given features (indices in a frame) in every frame of the 'common' observation."""
     if proprio_dim % COMMON_OBS_FRAME:
         raise ValueError(f"A 'common' observation has frames of {COMMON_OBS_FRAME} values, not {proprio_dim} in all.")
-    return tuple(frame * COMMON_OBS_FRAME + i for frame in range(proprio_dim // COMMON_OBS_FRAME) for i in VELOCITY_COMMAND_FEATURES)
+    return tuple(frame * COMMON_OBS_FRAME + i for frame in range(proprio_dim // COMMON_OBS_FRAME) for i in features)
+
+
+def _select_proprio_inputs(state: dict, init_config: dict, model_config: dict) -> dict:
+    """A trained model's weights with the proprioception encoder's input weights of the features this model keeps."""
+
+    def kept(config):
+        removed = set(config.get("removed_proprio_features", ()))
+        return [i for i in range(config["proprio_dim"]) if i not in removed]
+
+    init_kept, model_kept = kept(init_config), kept(model_config)
+    if init_kept == model_kept:
+        return state
+    if not set(model_kept) <= set(init_kept):
+        raise ValueError(f"The initial model has no input for features {sorted(set(model_kept) - set(init_kept))}")
+    columns = torch.tensor([init_kept.index(i) for i in model_kept])
+    state = dict(state)
+    for key in ("proprio_encoder.input_norm.weight", "proprio_encoder.input_norm.bias"):
+        state[key] = state[key][columns]
+    state["proprio_encoder.encoder.0.weight"] = state["proprio_encoder.encoder.0.weight"][:, columns]
+    return state
 
 
 # The test metrics skip the first 49 steps (about 1 s) of every episode, as the window models of the first studies
@@ -373,6 +459,9 @@ def compute_reconstruction_losses(
     }
 
 
+FRAME_KEYS = {"depth": "depth_data", "lidar": "lidar_grid"}
+
+
 class SequenceTerrainReconstructionDataset(Dataset):
     """Segments cut from the sequences of collect_depth_to_heightmap.py (one directory of chunk files per run).
 
@@ -387,7 +476,6 @@ class SequenceTerrainReconstructionDataset(Dataset):
         directories = [dataset_path] if isinstance(dataset_path, (str, Path)) else list(dataset_path)
         self.segment_length = segment_length
 
-        required_keys = {"depth_data", "robot_info", "heightmaps", "dones"}
         self.runs: list[dict] = []
         index, targets = [], []
         for run, directory in enumerate(directories):
@@ -395,6 +483,13 @@ class SequenceTerrainReconstructionDataset(Dataset):
             if not paths:
                 raise FileNotFoundError(f"No chunk_*.pt files in {directory}")
             chunks = [torch.load(path, map_location="cpu", mmap=True, weights_only=True) for path in paths]
+            # the frames of the run's sensor: depth images or LiDAR grids (collector --sensor)
+            frame_key = FRAME_KEYS[chunks[0]["metadata"].get("sensor", "depth")]
+            if run == 0:
+                self.frame_key = frame_key
+            elif frame_key != self.frame_key:
+                raise ValueError(f"{directory} has {frame_key}, the first run {self.frame_key}: one sensor per dataset.")
+            required_keys = {frame_key, "robot_info", "heightmaps", "dones"}
             for path, chunk in zip(paths, chunks):
                 missing_keys = required_keys.difference(chunk)
                 if missing_keys:
@@ -456,7 +551,7 @@ class SequenceTerrainReconstructionDataset(Dataset):
     def __getitem__(self, index: int) -> tuple[Tensor, Tensor, Tensor]:
         run, first, env = self.index[index].tolist()
         stop = first + self.segment_length
-        return tuple(self._rows(run, name, first, stop, env).float() for name in ("depth_data", "robot_info", "heightmaps"))
+        return tuple(self._rows(run, name, first, stop, env).float() for name in (self.frame_key, "robot_info", "heightmaps"))
 
 
 def _segment_prediction(model: nn.Module, depth_data: Tensor, robot_info: Tensor, burn_in: int = 0) -> TerrainReconstructionOutput:
@@ -668,6 +763,7 @@ def run_terrain_reconstruction(
     init_checkpoint: str | None = None,
     learning_rate: float = 3e-4,
     drop_velocity_commands: bool = True,
+    drop_linear_velocity: bool = True,
     fusion: str = "mlp",
     reinit_fusion: bool = False,
 ) -> None:
@@ -710,9 +806,21 @@ def run_terrain_reconstruction(
         "heightmap_size": tuple(sample_target.shape[-2:]),
         "architecture": "recurrent",
         "fusion": fusion,
+        "sensor": dataset.metadata.get("sensor", "depth"),
     }
+    if model_config["sensor"] == "lidar":
+        # the 10 cm cells of the grid, all as tokens, and where the heightmap sits among them
+        model_config["token_grid_size"] = tuple(size // 2 for size in sample_depth.shape[-2:])
+        model_config["context_crop"] = tuple(dataset.metadata["lidar_heightmap_crop"])
+        # the extra L2 errors of the training data, also in the closed loop (sim_helpers.SensorFrames)
+        model_config["lidar_errors"] = dict(dataset.metadata.get("lidar_errors", {}))
+    removed = []
+    if drop_linear_velocity:
+        removed += LINEAR_VELOCITY_FEATURES
     if drop_velocity_commands:
-        model_config["dropped_proprio_features"] = velocity_command_features(model_config["proprio_dim"])
+        removed += VELOCITY_COMMAND_FEATURES
+    if removed:
+        model_config["removed_proprio_features"] = common_obs_features(model_config["proprio_dim"], removed)
 
     train_heightmaps = dataset.heightmaps[train_dataset.indices]
     target_normalization = {
@@ -728,6 +836,7 @@ def run_terrain_reconstruction(
         init_state = init["model_state_dict"]
         if reinit_fusion or init["model_config"].get("fusion", "attention") != fusion:
             init_state = {key: value for key, value in init_state.items() if not key.startswith(FUSION_MODULES)}
+        init_state = _select_proprio_inputs(init_state, init["model_config"], model_config)
         missing, unexpected = model.load_state_dict(init_state, strict=False)
         if unexpected or any(not key.startswith(FUSION_MODULES) for key in missing):
             raise ValueError(f"{init_checkpoint} does not match the model: missing {missing}, unexpected {unexpected}")
@@ -1022,7 +1131,7 @@ def _predict_rollouts(
                     restart = (age == 0).to(device).view(1, -1, 1)
                     hidden_state = torch.where(restart, torch.zeros_like(hidden_state), hidden_state)
                 prediction = model(
-                    depth_data=dataset.step_rows(run, "depth_data", step).to(device)[:, None].float(),
+                    depth_data=dataset.step_rows(run, dataset.frame_key, step).to(device)[:, None].float(),
                     robot_info=robot_info[step, :, None].float(),
                     hidden_state=hidden_state,
                 )
@@ -1143,7 +1252,13 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--keep_velocity_commands",
         action="store_true",
-        help="Keep the velocity commands in the observation (by default zeroed: they say nothing about the terrain).",
+        help="Keep the velocity commands in the network's input (by default removed: they say nothing about the terrain).",
+    )
+    parser.add_argument(
+        "--keep_linear_velocity",
+        action="store_true",
+        help="Keep the base linear velocity in the network's input (by default removed: the simulator gives it exactly, the "
+        "robot only through a state estimator).",
     )
     parser.add_argument("--epochs", type=int, default=100, help="Number of training epochs.")
     parser.add_argument("--batch_size", type=int, default=32, help="Segments per batch.")
@@ -1196,6 +1311,7 @@ if __name__ == "__main__":
         init_checkpoint=args.init_checkpoint,
         learning_rate=args.learning_rate,
         drop_velocity_commands=not args.keep_velocity_commands,
+        drop_linear_velocity=not args.keep_linear_velocity,
         fusion=args.fusion,
         reinit_fusion=args.reinit_fusion,
     )

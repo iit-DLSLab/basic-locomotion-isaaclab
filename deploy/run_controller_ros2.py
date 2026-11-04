@@ -38,7 +38,8 @@ if os.environ.get("BASIC_LOCOMOTION_ROS2_SOURCED") != "1":
 # ROS 2 imports
 import rclpy 
 from rclpy.node import Node 
-from sensor_msgs.msg import Joy
+from sensor_msgs.msg import Joy, PointCloud2
+from rclpy.qos import qos_profile_sensor_data
 from visualization_msgs.msg import Marker, MarkerArray
 from dls2_interface.msg import BaseState, BlindState, Imu, ControlSignal
 
@@ -162,7 +163,11 @@ class ControllerROS2(Node):
                 mj_model=self.mjModel,
                 mj_data=self.mjData,
             )
-            self.subscription_heightmap = self.create_subscription(MarkerArray, "/height_scan_markers", self.get_heightmap_callback, 1,)
+            if self.locomotion_policy.lidar_reconstructor is not None:
+                # the heightmap comes from the L2 messages (config.lidar_reconstructor_path), not from the marker scan
+                self.subscription_lidar = self.create_subscription(PointCloud2, "/utlidar/cloud", self.get_lidar_callback, qos_profile_sensor_data)
+            else:
+                self.subscription_heightmap = self.create_subscription(MarkerArray, "/height_scan_markers", self.get_heightmap_callback, 1,)
 
 
 
@@ -226,6 +231,20 @@ class ControllerROS2(Node):
         self.imu_orientation = np.roll(np.array(msg.orientation), 1) 
 
         self.first_message_imu_arrived = True
+
+
+    def get_lidar_callback(self, msg):
+        """A /utlidar/cloud message (L2 frame, float32 x y z) for the LiDAR reconstructor. Its age is measured on this
+        computer's clock from the arrival (the message comes at the end of its 64.9 ms scan), not from the stamp of the
+        robot's clock."""
+        offsets = {field.name: field.offset for field in msg.fields}
+        data = np.frombuffer(msg.data, dtype=np.uint8).reshape(-1, msg.point_step)
+        points = np.stack([data[:, offsets[axis]:offsets[axis] + 4].copy().view(np.float32)[:, 0] for axis in "xyz"], axis=1)
+        reconstructor = self.locomotion_policy.lidar_reconstructor
+        reconstructor.lidar_message(points, time.monotonic() - reconstructor.message_period)
+        if not self.first_message_heightmap_arrived:
+            self.get_logger().info(f"Received the first LiDAR message ({len(points)} points)")
+        self.first_message_heightmap_arrived = True
 
 
     def get_heightmap_callback(self, msg):

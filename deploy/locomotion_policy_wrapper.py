@@ -79,6 +79,16 @@ class LocomotionPolicyWrapper:
         except:
             self.use_vision = False
 
+        # Heightmap from the Unitree L2 (config.lidar_reconstructor_path): the controller feeds it the /utlidar/cloud
+        # messages (lidar_reconstructor.lidar_message), the policy observation here at every step
+        self.lidar_reconstructor = None
+        if self.use_vision and getattr(config, "lidar_reconstructor_path", None):
+            sys.path.append(dir_path + "/../scripts/l2_lidar_to_heightmap/")
+            from lidar_reconstructor import LidarTerrainReconstructor
+            self.lidar_reconstructor = LidarTerrainReconstructor(
+                config.lidar_reconstructor_path, calibration=getattr(config, "lidar_calibration_path", None)
+            )
+
         # RMA
         if(config.training_env["use_rma"] == True):
             self._rma_network = load_network(getattr(config, "rma_network_path", config.rma_network), device='cpu')
@@ -285,11 +295,16 @@ class LocomotionPolicyWrapper:
             past = self._observation_history[1:,:]
             self._observation_history = np.vstack((past, copy.deepcopy(obs)))
             obs = self._observation_history.flatten()
+        common_obs = obs.copy()  # the task's 'common' observation, the input of the LiDAR reconstructor
 
         if(config.training_env["use_rma"] == True):
             obs = np.concatenate((obs, obs_rma), axis=0)
         
-        if(self.use_vision):
+        if(self.use_vision and self.lidar_reconstructor is not None):
+            # already in the policy's order and convention (base z - ground z - 0.5, clipped)
+            height_data = self.lidar_reconstructor.step(common_obs, base_projected_gravity, time.monotonic()).numpy()
+            obs = np.concatenate((obs, height_data), axis=0)
+        elif(self.use_vision):
             # Flatten heightmap with bottom-right at [0], then points going upward
             heightmap_2d = heightmap_data[..., 2][:, :, 0]  # Remove the last dimension
             

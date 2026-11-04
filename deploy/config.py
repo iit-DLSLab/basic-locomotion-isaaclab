@@ -54,6 +54,13 @@ else:
 
 # ----------------------------------------------------------------------------------------------------------------
 
+# Perceptive policies: the heightmap reconstructed from the Unitree L2 (/utlidar/cloud) by this TorchScript
+# (exported by scripts/l2_lidar_to_heightmap/lidar_reconstructor.py), instead of the /height_scan_markers scan. None: the scan.
+lidar_reconstructor_path = None
+# Optional calibration of the robot's L2 for it (calibrate_mount.py --output: mount and range error). None: the
+# mount of lidar_grid.py and no range correction.
+lidar_calibration_path = None
+
 concurrent_state_est_network = policy_folder_path + "/exported/concurrent_state_estimator.pth"
 rma_network = policy_folder_path + "/exported/rma.pth"
 
