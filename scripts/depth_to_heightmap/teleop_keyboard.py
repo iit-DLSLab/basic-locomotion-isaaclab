@@ -72,7 +72,7 @@ import basic_locomotion_isaaclab.tasks  # noqa: F401
 from isaaclab_tasks.utils.hydra import hydra_task_config
 
 import sim_helpers
-from terrain_reconstruction_transformer import build_terrain_reconstructor
+from terrain_reconstruction_mlp import build_terrain_reconstructor
 
 # command ranges the policy was trained on (custom_events._sample_random_commands): vx, vy (m/s), yaw rate (rad/s)
 COMMAND_LIMITS = (1.0, 0.25, 0.8)

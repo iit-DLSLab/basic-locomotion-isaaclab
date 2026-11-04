@@ -1,6 +1,6 @@
 """The LiDAR terrain reconstructor on the robot: plain torch, one call per policy step.
 
-Export a trained checkpoint (terrain_reconstruction_transformer.py, collector --sensor lidar) to TorchScript:
+Export a trained checkpoint (terrain_reconstruction_mlp.py, collector --sensor lidar) to TorchScript:
 
     python scripts/l2_lidar_to_heightmap/lidar_reconstructor.py --checkpoint <model>.pt --output <model>.ts
 
@@ -97,7 +97,7 @@ class _Step(torch.nn.Module):
 
 def export(checkpoint_path: str, output_path: str) -> None:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "depth_to_heightmap"))
-    from terrain_reconstruction_transformer import build_terrain_reconstructor
+    from terrain_reconstruction_mlp import build_terrain_reconstructor
 
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     model_config = checkpoint["model_config"]
@@ -138,7 +138,7 @@ def export(checkpoint_path: str, output_path: str) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Export a LiDAR terrain reconstructor to TorchScript for the robot.")
-    parser.add_argument("--checkpoint", required=True, help="Checkpoint of terrain_reconstruction_transformer.py.")
+    parser.add_argument("--checkpoint", required=True, help="Checkpoint of terrain_reconstruction_mlp.py.")
     parser.add_argument("--output", required=True, help="TorchScript file to write.")
     args = parser.parse_args()
     export(args.checkpoint, args.output)

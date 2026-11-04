@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import bisect
 import glob
-import math
 import os
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -22,20 +21,6 @@ def _make_group_norm(num_channels: int) -> nn.GroupNorm:
         if num_channels % num_groups == 0:
             return nn.GroupNorm(num_groups=num_groups, num_channels=num_channels)
     raise ValueError(f"Could not build GroupNorm for {num_channels} channels.")
-
-
-def _sinusoidal_position_embedding(length: int, dim: int, device: torch.device, dtype: torch.dtype) -> Tensor:
-    positions = torch.arange(length, device=device, dtype=dtype).unsqueeze(1)
-    frequency = torch.exp(
-        torch.arange(0, dim, 2, device=device, dtype=dtype) * (-math.log(10000.0) / max(dim, 1))
-    )
-    angles = positions * frequency.unsqueeze(0)
-
-    embedding = torch.zeros(length, dim, device=device, dtype=dtype)
-    embedding[:, 0::2] = torch.sin(angles)
-    if dim > 1:
-        embedding[:, 1::2] = torch.cos(angles[:, : embedding[:, 1::2].shape[1]])
-    return embedding
 
 
 class ConvNormAct(nn.Module):
@@ -85,7 +70,6 @@ class DepthTokenEncoder(nn.Module):
             nn.Conv2d(embed_dim, context_channels, kernel_size=1),
             nn.GELU(),
         )
-        self.token_norm = nn.LayerNorm(embed_dim)
 
     def encode_frames(self, frames: Tensor) -> Tensor:
         """(N, C, H, W) -> token maps (N, D, h, w), each frame on its own."""
@@ -97,15 +81,6 @@ class DepthTokenEncoder(nn.Module):
 
     def on_heightmap(self, context: Tensor, heightmap_size: tuple[int, int]) -> Tensor:
         return _context_on_heightmap(context, heightmap_size)
-
-    def tokens(self, token_maps: Tensor) -> Tensor:
-        """Token maps (N, D, h, w) -> tokens (N, h * w, D) with their position in the map, for the attention fusion."""
-        tokens = token_maps.flatten(2).transpose(1, 2)
-        num_tokens, dim = tokens.shape[1:]
-        # also the frame's time position (0), from when the models took several frames: trained weights expect it
-        time_position = _sinusoidal_position_embedding(1, dim, tokens.device, tokens.dtype)
-        spatial_position = _sinusoidal_position_embedding(num_tokens, dim, tokens.device, tokens.dtype)
-        return self.token_norm(tokens + time_position + spatial_position)
 
 
 class LidarGridEncoder(nn.Module):
@@ -130,7 +105,6 @@ class LidarGridEncoder(nn.Module):
             nn.Conv2d(embed_dim, context_channels, kernel_size=1),
             nn.GELU(),
         )
-        self.token_norm = nn.LayerNorm(embed_dim)
 
     def encode_frames(self, frames: Tensor) -> Tensor:
         return self.encoder(frames)
@@ -138,14 +112,12 @@ class LidarGridEncoder(nn.Module):
     def token_maps(self, features: Tensor) -> Tensor:
         return self.token_projection(self.token_pool(features))
 
-    tokens = DepthTokenEncoder.tokens
-
     def on_heightmap(self, context: Tensor, heightmap_size: tuple[int, int]) -> Tensor:
         row, col = self.crop
         return context[..., row : row + heightmap_size[0], col : col + heightmap_size[1]]
 
 
-class ProprioceptiveHistoryEncoder(nn.Module):
+class ProprioceptiveEncoder(nn.Module):
     def __init__(self, proprio_dim: int, embed_dim: int, hidden_dim: int):
         super().__init__()
         self.input_norm = nn.LayerNorm(proprio_dim)
@@ -155,56 +127,15 @@ class ProprioceptiveHistoryEncoder(nn.Module):
             nn.Linear(hidden_dim, embed_dim),
         )
         self.output_norm = nn.LayerNorm(embed_dim)
+        # the sinusoidal position embedding of position 0 (cos 0 = 1 on the odd features), from when the models took a
+        # history of observations: trained weights expect it
+        position = torch.zeros(embed_dim)
+        position[1::2] = 1.0
+        self.register_buffer("position", position, persistent=False)
 
-    def forward(self, proprio_history: Tensor) -> Tensor:
-        batch_size, history_steps, _ = proprio_history.shape
-        tokens = self.encoder(self.input_norm(proprio_history))
-        position_embedding = _sinusoidal_position_embedding(history_steps, tokens.shape[-1], tokens.device, tokens.dtype)
-        tokens = self.output_norm(tokens + position_embedding.view(1, history_steps, -1))
-        return tokens.reshape(batch_size, history_steps, -1)
-
-
-class FeedForwardBlock(nn.Module):
-    def __init__(self, embed_dim: int, dropout: float):
-        super().__init__()
-        self.block = nn.Sequential(
-            nn.Linear(embed_dim, embed_dim * 4),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(embed_dim * 4, embed_dim),
-            nn.Dropout(dropout),
-        )
-
-    def forward(self, x: Tensor) -> Tensor:
-        return self.block(x)
-
-
-class CrossAttentionBlock(nn.Module):
-    def __init__(self, embed_dim: int, num_heads: int, dropout: float):
-        super().__init__()
-        self.query_norm = nn.LayerNorm(embed_dim)
-        self.context_norm = nn.LayerNorm(embed_dim)
-        self.attention = nn.MultiheadAttention(
-            embed_dim=embed_dim,
-            num_heads=num_heads,
-            dropout=dropout,
-            batch_first=True,
-        )
-        self.feedforward_norm = nn.LayerNorm(embed_dim)
-        self.feedforward = FeedForwardBlock(embed_dim=embed_dim, dropout=dropout)
-
-    def forward(self, query_tokens: Tensor, context_tokens: Tensor) -> Tensor:
-        normalized_query = self.query_norm(query_tokens)
-        normalized_context = self.context_norm(context_tokens)
-        attention_output, _ = self.attention(
-            query=normalized_query,
-            key=normalized_context,
-            value=normalized_context,
-            need_weights=False,
-        )
-        fused = query_tokens + attention_output
-        fused = fused + self.feedforward(self.feedforward_norm(fused))
-        return fused
+    def forward(self, proprio: Tensor) -> Tensor:
+        """(N, F) -> (N, D)"""
+        return self.output_norm(self.encoder(self.input_norm(proprio)) + self.position)
 
 
 class ConditionalUNetRefiner(nn.Module):
@@ -259,13 +190,11 @@ class TerrainReconstructionOutput:
 class RecurrentTerrainReconstructor(nn.Module):
     """The terrain reconstructor: one control step at a time, with the GRU state carried across steps as its memory.
 
-    A step takes the current depth frame and the current 'common' observation, nothing older. ``fusion`` merges them
-    into the GRU input: "mlp" (the reference), the frame's token map (fewer channels) and the proprioceptive token
-    concatenated through an MLP; "attention", the proprioceptive token and a few learned queries read the token map
-    through cross-attention. The camera is fixed to the body, so each map position always looks at about the same
-    ground: fixed weights can do. The result updates the GRU state, and the heightmap is decoded from the state, then
-    refined with the current frame (in the heightmap layout). Terrain seen earlier, e.g. the ground now under the
-    robot's head, can only come from the state.
+    A step takes the current depth frame and the current 'common' observation, nothing older. An MLP merges them into
+    the GRU input: the frame's token map (fewer channels) and the proprioceptive token, concatenated. The camera is
+    fixed to the body, so each map position always looks at about the same ground: fixed weights can do. The result
+    updates the GRU state, and the heightmap is decoded from the state, then refined with the current frame (in the
+    heightmap layout). Terrain seen earlier, e.g. the ground now under the robot's head, can only come from the state.
 
     Inputs are L consecutive steps of B robots, depth_data (B, L, C, H, W) and robot_info (B, L, F); the outputs are
     (B, L, 1, h, w). On the robot L = 1 and ``hidden_state`` goes from one call to the next (None: start of an episode).
@@ -282,17 +211,12 @@ class RecurrentTerrainReconstructor(nn.Module):
         heightmap_size: tuple[int, int] = (9, 7),
         embed_dim: int = 128,
         proprio_hidden_dim: int = 256,
-        num_attention_heads: int = 4,
-        num_cross_attention_layers: int = 2,
-        frame_queries: int = 8,
         recurrent_hidden_dim: int = 192,
         token_grid_size: tuple[int, int] = (6, 8),
         refinement_context_channels: int = 32,
         refinement_base_channels: int = 32,
-        dropout: float = 0.1,
         dropped_proprio_features: tuple[int, ...] = (),
         removed_proprio_features: tuple[int, ...] = (),
-        fusion: str = "attention",
         frame_channels: int = 16,
         sensor: str = "depth",
         context_crop: tuple[int, int] = (0, 0),
@@ -318,27 +242,12 @@ class RecurrentTerrainReconstructor(nn.Module):
             )
         else:
             raise ValueError(f"Unknown sensor: {sensor}")
-        self.proprio_encoder = ProprioceptiveHistoryEncoder(len(self.proprio_index), embed_dim, proprio_hidden_dim)
-        self.fusion = fusion
-        if fusion == "mlp":
-            self.frame_reduction = nn.Conv2d(embed_dim, frame_channels, kernel_size=1)
-            fused_dim = frame_channels * token_grid_size[0] * token_grid_size[1] + embed_dim
-            self.step_mlp = nn.Sequential(
-                nn.LayerNorm(fused_dim), nn.Linear(fused_dim, 2 * embed_dim), nn.GELU(), nn.Linear(2 * embed_dim, embed_dim)
-            )
-        elif fusion == "attention":
-            # a single query (the proprioceptive token) takes a weighted average of the image tokens: too narrow for
-            # the terrain ahead, which the state has to keep until the robot gets there, so a few learned queries read
-            # it too
-            self.frame_queries = nn.Parameter(0.02 * torch.randn(frame_queries, embed_dim))
-            self.cross_attention_blocks = nn.ModuleList(
-                [CrossAttentionBlock(embed_dim, num_attention_heads, dropout) for _ in range(num_cross_attention_layers)]
-            )
-            self.step_projection = nn.Sequential(
-                nn.LayerNorm((frame_queries + 1) * embed_dim), nn.Linear((frame_queries + 1) * embed_dim, embed_dim)
-            )
-        else:
-            raise ValueError(f"Unknown fusion: {fusion}")
+        self.proprio_encoder = ProprioceptiveEncoder(len(self.proprio_index), embed_dim, proprio_hidden_dim)
+        self.frame_reduction = nn.Conv2d(embed_dim, frame_channels, kernel_size=1)
+        fused_dim = frame_channels * token_grid_size[0] * token_grid_size[1] + embed_dim
+        self.step_mlp = nn.Sequential(
+            nn.LayerNorm(fused_dim), nn.Linear(fused_dim, 2 * embed_dim), nn.GELU(), nn.Linear(2 * embed_dim, embed_dim)
+        )
         self.memory = nn.GRU(input_size=embed_dim, hidden_size=recurrent_hidden_dim, batch_first=True)
         self.rough_decoder = nn.Sequential(
             nn.LayerNorm(recurrent_hidden_dim),
@@ -363,16 +272,9 @@ class RecurrentTerrainReconstructor(nn.Module):
             encoder, depth_data.flatten(0, 1), self.frames_per_chunk, self.training and torch.is_grad_enabled()
         )
         token_maps = encoder.token_maps(features)  # (B * L, D, h, w)
-        proprio_token = self.proprio_encoder(proprio.flatten(0, 1).unsqueeze(1))  # (B * L, 1, D)
-        if self.fusion == "mlp":
-            frame = self.frame_reduction(token_maps).flatten(1)
-            step_input = self.step_mlp(torch.cat((frame, proprio_token.flatten(1)), dim=1))
-        else:
-            queries = torch.cat((proprio_token, self.frame_queries.expand(batch_size * steps, -1, -1)), dim=1)
-            depth_tokens = encoder.tokens(token_maps)
-            for block in self.cross_attention_blocks:
-                queries = block(queries, depth_tokens)
-            step_input = self.step_projection(queries.flatten(1))
+        proprio_token = self.proprio_encoder(proprio.flatten(0, 1))  # (B * L, D)
+        frame = self.frame_reduction(token_maps).flatten(1)
+        step_input = self.step_mlp(torch.cat((frame, proprio_token), dim=1))
         memory, hidden_state = self.memory(step_input.view(batch_size, steps, -1), hidden_state)
 
         rough_heightmap = self.rough_decoder(memory.flatten(0, 1)).view(-1, 1, *self.heightmap_size)
@@ -385,9 +287,14 @@ class RecurrentTerrainReconstructor(nn.Module):
             hidden_state=hidden_state,
         )
 
+    def load_state_dict(self, state_dict, strict: bool = True, assign: bool = False):
+        # the checkpoints trained before the attention fusion was removed also hold the norm of its tokens
+        state_dict = {key: value for key, value in state_dict.items() if ".token_norm." not in key}
+        return super().load_state_dict(state_dict, strict, assign)
 
-# modules of the two fusions: a model can start from a checkpoint with the other fusion, the fusion from random weights
-FUSION_MODULES = ("frame_reduction", "step_mlp", "frame_queries", "cross_attention_blocks", "step_projection")
+
+# the modules of the fusion: --reinit_fusion starts them from random weights
+FUSION_MODULES = ("frame_reduction", "step_mlp")
 
 
 def build_terrain_reconstructor(model_config: dict) -> nn.Module:
@@ -396,6 +303,8 @@ def build_terrain_reconstructor(model_config: dict) -> nn.Module:
     config.pop("lidar_errors", None)  # the simulated L2's, not the model's
     if config.pop("architecture", "window") != "recurrent":
         raise ValueError("Window (transformer) checkpoints are no longer supported: only the recurrent model is.")
+    if config.pop("fusion", "attention") != "mlp":
+        raise ValueError("Attention-fusion checkpoints are no longer supported: only the MLP fusion is.")
     return RecurrentTerrainReconstructor(**config)
 
 
@@ -764,7 +673,6 @@ def run_terrain_reconstruction(
     learning_rate: float = 3e-4,
     drop_velocity_commands: bool = True,
     drop_linear_velocity: bool = True,
-    fusion: str = "mlp",
     reinit_fusion: bool = False,
 ) -> None:
     dataset_paths = [Path(p).expanduser().resolve() for p in ([path] if isinstance(path, (str, Path)) else path)]
@@ -805,7 +713,7 @@ def run_terrain_reconstruction(
         "depth_channels": sample_depth.shape[-3],
         "heightmap_size": tuple(sample_target.shape[-2:]),
         "architecture": "recurrent",
-        "fusion": fusion,
+        "fusion": "mlp",
         "sensor": dataset.metadata.get("sensor", "depth"),
     }
     if model_config["sensor"] == "lidar":
@@ -829,12 +737,12 @@ def run_terrain_reconstruction(
     }
     model = build_terrain_reconstructor(model_config)
     if init_checkpoint:
-        # continue from a trained model: its weights and its normalization, so its outputs keep their meaning; a
-        # different fusion (or --reinit_fusion) starts from random weights
+        # continue from a trained model: its weights and its normalization, so its outputs keep their meaning; with
+        # --reinit_fusion the fusion starts from random weights
         init = torch.load(init_checkpoint, map_location="cpu", weights_only=False)
         target_normalization = init["target_normalization"]
         init_state = init["model_state_dict"]
-        if reinit_fusion or init["model_config"].get("fusion", "attention") != fusion:
+        if reinit_fusion:
             init_state = {key: value for key, value in init_state.items() if not key.startswith(FUSION_MODULES)}
         init_state = _select_proprio_inputs(init_state, init["model_config"], model_config)
         missing, unexpected = model.load_state_dict(init_state, strict=False)
@@ -1232,22 +1140,15 @@ def _parse_args() -> argparse.Namespace:
         help="Where to save the trained model. Defaults to terrain_reconstructor.pt next to the first dataset directory.",
     )
     parser.add_argument(
-        "--fusion",
-        choices=("mlp", "attention"),
-        default="mlp",
-        help="How the frame and the observation are merged before the GRU: an MLP on the concatenated frame features "
-        "and observation token (the reference), or cross-attention with learned queries.",
-    )
-    parser.add_argument(
         "--init_checkpoint",
         type=str,
         default=None,
-        help="Start from this trained model (weights and normalization); a different fusion starts from random weights.",
+        help="Start from this trained model (weights and normalization).",
     )
     parser.add_argument(
         "--reinit_fusion",
         action="store_true",
-        help="With --init_checkpoint: the fusion starts from random weights also if the checkpoint has the same one.",
+        help="With --init_checkpoint: the fusion MLP starts from random weights.",
     )
     parser.add_argument(
         "--keep_velocity_commands",
@@ -1312,6 +1213,5 @@ if __name__ == "__main__":
         learning_rate=args.learning_rate,
         drop_velocity_commands=not args.keep_velocity_commands,
         drop_linear_velocity=not args.keep_linear_velocity,
-        fusion=args.fusion,
         reinit_fusion=args.reinit_fusion,
     )
