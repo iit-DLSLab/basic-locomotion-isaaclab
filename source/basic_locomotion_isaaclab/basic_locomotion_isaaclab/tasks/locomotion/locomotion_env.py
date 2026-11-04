@@ -13,7 +13,7 @@ import torch
 import isaaclab.envs.mdp as mdp
 import isaaclab.sim as sim_utils
 import isaaclab.utils.math as math_utils
-from isaaclab.assets import Articulation, ArticulationCfg
+from isaaclab.assets import Articulation, ArticulationCfg, AssetBaseCfg
 from isaaclab.envs import DirectRLEnv, DirectRLEnvCfg
 from isaaclab.managers import EventTermCfg as EventTerm
 from isaaclab.scene import InteractiveSceneCfg
@@ -39,7 +39,6 @@ from isaaclab.terrains import TerrainImporterCfg
 from isaaclab.utils.configclass import configclass
 from isaaclab.utils.noise import NoiseModel
 
-from isaaclab import cloner
 
 
 from .aliengo_env_cfg import AliengoFlatEnvCfg, AliengoRoughBlindEnvCfg, AliengoRoughVisionEnvCfg
@@ -59,6 +58,9 @@ class LocomotionEnv(DirectRLEnv):
         self._edge_map_visualizer = None
         self._feet_edge_swing_visualizer = None
         self._height_map_visualizer = None
+        # Isaac Lab 3.0: the InteractiveScene owns the construction and the cloning of the assets and sensors,
+        # so they must be declared on cfg.scene before the scene is created
+        self._populate_scene_cfg(cfg)
         super().__init__(cfg, render_mode, **kwargs)
 
         # Joint position command (deviation from default joint positions)
@@ -257,90 +259,81 @@ class LocomotionEnv(DirectRLEnv):
             self.set_debug_vis(True)
 
 
-    def _setup_scene(self):
-        self._robot = Articulation(self.cfg.robot)
-        self.scene.articulations["robot"] = self._robot
-        self._contact_sensor = ContactSensor(self.cfg.contact_sensor)
-        self.scene.sensors["contact_sensor"] = self._contact_sensor
+    @staticmethod
+    def _populate_scene_cfg(cfg):
+        """Declare the robot, the sensors, the terrain and the light on cfg.scene.
 
+        In Isaac Lab 3.0 the InteractiveScene builds the clone plan from the declared entities, constructs them and
+        replicates env_0 (including the PhysX collision filtering with the terrain). The entities keep the names used
+        so far, and the env cfg fields (cfg.robot, cfg.terrain, ...) are left in place, so the rest of the code and the
+        hydra overrides are unchanged.
+        """
+        scene = cfg.scene
+        scene.robot = cfg.robot
+        scene.contact_sensor = cfg.contact_sensor
         # Keep the base-centered scanner for base-height and terrain-orientation terms.
-        self._pose_height_scanner = RayCaster(self.cfg.pose_height_scanner)
-        self.scene.sensors["pose_height_scanner"] = self._pose_height_scanner
+        scene.pose_height_scanner = cfg.pose_height_scanner
 
         # Use one small height map centered on each foot for the clearance rewards.
-        self._foot_height_scanners = []
         for foot_name in ("FL_foot", "FR_foot", "RL_foot", "RR_foot"):
             # Preserve the configured hierarchy, replacing the leg prefix in each link.
             leg_prefix = foot_name.split("_", 1)[0]
-            scanner_cfg = self.cfg.foot_height_scanner.replace(
-                prim_path=self.cfg.foot_height_scanner.prim_path.replace("FL_", f"{leg_prefix}_"),
-                visualizer_cfg=self.cfg.foot_height_scanner.visualizer_cfg.replace(
+            scanner_cfg = cfg.foot_height_scanner.replace(
+                prim_path=cfg.foot_height_scanner.prim_path.replace("FL_", f"{leg_prefix}_"),
+                visualizer_cfg=cfg.foot_height_scanner.visualizer_cfg.replace(
                     prim_path=f"/Visuals/{foot_name}HeightScanner"
                 ),
             )
-            scanner = RayCaster(scanner_cfg)
-            self.scene.sensors[f"{foot_name.lower()}_height_scanner"] = scanner
-            self._foot_height_scanners.append(scanner)
+            setattr(scene, f"{foot_name.lower()}_height_scanner", scanner_cfg)
 
         # Add the perceptive scanner only for vision-based locomotion.
-        if(getattr(self.cfg, "perceptive_height_scanner", None) is not None):
-            self._perceptive_height_scanner = RayCaster(self.cfg.perceptive_height_scanner)
-            self.scene.sensors["perceptive_height_scanner"] = self._perceptive_height_scanner
-
+        if getattr(cfg, "perceptive_height_scanner", None) is not None:
+            scene.perceptive_height_scanner = cfg.perceptive_height_scanner
         # The edge scanner is only used by the feet edge rewards (never observed), so it is available for blind locomotion as well
-        if(getattr(self.cfg, "edge_height_scanner", None) is not None):
-            self._edge_height_scanner = RayCaster(self.cfg.edge_height_scanner)
-            self.scene.sensors["edge_height_scanner"] = self._edge_height_scanner
-
+        if getattr(cfg, "edge_height_scanner", None) is not None:
+            scene.edge_height_scanner = cfg.edge_height_scanner
         # we add a depth camera if needed for vision-based locomotion
-        if(getattr(self.cfg, "use_depth_camera", False)):
-            self._depth_camera = MultiMeshRayCasterCamera(self.cfg.depth_camera)
-            ##self._depth_camera = TiledCamera(self.cfg.depth_camera)
-            self.scene.sensors["depth_camera"] = self._depth_camera
-            pass
-
+        if getattr(cfg, "use_depth_camera", False):
+            scene.depth_camera = cfg.depth_camera
         # we add the Unitree L2 LiDAR if needed for vision-based locomotion
-        if(getattr(self.cfg, "use_unitree_l2_lidar", False)):
-            self._unitree_l2_lidar = UnitreeL2Lidar(self.cfg.unitree_l2_lidar)
-            self.scene.sensors["unitree_l2_lidar"] = self._unitree_l2_lidar
+        if getattr(cfg, "use_unitree_l2_lidar", False):
+            scene.unitree_l2_lidar = cfg.unitree_l2_lidar.replace(class_type=UnitreeL2Lidar)
 
         # we add an imu
-        self._imu = Imu(self.cfg.imu)
-        self.scene.sensors["imu"] = self._imu
-
+        scene.imu = cfg.imu
         # Report ideal projected gravity in the same frame as the IMU measurements.
-        self._pva = Pva(PvaCfg(
-            prim_path=self.cfg.imu.prim_path,
-            update_period=self.cfg.imu.update_period,
-            offset=PvaCfg.OffsetCfg(
-                pos=self.cfg.imu.offset.pos,
-                rot=self.cfg.imu.offset.rot,
-            ),
-        ))
-        self.scene.sensors["pva"] = self._pva
-
-        self.cfg.terrain.num_envs = self.scene.cfg.num_envs
-        self.cfg.terrain.env_spacing = self.scene.cfg.env_spacing
-        self._terrain = self.cfg.terrain.class_type(self.cfg.terrain)
-        
-        # clone and replicate environments
-        src, dest = "/World/envs/env_0", "/World/envs/env_{}"
-        positions = cloner.grid_transforms(
-            self.scene.num_envs, self.scene.cfg.env_spacing, device=self.device
-        )[0]
-        global_paths = (self.cfg.terrain.prim_path,)
-        plan = cloner.clone_plan_from_env_0(
-            src, dest, self.scene.num_envs, self.device, positions, global_paths=global_paths
+        scene.pva = PvaCfg(
+            prim_path=cfg.imu.prim_path,
+            update_period=cfg.imu.update_period,
+            offset=PvaCfg.OffsetCfg(pos=cfg.imu.offset.pos, rot=cfg.imu.offset.rot),
         )
-        cloner.replicate(plan, stage=self.scene.stage)
 
-        # PhysX replication requires explicit collision filtering between environments.
-        if "physx" in self.scene.physics_backend:
-            self.scene.filter_collisions(global_prim_paths=[self.cfg.terrain.prim_path])
-        
+        # the scene sets num_envs and env_spacing of the terrain
+        scene.terrain = cfg.terrain
         # add lights
-        light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
-        light_cfg.func("/World/Light", light_cfg)
+        scene.light = AssetBaseCfg(
+            prim_path="/World/Light", spawn=sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
+        )
+
+    def _setup_scene(self):
+        # The entities are constructed and cloned by the InteractiveScene, see _populate_scene_cfg
+        self._robot = self.scene["robot"]
+        self._contact_sensor = self.scene["contact_sensor"]
+        self._pose_height_scanner = self.scene["pose_height_scanner"]
+        self._foot_height_scanners = [
+            self.scene[f"{foot_name.lower()}_height_scanner"] for foot_name in ("FL_foot", "FR_foot", "RL_foot", "RR_foot")
+        ]
+        if getattr(self.cfg, "perceptive_height_scanner", None) is not None:
+            self._perceptive_height_scanner = self.scene["perceptive_height_scanner"]
+        if getattr(self.cfg, "edge_height_scanner", None) is not None:
+            self._edge_height_scanner = self.scene["edge_height_scanner"]
+        if getattr(self.cfg, "use_depth_camera", False):
+            self._depth_camera = self.scene["depth_camera"]
+        if getattr(self.cfg, "use_unitree_l2_lidar", False):
+            self._unitree_l2_lidar = self.scene["unitree_l2_lidar"]
+        self._imu = self.scene["imu"]
+        self._pva = self.scene["pva"]
+        self._terrain = self.scene.terrain
 
 
     def _pre_physics_step(self, actions: torch.Tensor):

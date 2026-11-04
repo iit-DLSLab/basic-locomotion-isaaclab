@@ -161,8 +161,8 @@ def main() -> None:
     # mirror it for the agent and offset the seed per rank to decorrelate rollouts (the
     # runner broadcasts rank-0 model parameters at learn start, so init seeds may differ).
     if args_cli.distributed:
-        agent_cfg.device = f"cuda:{app_launcher.local_rank}"
-        agent_cfg.seed += app_launcher.global_rank
+        agent_cfg.device = f"cuda:{int(os.getenv('LOCAL_RANK', '0'))}"
+        agent_cfg.seed += int(os.getenv("RANK", "0"))
 
     # Seeding and matmul settings (matching the official FlashSAC training setup)
     torch.manual_seed(agent_cfg.seed)
@@ -181,7 +181,7 @@ def main() -> None:
     # Logging directory and config dumps (reproducibility) — rank 0 only in distributed
     # runs; the rsl_rl Logger disables all writers and checkpoint saves on other ranks.
     log_dir = None
-    if not args_cli.distributed or app_launcher.global_rank == 0:
+    if not args_cli.distributed or int(os.getenv("RANK", "0")) == 0:
         # Include microseconds because Ray can launch multiple trials in the same second.
         run_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
         if agent_cfg.run_name:

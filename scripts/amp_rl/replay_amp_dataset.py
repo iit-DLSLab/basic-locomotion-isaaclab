@@ -36,14 +36,13 @@ import torch
 from isaaclab.envs import DirectRLEnvCfg
 
 import isaaclab_tasks  # noqa: F401
-from isaaclab_tasks.utils.hydra import hydra_task_config
+from isaaclab_tasks.utils import resolve_task_config
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg
 
 # Import extensions to set up environment tasks
 import basic_locomotion_isaaclab.tasks  # noqa: F401
 
 
-@hydra_task_config(args_cli.task, "rsl_rl_cfg_entry_point")
 def main(env_cfg: DirectRLEnvCfg, agent_cfg: RslRlOnPolicyRunnerCfg):
     """Replay the AMP dataset."""
     env_cfg.scene.num_envs = args_cli.num_envs
@@ -105,6 +104,6 @@ def main(env_cfg: DirectRLEnvCfg, agent_cfg: RslRlOnPolicyRunnerCfg):
 
 if __name__ == "__main__":
     # run the main execution
-    main()
+    main(*resolve_task_config(args_cli.task, "rsl_rl_cfg_entry_point"))
     # close sim app
     simulation_app.close()

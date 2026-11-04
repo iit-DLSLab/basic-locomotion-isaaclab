@@ -173,7 +173,7 @@ import isaaclab_tasks  # noqa: F401
 import basic_locomotion_isaaclab.tasks  # noqa: F401
 
 from isaaclab_tasks.utils import get_checkpoint_path
-from isaaclab_tasks.utils.hydra import hydra_task_config
+from isaaclab_tasks.utils import resolve_task_config
 
 # PLACEHOLDER: Extension template (do not remove this comment)
 
@@ -309,7 +309,6 @@ def _save_dagger_policy(
     print(f"[INFO] Saved DAgger student policy checkpoint to: {path}")
 
 
-@hydra_task_config(args_cli.task, args_cli.agent)
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
     """Train a depth-conditioned student with online DAgger supervision."""
     # grab task name for checkpoint path
@@ -603,6 +602,6 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
 if __name__ == "__main__":
     # run the main function
-    main()
+    main(*resolve_task_config(args_cli.task, args_cli.agent))
     # close sim app
     simulation_app.close()

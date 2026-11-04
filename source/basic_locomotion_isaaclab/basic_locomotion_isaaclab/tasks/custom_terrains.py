@@ -91,7 +91,7 @@ class MeshOverhangBoxesTerrainCfg(SubTerrainBaseCfg):
 
 
 @height_field_to_mesh
-def holes_terrain(difficulty: float, cfg: "HfHolesTerrainCfg") -> np.ndarray:
+def holes_terrain(difficulty: float, cfg: "HfHolesTerrainCfg") -> tuple[np.ndarray, np.ndarray]:
     """Generate a flat terrain with many small square holes, deep enough that a foot in a hole is catastrophic.
 
     The holes have a fixed size, independent of the difficulty: the terrain is meant to have many edges to avoid,
@@ -131,7 +131,14 @@ def holes_terrain(difficulty: float, cfg: "HfHolesTerrainCfg") -> np.ndarray:
         ] = True
         num_placed += 1
 
-    return hf_raw
+    # Isaac Lab 3.0: the height field generators also return their local origin [m]. The robots spawn on the
+    # flat central platform, at height 0
+    origin = np.array([
+        (width_pixels - 1) * cfg.horizontal_scale / 2,
+        (length_pixels - 1) * cfg.horizontal_scale / 2,
+        0.0,
+    ])
+    return hf_raw, origin
 
 
 @configclass
