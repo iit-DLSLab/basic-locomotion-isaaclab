@@ -47,3 +47,6 @@ deploy/ros1_ws/install/
 # Usd
 source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/assets/pegasus_asset/*.db3
 /deploy/rosbag/*.db3
+
+# Pixi
+.pixi/

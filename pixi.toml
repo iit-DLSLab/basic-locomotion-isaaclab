@@ -1,7 +1,14 @@
 [workspace]
 name = "basic_locomotion_isaaclab_env"
-platforms = ["linux-64"]
+platforms = [
+  "linux-64",
+  # Isaac Lab 3 Omniverse wheels are manylinux_2_35 (Ubuntu 22.04+)
+  { name = "linux-64-glibc-2-35", platform = "linux-64", glibc = "2.35" },
+]
 channels = ["conda-forge", "nvidia"]
+
+[feature.common]
+platforms = ["linux-64"]
 
 [feature.common.dependencies]
 pip = "*"
@@ -53,6 +60,28 @@ ros-lyrical-librealsense2 = "*"
 ros-lyrical-realsense2-camera-msgs = "*"
 ros-lyrical-realsense2-camera = "*"
 
+# ---------------------------------------------------------------------------
+# Training: Isaac Lab release from PyPI (lightweight, no Isaac Sim / Kit)
+# ---------------------------------------------------------------------------
+[feature.train]
+platforms = ["linux-64-glibc-2-35"]
+
+[feature.train.dependencies]
+python = "3.12.*"
+pip = "*"
+setuptools = "<82"  # torch 2.11 requires setuptools<82
+
+[feature.train.pypi-dependencies]
+isaaclab = { version = "==3.0.0", extras = ["all", "wandb"] }
+basic_locomotion_isaaclab = { path = "source/basic_locomotion_isaaclab", editable = true }
+
+[feature.train.pypi-options]
+extra-index-urls = ["https://pypi.nvidia.com", "https://download.pytorch.org/whl/cu130"]
+index-strategy = "unsafe-best-match"
+# Mirrors Isaac Lab's [tool.uv].override-dependencies (not inherited from the wheel)
+dependency-overrides = { packaging = ">=20,<27" }
+
 [environments]
+train = ["train"]
 humble = ["common", "humble"]
 lyrical = ["common", "lyrical"]
