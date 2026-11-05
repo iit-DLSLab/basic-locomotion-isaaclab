@@ -1,0 +1,28 @@
+--- git commit ---
+1037932f81f388b3f3d25a7bd3330988af330f25
+
+
+--- git status ---
+HEAD detached from 5130b69
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   deploy/config.py
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/deploy/config.py b/deploy/config.py
+index 0a838f4..0ef4c6a 100644
+--- a/deploy/config.py
++++ b/deploy/config.py
+@@ -24,7 +24,7 @@ elif(robot == "go2"):
+     Kp_stand_up_and_down = 50.
+     Kd_stand_up_and_down = 5.
+ 
+-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_se_vision"
++    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-11-04_07-49-39"
+ 
+ elif(robot == "b2"):
+     Kp_walking = 120.

@@ -48,13 +48,13 @@ elif(robot == "hyqreal2"):
     Kd_stand_up_and_down = 20.
 
 elif(robot == "pegasus"):
-    Kp_walking = 120.
+    Kp_walking = 100. #training with 120
     Kd_walking = 6.
 
-    Kp_stand_up_and_down = 200.
+    Kp_stand_up_and_down = 600.
     Kd_stand_up_and_down = 10.
 
-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/imu_blind"
+    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/blind_120"
 
 else:
     raise ValueError(f"Robot {robot} not supported")
