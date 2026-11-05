@@ -5,13 +5,13 @@
 
 """Train a depth-conditioned student policy with online DAgger supervision."""
 
-"""Launch Isaac Sim Simulator first."""
+"""Parse command-line arguments first."""
 
 import argparse
 import sys
 from contextlib import nullcontext
 
-from isaaclab.app import AppLauncher
+from isaaclab.app import add_launcher_args, launch_simulation
 
 # local imports
 import cli_args  # isort: skip
@@ -129,8 +129,8 @@ parser.add_argument(
 )
 # append RSL-RL cli arguments
 cli_args.add_rsl_rl_args(parser)
-# append AppLauncher cli args
-AppLauncher.add_app_launcher_args(parser)
+# append simulation launcher cli args
+add_launcher_args(parser)
 # parse the arguments
 args_cli, hydra_args = parser.parse_known_args()
 # always enable cameras to record video
@@ -140,9 +140,6 @@ if args_cli.video:
 # clear out sys.argv for Hydra
 sys.argv = [sys.argv[0]] + hydra_args
 
-# launch omniverse app
-app_launcher = AppLauncher(args_cli)
-simulation_app = app_launcher.app
 
 """Rest everything follows."""
 
@@ -450,7 +447,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     step = 0
     updates = 0
 
-    while simulation_app.is_running() and (
+    while env.unwrapped.sim.is_running() and (
         args_cli.max_training_steps is None or step < args_cli.max_training_steps
     ):
         common_obs = obs["common"]
@@ -602,6 +599,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
 if __name__ == "__main__":
     # run the main function
-    main(*resolve_task_config(args_cli.task, args_cli.agent))
-    # close sim app
-    simulation_app.close()
+    env_cfg, agent_cfg = resolve_task_config(args_cli.task, args_cli.agent)
+    # start only the runtime the task needs (Kit is launched only for PhysX / Kit visualizers)
+    with launch_simulation(env_cfg, args_cli):
+        main(env_cfg, agent_cfg)

@@ -23,7 +23,7 @@ import os
 
 def main() -> None:
     """Launch Isaac Sim and roll out a trained FlashSAC policy."""
-    from isaaclab.app import AppLauncher
+    from isaaclab.app import add_launcher_args, launch_simulation
 
     parser = argparse.ArgumentParser(description="Play a trained FlashSAC policy on an Isaac Lab task.")
     parser.add_argument("--task", type=str, required=True, help="Name of the task (Isaac Lab gym id).")
@@ -55,15 +55,13 @@ def main() -> None:
         default=None,
         help="Motion clip .npz path(s) or a directory of clips (required for tracking tasks).",
     )
-    AppLauncher.add_app_launcher_args(parser)
+    add_launcher_args(parser)
     args_cli = parser.parse_args()
     if args_cli.video:
         args_cli.enable_cameras = True  # offscreen rendering is required for video capture
 
-    app_launcher = AppLauncher(args_cli)
-    simulation_app = app_launcher.app
 
-    # Late imports: Isaac Lab modules require the simulation app to be running
+    # Late imports: keep CLI parsing (--help) fast
     import gymnasium as gym
     import isaaclab_tasks  # noqa: F401  (registers the Isaac Lab gym tasks)
     import torch
@@ -105,58 +103,61 @@ def main() -> None:
         env_cfg.viewer.origin_type = "asset_root"
         env_cfg.viewer.asset_name = "robot"
         env_cfg.viewer.env_index = args_cli.viewer_follow_env
-    env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
-    if args_cli.video:
-        env = gym.wrappers.RecordVideo(
+    # start only the runtime the task needs (Kit is launched only for PhysX / Kit visualizers)
+    with launch_simulation(env_cfg, args_cli):
+        env = gym.make(args_cli.task, cfg=env_cfg, render_mode="rgb_array" if args_cli.video else None)
+        # keep the simulation handle before wrapping: it tells when the viewer was closed
+        sim = env.unwrapped.sim
+        if args_cli.video:
+            env = gym.wrappers.RecordVideo(
+                env,
+                video_folder=args_cli.video_dir,
+                step_trigger=lambda step: step == 0,
+                video_length=args_cli.video_length,
+                disable_logger=True,
+            )
+        env = FlashSACVecEnvWrapper(
             env,
-            video_folder=args_cli.video_dir,
-            step_trigger=lambda step: step == 0,
-            video_length=args_cli.video_length,
-            disable_logger=True,
+            clip_actions=agent_cfg.clip_actions,
+            action_bound=agent_cfg.action_bound,
+            action_bound_scale=agent_cfg.action_bound_scale,
         )
-    env = FlashSACVecEnvWrapper(
-        env,
-        clip_actions=agent_cfg.clip_actions,
-        action_bound=agent_cfg.action_bound,
-        action_bound_scale=agent_cfg.action_bound_scale,
-    )
 
-    # Load the policy
-    train_cfg = agent_cfg.to_dict()  # type: ignore[attr-defined]
-    runner = OffPolicyRunner(env, train_cfg, log_dir=None, device=agent_cfg.device)
-    runner.load(checkpoint_path)
-    policy = runner.get_inference_policy(device=agent_cfg.device)
+        # Load the policy
+        train_cfg = agent_cfg.to_dict()  # type: ignore[attr-defined]
+        runner = OffPolicyRunner(env, train_cfg, log_dir=None, device=agent_cfg.device)
+        runner.load(checkpoint_path)
+        policy = runner.get_inference_policy(device=agent_cfg.device)
 
-    # Optionally export the deterministic policy for deployment
-    if args_cli.export_policy:
-        export_dir = os.path.join(os.path.dirname(checkpoint_path), "exported")
-        runner.export_policy_to_jit(export_dir)
-        runner.export_policy_to_onnx(export_dir)
-        print(f"[INFO] Exported policy to: {export_dir}")
+        # Optionally export the deterministic policy for deployment
+        if args_cli.export_policy:
+            export_dir = os.path.join(os.path.dirname(checkpoint_path), "exported")
+            runner.export_policy_to_jit(export_dir)
+            runner.export_policy_to_onnx(export_dir)
+            print(f"[INFO] Exported policy to: {export_dir}")
 
-        # DreamWaQ variants additionally export the CENet estimator and the sim2real deploy
-        # contract (config.yaml + joint order + provenance), then self-verify that the exported
-        # policy.pt + cenet.pt compose to reproduce the live policy's action.
-        if hasattr(policy, "cenet_as_jit"):
-            runner.export_cenet_to_jit(export_dir)
-            write_deploy_config(env, agent_cfg, export_dir)
-            verify_exported_pair(policy, export_dir, env.get_observations())
-            print(f"[INFO] Exported + verified cenet.pt and config.yaml to: {export_dir}")
+            # DreamWaQ variants additionally export the CENet estimator and the sim2real deploy
+            # contract (config.yaml + joint order + provenance), then self-verify that the exported
+            # policy.pt + cenet.pt compose to reproduce the live policy's action.
+            if hasattr(policy, "cenet_as_jit"):
+                runner.export_cenet_to_jit(export_dir)
+                write_deploy_config(env, agent_cfg, export_dir)
+                verify_exported_pair(policy, export_dir, env.get_observations())
+                print(f"[INFO] Exported + verified cenet.pt and config.yaml to: {export_dir}")
 
-    # Roll out (a finite clip when recording, otherwise until the app is closed)
-    obs = env.get_observations().to(agent_cfg.device)
-    steps = 0
-    while simulation_app.is_running():
-        with torch.inference_mode():
-            actions = policy(obs)
-            obs, _, _, _ = env.step(actions.to(env.device))
-            obs = obs.to(agent_cfg.device)
-        steps += 1
-        if args_cli.video and steps > args_cli.video_length:
-            break
+        # Roll out (a finite clip when recording, otherwise until the app is closed)
+        obs = env.get_observations().to(agent_cfg.device)
+        steps = 0
+        while sim.is_running():
+            with torch.inference_mode():
+                actions = policy(obs)
+                obs, _, _, _ = env.step(actions.to(env.device))
+                obs = obs.to(agent_cfg.device)
+            steps += 1
+            if args_cli.video and steps > args_cli.video_length:
+                break
 
-    env.close()
-    simulation_app.close()
+        env.close()
 
 
 if __name__ == "__main__":
