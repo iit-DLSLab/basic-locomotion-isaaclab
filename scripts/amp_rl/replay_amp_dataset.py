@@ -1,11 +1,11 @@
 """Script to replay an AMP motion dataset kinematically on the robot (no policy, no physics step)."""
 
-"""Launch Isaac Sim Simulator first."""
+"""Parse command-line arguments first."""
 
 import argparse
 import sys
 
-from isaaclab.app import AppLauncher
+from isaaclab.app import add_launcher_args, launch_simulation
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Replay an AMP motion dataset.")
@@ -13,16 +13,13 @@ parser.add_argument("--task", type=str, default="Locomotion-Aliengo-Flat", help=
 parser.add_argument("--dataset", type=str, default="flat", help="Dataset name (file <name>.npy in amp_data_path).")
 parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to simulate.")
 
-# append AppLauncher cli args
-AppLauncher.add_app_launcher_args(parser)
+# append simulation launcher cli args
+add_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
 
 # clear out sys.argv for Hydra
 sys.argv = [sys.argv[0]] + hydra_args
 
-# launch omniverse app
-app_launcher = AppLauncher(args_cli)
-simulation_app = app_launcher.app
 
 """Rest everything follows."""
 
@@ -36,14 +33,13 @@ import torch
 from isaaclab.envs import DirectRLEnvCfg
 
 import isaaclab_tasks  # noqa: F401
-from isaaclab_tasks.utils.hydra import hydra_task_config
+from isaaclab_tasks.utils import resolve_task_config
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg
 
 # Import extensions to set up environment tasks
 import basic_locomotion_isaaclab.tasks  # noqa: F401
 
 
-@hydra_task_config(args_cli.task, "rsl_rl_cfg_entry_point")
 def main(env_cfg: DirectRLEnvCfg, agent_cfg: RslRlOnPolicyRunnerCfg):
     """Replay the AMP dataset."""
     env_cfg.scene.num_envs = args_cli.num_envs
@@ -74,7 +70,7 @@ def main(env_cfg: DirectRLEnvCfg, agent_cfg: RslRlOnPolicyRunnerCfg):
 
     frame = 0
     # simulate environment
-    while simulation_app.is_running():
+    while env.unwrapped.sim.is_running():
         start_time = time.time()
         with torch.inference_mode():
             root_pose = torch.zeros((num_envs, 7), device=device)
@@ -105,6 +101,7 @@ def main(env_cfg: DirectRLEnvCfg, agent_cfg: RslRlOnPolicyRunnerCfg):
 
 if __name__ == "__main__":
     # run the main execution
-    main()
-    # close sim app
-    simulation_app.close()
+    env_cfg, agent_cfg = resolve_task_config(args_cli.task, "rsl_rl_cfg_entry_point")
+    # start only the runtime the task needs (Kit is launched only for PhysX / Kit visualizers)
+    with launch_simulation(env_cfg, args_cli):
+        main(env_cfg, agent_cfg)

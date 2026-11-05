@@ -74,7 +74,7 @@ def apply_agent_cfg_overrides(agent_cfg, overrides: list[str]) -> None:
 
 def main() -> None:
     """Launch Isaac Sim and train FlashSAC on the requested task."""
-    from isaaclab.app import AppLauncher
+    from isaaclab.app import add_launcher_args, launch_simulation
 
     parser = argparse.ArgumentParser(description="Train FlashSAC on an Isaac Lab task.")
     parser.add_argument("--task", type=str, required=True, help="Name of the task (Isaac Lab gym id).")
@@ -103,7 +103,7 @@ def main() -> None:
         default=None,
         help="Motion clip .npz path(s) or a directory of clips (required for tracking tasks).",
     )
-    # AppLauncher consumes this to bind each rank to cuda:{LOCAL_RANK} (launch via torchrun)
+    # launch_simulation consumes this to bind each rank to cuda:{LOCAL_RANK} (launch via torchrun)
     parser.add_argument("--distributed", action="store_true", help="Run distributed data-parallel training.")
     parser.add_argument(
         "agent_overrides",
@@ -111,13 +111,11 @@ def main() -> None:
         metavar="agent.<path>=<value>",
         help="Nested FlashSAC agent overrides used by hyperparameter sweeps.",
     )
-    AppLauncher.add_app_launcher_args(parser)
+    add_launcher_args(parser)
     args_cli = parser.parse_args()
 
-    app_launcher = AppLauncher(args_cli)
-    simulation_app = app_launcher.app
 
-    # Late imports: Isaac Lab modules require the simulation app to be running
+    # Late imports: keep CLI parsing (--help) fast
     import gymnasium as gym
     import isaaclab_tasks  # noqa: F401  (registers the Isaac Lab gym tasks)
     import torch
@@ -157,12 +155,12 @@ def main() -> None:
     if args_cli.mini_batch_size is not None:
         agent_cfg.algorithm.mini_batch_size = args_cli.mini_batch_size
 
-    # Multi-GPU (torchrun) launch: AppLauncher resolved the sim device to cuda:{local_rank};
+    # Multi-GPU (torchrun) launch: launch_simulation resolves the sim device to cuda:{local_rank};
     # mirror it for the agent and offset the seed per rank to decorrelate rollouts (the
     # runner broadcasts rank-0 model parameters at learn start, so init seeds may differ).
     if args_cli.distributed:
-        agent_cfg.device = f"cuda:{app_launcher.local_rank}"
-        agent_cfg.seed += app_launcher.global_rank
+        agent_cfg.device = f"cuda:{int(os.getenv('LOCAL_RANK', '0'))}"
+        agent_cfg.seed += int(os.getenv("RANK", "0"))
 
     # Seeding and matmul settings (matching the official FlashSAC training setup)
     torch.manual_seed(agent_cfg.seed)
@@ -181,7 +179,7 @@ def main() -> None:
     # Logging directory and config dumps (reproducibility) — rank 0 only in distributed
     # runs; the rsl_rl Logger disables all writers and checkpoint saves on other ranks.
     log_dir = None
-    if not args_cli.distributed or app_launcher.global_rank == 0:
+    if not args_cli.distributed or int(os.getenv("RANK", "0")) == 0:
         # Include microseconds because Ray can launch multiple trials in the same second.
         run_stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S-%f")
         if agent_cfg.run_name:
@@ -198,24 +196,25 @@ def main() -> None:
         dump_yaml(os.path.join(log_dir, "params", "agent.yaml"), agent_cfg)
 
     # Build the environment
-    env = gym.make(args_cli.task, cfg=env_cfg, render_mode=None)
-    env = FlashSACVecEnvWrapper(
-        env,
-        clip_actions=agent_cfg.clip_actions,
-        action_bound=agent_cfg.action_bound,
-        action_bound_scale=agent_cfg.action_bound_scale,
-    )
+    # start only the runtime the task needs (Kit is launched only for PhysX / Kit visualizers)
+    with launch_simulation(env_cfg, args_cli):
+        env = gym.make(args_cli.task, cfg=env_cfg, render_mode=None)
+        env = FlashSACVecEnvWrapper(
+            env,
+            clip_actions=agent_cfg.clip_actions,
+            action_bound=agent_cfg.action_bound,
+            action_bound_scale=agent_cfg.action_bound_scale,
+        )
 
-    # Train
-    train_cfg = agent_cfg.to_dict()  # type: ignore[attr-defined]
-    runner = OffPolicyRunner(env, train_cfg, log_dir=log_dir, device=agent_cfg.device)
-    runner.add_git_repo_to_log(__file__)
-    # Randomize initial episode lengths to decorrelate resets across environments
-    # (training only — eval/play start from fresh resets), as in the official FlashSAC.
-    runner.learn(num_learning_iterations=agent_cfg.max_iterations, init_at_random_ep_len=True)
+        # Train
+        train_cfg = agent_cfg.to_dict()  # type: ignore[attr-defined]
+        runner = OffPolicyRunner(env, train_cfg, log_dir=log_dir, device=agent_cfg.device)
+        runner.add_git_repo_to_log(__file__)
+        # Randomize initial episode lengths to decorrelate resets across environments
+        # (training only — eval/play start from fresh resets), as in the official FlashSAC.
+        runner.learn(num_learning_iterations=agent_cfg.max_iterations, init_at_random_ep_len=True)
 
-    env.close()
-    simulation_app.close()
+        env.close()
 
 
 if __name__ == "__main__":

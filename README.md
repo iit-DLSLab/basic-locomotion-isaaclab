@@ -1,6 +1,6 @@
 <div style="text-align: left;">
   <img src="https://img.shields.io/badge/IsaacLab%20-v3.0.0-green" alt="IsaacLab v3.0.0" style="margin-bottom: 1px;">
-  <img src="https://img.shields.io/badge/rsl_rl%20-v5.4.2-brown" alt="rsl-rl v5.4.2" style="margin-bottom: 1px;">
+  <img src="https://img.shields.io/badge/rsl_rl%20-v5.5.1-brown" alt="rsl-rl v5.5.1" style="margin-bottom: 1px;">
   <img src="https://img.shields.io/badge/Mujoco%20-v3.13.0-blue" alt="Mujoco v3.13.0" style="margin-bottom: 1px;">
   <div style="display: flex; justify-content: space-around;">
     <img src="./gifs/train.gif" alt="Train" width="32%">
@@ -19,13 +19,13 @@ Features:
 - [Morphological Symmetries](https://arxiv.org/pdf/2403.17320) 
 - [Adversarial Motion Priors](https://arxiv.org/pdf/2104.02180) (big thanks to [Giuseppe L'erario](https://github.com/Giulero) and [Giulio Romualdi](https://github.com/giulioromualdi))
 - Identification of robot parameters for sim2real using [pace](https://github.com/leggedrobotics/pace-sim2real) via our repo [sim2real-robot-identification](https://github.com/iit-DLSLab/sim2real-robot-identification)
+- Depth/Lidat to Heightmap using [sensors2heightmap-isaaclab](https://github.com/iit-DLSLab/sensors2heightmap-isaaclab)
 - Sim-to-Sim in [Mujoco](https://github.com/google-deepmind/mujoco)
 - Sim-to-Real using ROS2 
 
 Features work in progress - done but not tested:
 - Dagger for depth-to-action policy distillation
-- Depth-to-Heightmap network
-- Lidar-to-Heightmap network
+
 
 
 Real-world deployment via:

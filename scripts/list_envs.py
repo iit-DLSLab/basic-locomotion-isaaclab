@@ -5,17 +5,6 @@ The script iterates over all registered environments and stores the details in a
 It prints the name of the environment, the entry point and the config file.
 """
 
-"""Launch Isaac Sim Simulator first."""
-
-from isaaclab.app import AppLauncher
-
-# launch omniverse app
-app_launcher = AppLauncher(headless=True)
-simulation_app = app_launcher.app
-
-
-"""Rest everything follows."""
-
 import gymnasium as gym
 from prettytable import PrettyTable
 
@@ -47,11 +36,5 @@ def main():
 
 
 if __name__ == "__main__":
-    try:
-        # run the main function
-        main()
-    except Exception as e:
-        raise e
-    finally:
-        # close the app
-        simulation_app.close()
+    # registering the tasks needs no simulation runtime, so nothing is launched here
+    main()

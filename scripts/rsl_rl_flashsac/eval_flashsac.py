@@ -87,7 +87,7 @@ def log_eval_to_wandb(project_name: str, run_dir: str, eval_infos: list[dict]) -
 
 def main() -> None:
     """Launch Isaac Sim and evaluate trained FlashSAC checkpoints."""
-    from isaaclab.app import AppLauncher
+    from isaaclab.app import add_launcher_args, launch_simulation
 
     parser = argparse.ArgumentParser(description="Evaluate trained FlashSAC policies on an Isaac Lab task.")
     parser.add_argument("--task", type=str, required=True, help="Name of the task (Isaac Lab gym id).")
@@ -118,13 +118,11 @@ def main() -> None:
         default=None,
         help="Motion clip .npz path(s) or a directory of clips (required for tracking tasks).",
     )
-    AppLauncher.add_app_launcher_args(parser)
+    add_launcher_args(parser)
     args_cli = parser.parse_args()
 
-    app_launcher = AppLauncher(args_cli)
-    simulation_app = app_launcher.app
 
-    # Late imports: Isaac Lab modules require the simulation app to be running
+    # Late imports: keep CLI parsing (--help) fast
     import gymnasium as gym
     import isaaclab_tasks  # noqa: F401  (registers the Isaac Lab gym tasks)
     import torch
@@ -170,93 +168,94 @@ def main() -> None:
     # Build the environment once for all checkpoints
     env_cfg = parse_env_cfg(args_cli.task, device=device, num_envs=args_cli.num_envs)
     apply_motion_files(env_cfg, args_cli.motion_files)
-    env = gym.make(args_cli.task, cfg=env_cfg, render_mode=None)
-    env = FlashSACVecEnvWrapper(
-        env,
-        clip_actions=agent_cfg.clip_actions,
-        action_bound=agent_cfg.action_bound,
-        action_bound_scale=agent_cfg.action_bound_scale,
-    )
-
-    train_cfg = agent_cfg.to_dict()  # type: ignore[attr-defined]
-    runner = OffPolicyRunner(env, train_cfg, log_dir=None, device=device)
-
-    # Anchor for the file-mtime wall-time fallback (checkpoints from before wall_time was stored):
-    # the config dump happens right before the runner/training loop starts.
-    anchor = os.path.join(run_dir, "params", "agent.yaml")
-    mtime_anchor = os.path.getmtime(anchor) if os.path.exists(anchor) else None
-
-    eval_infos: list[dict] = []
-    for checkpoint_path in checkpoints:
-        # Idempotent in --all_checkpoints mode: skip checkpoints another eval already covered
-        ckpt_name = os.path.splitext(os.path.basename(checkpoint_path))[0]
-        out_path = os.path.join(run_dir, f"eval_{ckpt_name}.json")
-        if args_cli.all_checkpoints and not args_cli.force and os.path.exists(out_path):
-            print(f"[INFO] {ckpt_name}: eval JSON exists, skipping.")
-            continue
-        runner.load(checkpoint_path)
-        policy = runner.get_inference_policy(device=device)
-        wall_time = runner.loaded_wall_time
-        if wall_time is None and mtime_anchor is not None:
-            wall_time = os.path.getmtime(checkpoint_path) - mtime_anchor
-
-        total_returns: list[float] = []
-        total_lengths: list[float] = []
-        with torch.no_grad():
-            for _ in range(num_rounds):
-                obs, _ = env.reset()
-                obs = obs.to(device)
-                returns = torch.zeros(args_cli.num_envs, device=device)
-                lengths = torch.zeros(args_cli.num_envs, device=device)
-                finished = torch.zeros(args_cli.num_envs, device=device)
-
-                # Every environment runs until its first episode end, then is masked out
-                while finished.sum() < args_cli.num_envs:
-                    actions = policy(obs)
-                    obs, rewards, dones, _ = env.step(actions.to(env.device))
-                    obs, rewards, dones = obs.to(device), rewards.to(device), dones.to(device)
-
-                    active = 1.0 - finished
-                    returns += rewards * active
-                    lengths += active
-                    # terminated or truncated both end the episode during evaluation
-                    finished = torch.maximum(finished, dones.float().reshape(-1))
-
-                total_returns.extend(returns.cpu().tolist())
-                total_lengths.extend(lengths.cpu().tolist())
-
-        returns_t = torch.tensor(total_returns)
-        lengths_t = torch.tensor(total_lengths)
-        eval_info = {
-            "task": args_cli.task,
-            "checkpoint": checkpoint_path,
-            "iteration": runner.current_learning_iteration,
-            "num_episodes": num_episodes,
-            "wall_time": wall_time,
-            "avg_return": returns_t.mean().item(),
-            "std_return": returns_t.std().item(),
-            "avg_length": lengths_t.mean().item(),
-        }
-        eval_infos.append(eval_info)
-        print(
-            f"[INFO] {os.path.basename(checkpoint_path)} (it {eval_info['iteration']}):"
-            f" avg_return {eval_info['avg_return']:.3f} ± {eval_info['std_return']:.3f},"
-            f" avg_length {eval_info['avg_length']:.1f}"
+    # start only the runtime the task needs (Kit is launched only for PhysX / Kit visualizers)
+    with launch_simulation(env_cfg, args_cli):
+        env = gym.make(args_cli.task, cfg=env_cfg, render_mode=None)
+        env = FlashSACVecEnvWrapper(
+            env,
+            clip_actions=agent_cfg.clip_actions,
+            action_bound=agent_cfg.action_bound,
+            action_bound_scale=agent_cfg.action_bound_scale,
         )
 
-        # Save the metrics next to the checkpoint
-        with open(out_path, "w") as f:
-            json.dump(eval_info, f, indent=2)
+        train_cfg = agent_cfg.to_dict()  # type: ignore[attr-defined]
+        runner = OffPolicyRunner(env, train_cfg, log_dir=None, device=device)
 
-    print(f"[INFO] Saved {len(eval_infos)} evaluation JSON file(s) to: {run_dir}")
+        # Anchor for the file-mtime wall-time fallback (checkpoints from before wall_time was stored):
+        # the config dump happens right before the runner/training loop starts.
+        anchor = os.path.join(run_dir, "params", "agent.yaml")
+        mtime_anchor = os.path.getmtime(anchor) if os.path.exists(anchor) else None
 
-    # When training logged to W&B, append the eval metrics to the same run
-    logger_cfg = agent_cfg.logger
-    if eval_infos and isinstance(logger_cfg, dict) and logger_cfg.get("class_name") == "WandbLogWriter":
-        log_eval_to_wandb(project_name=logger_cfg["project_name"], run_dir=run_dir, eval_infos=eval_infos)
+        eval_infos: list[dict] = []
+        for checkpoint_path in checkpoints:
+            # Idempotent in --all_checkpoints mode: skip checkpoints another eval already covered
+            ckpt_name = os.path.splitext(os.path.basename(checkpoint_path))[0]
+            out_path = os.path.join(run_dir, f"eval_{ckpt_name}.json")
+            if args_cli.all_checkpoints and not args_cli.force and os.path.exists(out_path):
+                print(f"[INFO] {ckpt_name}: eval JSON exists, skipping.")
+                continue
+            runner.load(checkpoint_path)
+            policy = runner.get_inference_policy(device=device)
+            wall_time = runner.loaded_wall_time
+            if wall_time is None and mtime_anchor is not None:
+                wall_time = os.path.getmtime(checkpoint_path) - mtime_anchor
 
-    env.close()
-    simulation_app.close()
+            total_returns: list[float] = []
+            total_lengths: list[float] = []
+            with torch.no_grad():
+                for _ in range(num_rounds):
+                    obs, _ = env.reset()
+                    obs = obs.to(device)
+                    returns = torch.zeros(args_cli.num_envs, device=device)
+                    lengths = torch.zeros(args_cli.num_envs, device=device)
+                    finished = torch.zeros(args_cli.num_envs, device=device)
+
+                    # Every environment runs until its first episode end, then is masked out
+                    while finished.sum() < args_cli.num_envs:
+                        actions = policy(obs)
+                        obs, rewards, dones, _ = env.step(actions.to(env.device))
+                        obs, rewards, dones = obs.to(device), rewards.to(device), dones.to(device)
+
+                        active = 1.0 - finished
+                        returns += rewards * active
+                        lengths += active
+                        # terminated or truncated both end the episode during evaluation
+                        finished = torch.maximum(finished, dones.float().reshape(-1))
+
+                    total_returns.extend(returns.cpu().tolist())
+                    total_lengths.extend(lengths.cpu().tolist())
+
+            returns_t = torch.tensor(total_returns)
+            lengths_t = torch.tensor(total_lengths)
+            eval_info = {
+                "task": args_cli.task,
+                "checkpoint": checkpoint_path,
+                "iteration": runner.current_learning_iteration,
+                "num_episodes": num_episodes,
+                "wall_time": wall_time,
+                "avg_return": returns_t.mean().item(),
+                "std_return": returns_t.std().item(),
+                "avg_length": lengths_t.mean().item(),
+            }
+            eval_infos.append(eval_info)
+            print(
+                f"[INFO] {os.path.basename(checkpoint_path)} (it {eval_info['iteration']}):"
+                f" avg_return {eval_info['avg_return']:.3f} ± {eval_info['std_return']:.3f},"
+                f" avg_length {eval_info['avg_length']:.1f}"
+            )
+
+            # Save the metrics next to the checkpoint
+            with open(out_path, "w") as f:
+                json.dump(eval_info, f, indent=2)
+
+        print(f"[INFO] Saved {len(eval_infos)} evaluation JSON file(s) to: {run_dir}")
+
+        # When training logged to W&B, append the eval metrics to the same run
+        logger_cfg = agent_cfg.logger
+        if eval_infos and isinstance(logger_cfg, dict) and logger_cfg.get("class_name") == "WandbLogWriter":
+            log_eval_to_wandb(project_name=logger_cfg["project_name"], run_dir=run_dir, eval_infos=eval_infos)
+
+        env.close()
 
 
 if __name__ == "__main__":

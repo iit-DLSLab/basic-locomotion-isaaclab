@@ -5,12 +5,12 @@
 
 """Script to train RL agent with RSL-RL."""
 
-"""Launch Isaac Sim Simulator first."""
+"""Parse command-line arguments first."""
 
 import argparse
 import sys
 
-from isaaclab.app import AppLauncher
+from isaaclab.app import add_launcher_args, launch_simulation
 
 # local imports
 import cli_args  # isort: skip
@@ -36,8 +36,8 @@ parser.add_argument(
 )
 # append RSL-RL cli arguments
 cli_args.add_rsl_rl_args(parser)
-# append AppLauncher cli args
-AppLauncher.add_app_launcher_args(parser)
+# append simulation launcher cli args
+add_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
 
 # always enable cameras to record video
@@ -47,9 +47,6 @@ if args_cli.video:
 # clear out sys.argv for Hydra
 sys.argv = [sys.argv[0]] + hydra_args
 
-# launch omniverse app
-app_launcher = AppLauncher(args_cli)
-simulation_app = app_launcher.app
 
 """Check for minimum supported RSL-RL version."""
 
@@ -98,7 +95,7 @@ from isaaclab_rl.rsl_rl import RslRlBaseRunnerCfg, RslRlVecEnvWrapper
 
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils import get_checkpoint_path
-from isaaclab_tasks.utils.hydra import hydra_task_config
+from isaaclab_tasks.utils import resolve_task_config
 
 # import logger
 logger = logging.getLogger(__name__)
@@ -113,7 +110,6 @@ torch.backends.cudnn.deterministic = False
 torch.backends.cudnn.benchmark = False
 
 
-@hydra_task_config(args_cli.task, args_cli.agent)
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlBaseRunnerCfg):
     """Train with RSL-RL agent."""
     # override configurations with non-hydra CLI arguments
@@ -139,11 +135,11 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     # multi-gpu training configuration
     if args_cli.distributed:
-        env_cfg.sim.device = f"cuda:{app_launcher.local_rank}"
-        agent_cfg.device = f"cuda:{app_launcher.local_rank}"
+        env_cfg.sim.device = f"cuda:{int(os.getenv('LOCAL_RANK', '0'))}"
+        agent_cfg.device = f"cuda:{int(os.getenv('LOCAL_RANK', '0'))}"
 
         # set seed to have diversity in different threads
-        seed = agent_cfg.seed + app_launcher.local_rank
+        seed = agent_cfg.seed + int(os.getenv("LOCAL_RANK", "0"))
         env_cfg.seed = seed
         agent_cfg.seed = seed
 
@@ -228,6 +224,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
 if __name__ == "__main__":
     # run the main function
-    main()
-    # close sim app
-    simulation_app.close()
+    env_cfg, agent_cfg = resolve_task_config(args_cli.task, args_cli.agent)
+    # start only the runtime the task needs (Kit is launched only for PhysX / Kit visualizers)
+    with launch_simulation(env_cfg, args_cli):
+        main(env_cfg, agent_cfg)

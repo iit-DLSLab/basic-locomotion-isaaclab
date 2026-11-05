@@ -1,12 +1,12 @@
 """Script to train RL agent with RSL-RL."""
 
-"""Launch Isaac Sim Simulator first."""
+"""Parse command-line arguments first."""
 
 import argparse
 import os
 import sys
 
-from isaaclab.app import AppLauncher
+from isaaclab.app import add_launcher_args, launch_simulation
 
 # local imports
 import cli_args  # isort: skip
@@ -24,8 +24,8 @@ parser.add_argument("--wandb_username", type=str, default=None, help="Wandb user
 
 # append RSL-RL cli arguments
 cli_args.add_rsl_rl_args(parser)
-# append AppLauncher cli args
-AppLauncher.add_app_launcher_args(parser)
+# append simulation launcher cli args
+add_launcher_args(parser)
 args_cli, hydra_args = parser.parse_known_args()
 
 # always enable cameras to record video
@@ -35,9 +35,6 @@ if args_cli.video:
 # clear out sys.argv for Hydra
 sys.argv = [sys.argv[0]] + hydra_args
 
-# launch omniverse app
-app_launcher = AppLauncher(args_cli)
-simulation_app = app_launcher.app
 
 """Rest everything follows."""
 
@@ -71,7 +68,7 @@ from isaaclab.utils.io import dump_yaml
 
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils import get_checkpoint_path
-from isaaclab_tasks.utils.hydra import hydra_task_config
+from isaaclab_tasks.utils import resolve_task_config
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
 
 # Import extensions to set up environment tasks
@@ -93,7 +90,6 @@ torch.backends.cudnn.allow_tf32 = True
 torch.backends.cudnn.deterministic = False
 torch.backends.cudnn.benchmark = False
 
-@hydra_task_config(args_cli.task, "rsl_rl_cfg_entry_point")
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlOnPolicyRunnerCfg):
     """Train with RSL-RL agent."""
     # override configurations with non-hydra CLI arguments
@@ -186,6 +182,7 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
 if __name__ == "__main__":
     # run the main execution
-    main()
-    # close sim app
-    simulation_app.close()
+    env_cfg, agent_cfg = resolve_task_config(args_cli.task, "rsl_rl_cfg_entry_point")
+    # start only the runtime the task needs (Kit is launched only for PhysX / Kit visualizers)
+    with launch_simulation(env_cfg, args_cli):
+        main(env_cfg, agent_cfg)
