@@ -82,6 +82,8 @@ index-strategy = "unsafe-best-match"
 dependency-overrides = { packaging = ">=20,<27" }
 
 [environments]
+# `pixi shell` (no -e) activates ROS 2 lyrical
+default = ["common", "lyrical"]
 train = ["train"]
 humble = ["common", "humble"]
 lyrical = ["common", "lyrical"]

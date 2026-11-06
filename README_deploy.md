@@ -5,11 +5,11 @@
 2. Activate the environment from anywhere inside the repo (it uses [pixi.toml](./pixi.toml) in the repo root). The first run creates it:
 
 ```bash
+# ROS2 lyrical (default)
+pixi shell
+
 # ROS2 humble
 pixi shell -e humble
-
-# ROS2 lyrical
-pixi shell -e lyrical
 ```
 
 ## Run Sim-to-Sim 
