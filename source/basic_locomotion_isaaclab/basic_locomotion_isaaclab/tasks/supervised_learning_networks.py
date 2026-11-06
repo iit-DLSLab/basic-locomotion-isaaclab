@@ -192,11 +192,43 @@ class SupervisedNetworkBase(torch.nn.Module):
             'network_type': self.network_type,
             'model_kwargs': self._checkpoint_kwargs(),
         }, filepath)
-        
+
         print(f"Network saved to {filepath}")
-        
+
         # Move model back to original device
         #self.to(original_device)
+
+        # Save also the ONNX export next to the checkpoint, used at deploy time with onnxruntime (no torch needed)
+        try:
+            onnx_path = self.export_onnx(filepath)
+            print(f"Network exported to {onnx_path}")
+        except Exception as error:  # the checkpoint is already saved: do not stop the training for this
+            print(f"Warning: ONNX export of {filepath} failed: {error}")
+
+    def export_onnx(self, filepath):
+        """Export the network to ONNX, next to filepath with the .onnx extension.
+
+        A CPU copy in eval mode is exported, so the network being trained is neither moved nor switched to eval.
+        Same settings as the policy export of isaaclab_rl: opset 18, input "obs" with a batch of 1, but with the
+        weights inside the .onnx file (no separate .onnx.data to copy along).
+        """
+        onnx_path = os.path.splitext(filepath)[0] + ".onnx"
+        export_model = create_supervised_network(
+            self.input_features, self.output_features, network_type=self.network_type, **self._checkpoint_kwargs()
+        )
+        export_model.load_state_dict({name: value.detach().cpu() for name, value in self.state_dict().items()})
+        export_model.eval()
+        torch.onnx.export(
+            export_model,
+            torch.zeros(1, self.input_features),
+            onnx_path,
+            export_params=True,
+            opset_version=18,
+            input_names=["obs"],
+            output_names=["output"],
+            external_data=False,
+        )
+        return onnx_path
 
 
 class MlpNN(SupervisedNetworkBase):
@@ -446,6 +478,19 @@ if __name__ == "__main__":
             assert loaded_predictions.shape == (batch_size, output_features), (
                 f"Loaded {network_type} output shape mismatch: {loaded_predictions.shape}"
             )
+
+            # The ONNX export saved next to the checkpoint must give the same predictions
+            try:
+                import onnxruntime
+            except ImportError:
+                print("onnxruntime not installed, skipping the ONNX check.")
+            else:
+                session = onnxruntime.InferenceSession(os.path.splitext(checkpoint_path)[0] + ".onnx")
+                with torch.no_grad():
+                    for sample in test_inputs:
+                        expected = loaded_model(sample.unsqueeze(0)).numpy()
+                        onnx_prediction = session.run(None, {"obs": sample.unsqueeze(0).numpy()})[0]
+                        assert abs(onnx_prediction - expected).max() < 1e-5, f"{network_type} ONNX mismatch"
 
             print(f"{network_type} smoke test passed.")
 

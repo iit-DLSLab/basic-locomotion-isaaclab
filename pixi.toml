@@ -29,7 +29,6 @@ gymnasium = "*"
 [feature.common.pypi-dependencies]
 readchar = "*"
 onnxruntime = "*"
-torch = "*"
 mujoco = "*"
 scipy = "*"
 

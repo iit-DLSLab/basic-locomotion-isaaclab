@@ -11,17 +11,32 @@ np.set_printoptions(precision=3, suppress=True)
 from tqdm import tqdm
 import mujoco
 import onnxruntime as ort
-import torch
 from scipy.spatial.transform import Rotation
 
 import config
 
 import sys
-import os 
+import os
 dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path+"/../")
 sys.path.append(dir_path+"/../source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/")
-from supervised_learning_networks import load_network
+
+
+def load_supervised_network(checkpoint_path):
+    """Load a supervised network (concurrent state estimator, RMA) as a function obs -> prediction.
+
+    Uses the ONNX export saved next to the checkpoint (same name, .onnx) with onnxruntime.
+    """
+    onnx_path = os.path.splitext(checkpoint_path)[0] + ".onnx"
+    options = ort.SessionOptions()
+    # Small network called once per step: one thread, no worker threads spinning between the calls
+    options.intra_op_num_threads = 1
+    options.inter_op_num_threads = 1
+    options.add_session_config_entry("session.intra_op.allow_spinning", "0")
+    session = ort.InferenceSession(onnx_path, sess_options=options, providers=["CPUExecutionProvider"])
+    input_name = session.get_inputs()[0].name
+    print(f"Network loaded from {onnx_path}")
+    return lambda obs: session.run(None, {input_name: np.asarray(obs, dtype=np.float32).reshape(1, -1)})[0].squeeze()
 
 
 class LocomotionPolicyWrapper:
@@ -95,14 +110,14 @@ class LocomotionPolicyWrapper:
 
         # RMA
         if(config.training_env["use_rma"] == True):
-            self._rma_network = load_network(getattr(config, "rma_network_path", config.rma_network), device='cpu')
+            self._rma_network = load_supervised_network(getattr(config, "rma_network_path", config.rma_network))
             self.rma_history_length = int(config.training_env["rma_history_length"])
             single_rma_observation_space = int(config.training_env["single_rma_observation_space"])
             self._observation_history_rma = np.zeros((self.rma_history_length, single_rma_observation_space), dtype=np.float32)
 
         # Learned State Estimator
         if(config.training_env["base_state_source"] == "concurrent_se"):
-            self._concurrent_state_est_network = load_network(config.concurrent_state_est_network, device='cpu')
+            self._concurrent_state_est_network = load_supervised_network(config.concurrent_state_est_network)
             single_concurrent_state_est_observation_space = int(config.training_env["single_concurrent_state_est_observation_space"])
             concurrent_state_est_history_length = int(config.training_env.get("concurrent_state_est_history_length", self.history_length))
             self._observation_history_concurrent_state_est = np.zeros((concurrent_state_est_history_length, single_concurrent_state_est_observation_space), dtype=np.float32)
@@ -113,22 +128,15 @@ class LocomotionPolicyWrapper:
 
 
     def _get_projected_gravity(self, quat_wxyz):        
-        # Get the projected gravity in the base frame
-        GRAVITY_VEC_W = torch.tensor((0, 0, -9.81), dtype=torch.double)
-        GRAVITY_VEC_W = GRAVITY_VEC_W / GRAVITY_VEC_W.norm(p=2, dim=-1).clamp(min=1e-9, max=None).unsqueeze(-1)
-        q = torch.tensor(quat_wxyz).view(1, 4)
-        v = GRAVITY_VEC_W.clone().detach().view(1, 3)
-        q_w = q[..., 0]
-        q_vec = q[..., 1:]
-        a = v * (2.0 * q_w**2 - 1.0).unsqueeze(-1)
-        b = torch.cross(q_vec, v, dim=-1) * q_w.unsqueeze(-1) * 2.0
-        # for two-dimensional tensors, bmm is faster than einsum
-        if q_vec.dim() == 2:
-            c = q_vec * torch.bmm(q_vec.view(q.shape[0], 1, 3), v.view(q.shape[0], 3, 1)).squeeze(-1) * 2.0
-        else:
-            c = q_vec * torch.einsum("...i,...i->...", q_vec, v).unsqueeze(-1) * 2.0
-        projected_gravity =  a - b + c
-        return projected_gravity.numpy().flatten()
+        # Get the projected gravity in the base frame: the unit gravity vector rotated by the inverse of quat_wxyz
+        # (same formula as quat_rotate_inverse of Isaac Lab)
+        v = np.array([0.0, 0.0, -1.0])
+        q_w = float(quat_wxyz[0])
+        q_vec = np.asarray(quat_wxyz[1:], dtype=np.float64)
+        a = v * (2.0 * q_w**2 - 1.0)
+        b = np.cross(q_vec, v) * q_w * 2.0
+        c = q_vec * np.dot(q_vec, v) * 2.0
+        return a - b + c
 
 
     def compute_control(self, 
@@ -298,7 +306,7 @@ class LocomotionPolicyWrapper:
             obs_concurrent_state_est = self._observation_history_concurrent_state_est.flatten()
             
             # QUERY THE NETOWRK
-            base_lin_vel_predicted = self._concurrent_state_est_network(torch.tensor(obs_concurrent_state_est, dtype=torch.float32).unsqueeze(0)).detach().numpy().squeeze()
+            base_lin_vel_predicted = self._concurrent_state_est_network(obs_concurrent_state_est)
             obs[0:3] = base_lin_vel_predicted
             
         if(config.training_env["use_rma"] == True):
@@ -332,7 +340,7 @@ class LocomotionPolicyWrapper:
             past_rma = self._observation_history_rma[1:,:]
             self._observation_history_rma = np.vstack((past_rma, copy.deepcopy(obs_rma)))
             obs_rma = self._observation_history_rma.flatten()
-            obs_rma = self._rma_network(torch.tensor(obs_rma, dtype=torch.float32).unsqueeze(0)).detach().numpy().squeeze()
+            obs_rma = self._rma_network(obs_rma)
             
             
         if(self.use_observation_history):
