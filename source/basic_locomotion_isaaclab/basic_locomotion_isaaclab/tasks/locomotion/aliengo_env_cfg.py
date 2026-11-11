@@ -426,10 +426,9 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
     feet_edge_swing_reward_scale = -1.0
     feet_edge_swing_margin = 0.04 # desired horizontal distance of the swing foot from a riser face [m]
     feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized, and this much above its base to count as touching it [m]
-    feet_edge_height_threshold = 0.05
-    feet_edge_horizontal_radius = 0.10
-    feet_edge_radius_px = 0
-    visualize_edge_map = False
+    feet_edge_height_threshold = 0.05 # height jump between two neighboring points of the edge height grid that counts as an edge, shared by feet_edge_stance, feet_edge_swing and feet_vertical_surface_contacts [m]
+    feet_edge_stance_margin = 0.04 # desired horizontal distance of the stance foot sphere from an edge (step lip or riser base) [m]
+    visualize_feet_edge_stance_zone = False # black dots on the edge height grid where a stance foot is penalized by feet_edge_stance, white elsewhere (for play with a few envs)
     visualize_feet_edge_swing_zone = False # transparent red cylinders where a swing foot is penalized by feet_edge_swing
 
     feet_vertical_surface_contacts_reward_scale = -1.5

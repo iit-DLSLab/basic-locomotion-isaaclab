@@ -55,7 +55,7 @@ from basic_locomotion_isaaclab.tasks.supervised_learning_networks import FrozenR
 class LocomotionEnv(DirectRLEnv):
 
     def __init__(self, cfg, render_mode: str | None = None, **kwargs):
-        self._edge_map_visualizer = None
+        self._feet_edge_stance_visualizer = None
         self._feet_edge_swing_visualizer = None
         self._height_map_visualizer = None
         # Isaac Lab 3.0: the InteractiveScene owns the construction and the cloning of the assets and sensors,
@@ -252,7 +252,7 @@ class LocomotionEnv(DirectRLEnv):
         self._nominal_viscous_friction = self._robot.data.joint_viscous_friction_coeff.torch.clone()
 
         if (
-            getattr(self.cfg, "visualize_edge_map", False)
+            getattr(self.cfg, "visualize_feet_edge_stance_zone", False)
             or getattr(self.cfg, "visualize_feet_edge_swing_zone", False)
             or getattr(self.cfg, "visualize_height_map_with_noise", False)
         ):
