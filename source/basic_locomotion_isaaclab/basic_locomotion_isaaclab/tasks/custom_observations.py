@@ -25,6 +25,7 @@ def _get_concurrent_state_estimation(self):
                 self._imu.data.ang_vel_b,
                 self._pva.data.projected_gravity_b,
                 self._commands,
+                self._base_pose_commands if self._use_base_pose_commands else None,
                 self._robot.data.joint_pos[:, self._ids_joints_order] - self._robot.data.default_joint_pos[:, self._ids_joints_order],
                 self._robot.data.joint_vel[:, self._ids_joints_order],
                 self._actions,
@@ -81,6 +82,7 @@ def _get_rma(self):
                 self._imu.data.ang_vel_b,
                 self._pva.data.projected_gravity_b,
                 self._commands,
+                self._base_pose_commands if self._use_base_pose_commands else None,
                 self._robot.data.joint_pos[:, self._ids_joints_order] - self._robot.data.default_joint_pos[:, self._ids_joints_order],
                 self._robot.data.joint_vel[:, self._ids_joints_order],
                 self._actions,
@@ -150,7 +152,8 @@ def _get_privileged_observation_asymmetric(self):
     height_data_scanner = torch.nan_to_num(height_data_scanner, nan=0.0, posinf=1.0, neginf=-1.0)
     height_data_scanner = torch.clip(height_data_scanner, min=-5, max=5) # Handle inf values
     mean_height_ray = torch.mean(height_data_scanner, dim=1)
-    height_error = torch.abs(self.cfg.desired_base_height + mean_height_ray - self._robot.data.root_state_w[:, 2])
+    desired_base_height = self.cfg.desired_base_height + self._base_pose_commands[:, 0]
+    height_error = torch.abs(desired_base_height + mean_height_ray - self._robot.data.root_state_w[:, 2])
 
     # terrain orientation
     height_map_resolution = self._pose_height_scanner.cfg.pattern_cfg.resolution

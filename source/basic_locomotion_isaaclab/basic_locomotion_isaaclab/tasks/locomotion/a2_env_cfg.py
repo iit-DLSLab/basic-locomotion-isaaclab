@@ -182,6 +182,17 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
     if(use_clock_signal):
         observation_space += 8 # clock signal for periodic gait (sin and cos of the phase of each leg)
 
+    # Base pose commands: desired base height offset (from desired_base_height), roll and pitch.
+    # They are non-zero only while standing (zero velocity command), while walking they are always zero
+    use_base_pose_commands = False
+    if(use_base_pose_commands):
+        observation_space += 3 # base pose command (height offset, roll, pitch)
+        base_pose_commands_height_range = 0.10 # +/- [m] around desired_base_height
+        base_pose_commands_roll_range = 0.349 # +/- [rad] (20 deg)
+        base_pose_commands_pitch_range = 0.349 # +/- [rad] (20 deg)
+        base_pose_commands_resample_time_s = 3.0 # a new pose is sampled every this many seconds
+        base_pose_commands_zero_prob = 0.2 # probability of sampling the nominal pose (all zeros)
+
     single_observation_space = observation_space # Usefull for concatenating history
 
     # observation history
@@ -212,6 +223,8 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
         single_concurrent_state_est_observation_space = 3 # base angular velocity  
         single_concurrent_state_est_observation_space += 3 # projected gravity in base frame
         single_concurrent_state_est_observation_space += 3 # command (desired linear vel in x and y, desired yaw rate)
+        if(use_base_pose_commands):
+            single_concurrent_state_est_observation_space += 3 # base pose command (height offset, roll, pitch)
         single_concurrent_state_est_observation_space += 12 # joint positions
         single_concurrent_state_est_observation_space += 12 # joint velocities
         single_concurrent_state_est_observation_space += 12 # last actions
@@ -246,6 +259,8 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
         single_rma_observation_space = 3 # base angular velocity  
         single_rma_observation_space += 3 # projected gravity in base frame
         single_rma_observation_space += 3 # command (desired linear vel in x and y, desired yaw rate)
+        if(use_base_pose_commands):
+            single_rma_observation_space += 3 # base pose command (height offset, roll, pitch)
         single_rma_observation_space += 12 # joint positions
         single_rma_observation_space += 12 # joint velocities
         single_rma_observation_space += 12 # last actions
@@ -357,6 +372,7 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
         "base_ang_vel": (0.05, 0.01),
         "projected_gravity": (0.05, 0.01),
         "commands": (0.01, 0.01),
+        "base_pose_commands": (0.01, 0.01),
         "joint_pos": (0.01, 0.01),
         "joint_vel": (0.1, 0.01),
         "actions": (0.01, 0.01),

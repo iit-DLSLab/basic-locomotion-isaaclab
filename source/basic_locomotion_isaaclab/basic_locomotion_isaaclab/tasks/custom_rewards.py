@@ -188,7 +188,9 @@ def track_height_exp(self) -> torch.Tensor:
     height_data_scanner = torch.clip(height_data_scanner, min=-5, max=5)
     mean_height_ray = torch.mean(height_data_scanner, dim=1)
 
-    height_error = torch.square(self.cfg.desired_base_height + mean_height_ray - self._robot.data.root_state_w[:, 2])
+    # The base pose command adds a height offset (zero while walking or with cfg.use_base_pose_commands False)
+    desired_base_height = self.cfg.desired_base_height + self._base_pose_commands[:, 0]
+    height_error = torch.square(desired_base_height + mean_height_ray - self._robot.data.root_state_w[:, 2])
     height_error_mapped = torch.exp(-height_error / 0.01)
     return height_error_mapped
 
@@ -236,7 +238,10 @@ def track_orientation_l2(self) -> torch.Tensor:
     root_roll_w = torch.atan2(torch.sin(root_roll_w), torch.cos(root_roll_w))
     root_pitch_w = torch.atan2(torch.sin(root_pitch_w), torch.cos(root_pitch_w))
 
-    base_orientation = torch.square(terrain_pitch - root_pitch_w) + torch.square(terrain_roll - root_roll_w)
+    # The base pose command adds a roll and pitch offset (zero while walking or with cfg.use_base_pose_commands False)
+    desired_roll = terrain_roll + self._base_pose_commands[:, 1]
+    desired_pitch = terrain_pitch + self._base_pose_commands[:, 2]
+    base_orientation = torch.square(desired_pitch - root_pitch_w) + torch.square(desired_roll - root_roll_w)
     return base_orientation
 
 

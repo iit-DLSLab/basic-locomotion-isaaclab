@@ -80,6 +80,13 @@ class LocomotionEnv(DirectRLEnv):
 
         # X/Y linear velocity and yaw angular velocity commands
         self._commands = torch.zeros(self.num_envs, 3, device=self.device)
+        # Base pose commands (height offset from cfg.desired_base_height, roll, pitch). Always allocated, so the rewards
+        # can use them unconditionally: with cfg.use_base_pose_commands False they stay at zero.
+        # _base_pose_commands_sampled holds the last sampled pose, _base_pose_commands is the active one
+        # (the sampled pose while standing, zero while walking). See custom_events._get_new_random_base_pose_commands
+        self._use_base_pose_commands = getattr(self.cfg, "use_base_pose_commands", False)
+        self._base_pose_commands_sampled = torch.zeros(self.num_envs, 3, device=self.device)
+        self._base_pose_commands = torch.zeros(self.num_envs, 3, device=self.device)
 
         # Swing peak
         self._swing_peak = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device).repeat(self.num_envs,1)
@@ -150,6 +157,8 @@ class LocomotionEnv(DirectRLEnv):
                 ("joint_vel", num_joints),
                 ("actions", num_joints),
             ]
+            # The base pose commands follow the velocity commands (policy, RMA and concurrent SE)
+            proprio_terms.insert(4, ("base_pose_commands", 3 if self._use_base_pose_commands else 0))
             policy_terms = (proprio_terms + [("clock", 8 if cfg.use_clock_signal else 0)]) * cfg.history_length
             # the height map takes whatever is left of the observation space
             rma_size = cfg.rma_output_space if cfg.use_rma else 0
@@ -433,6 +442,7 @@ class LocomotionEnv(DirectRLEnv):
                     base_ang_vel,
                     projected_gravity_b,
                     self._commands,
+                    self._base_pose_commands if self._use_base_pose_commands else None,
                     self._robot.data.joint_pos[:, self._ids_joints_order] - self._robot.data.default_joint_pos[:, self._ids_joints_order],
                     self._robot.data.joint_vel[:, self._ids_joints_order],
                     self._actions,
