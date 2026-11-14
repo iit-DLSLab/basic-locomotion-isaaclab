@@ -54,6 +54,24 @@ class LocomotionPolicyWrapper:
         self.max_cmd_acc = 1.0
         self.filtered_cmd = np.zeros(3)  # vx, vy in the heading frame and yaw rate
 
+        # Base pose commands (height offset from desired_base_height [m], roll [rad], pitch [rad]), see
+        # use_base_pose_commands in the env cfg. As in training they are active only while standing, and zero while walking.
+        # ref_base_pose can be set from outside (e.g. the console) or passed to compute_control
+        self.use_base_pose_commands = config.training_env.get("use_base_pose_commands", False)
+        self.base_pose_commands_size = 3 if self.use_base_pose_commands else 0
+        self.ref_base_pose = np.zeros(3)
+        self.filtered_base_pose = np.zeros(3)
+        if(self.use_base_pose_commands):
+            self.base_pose_range = np.array([
+                config.training_env["base_pose_commands_height_range"],
+                config.training_env["base_pose_commands_roll_range"],
+                config.training_env["base_pose_commands_pitch_range"],
+            ])
+        else:
+            self.base_pose_range = np.zeros(3)
+        # Max change of the base pose command per second (m/s, rad/s, rad/s), so a step becomes a ramp
+        self.max_base_pose_rate = np.array([0.1, 0.5, 0.5])
+
 
         # RL controller initialization -------------------------------------------------------------
         self.action_scale = config.training_env["action_scale"]
@@ -68,8 +86,11 @@ class LocomotionPolicyWrapper:
 
         self.use_clock_signal = config.training_env["use_clock_signal"]
         # The clock is either the raw phase of each leg (4 values, older policies) or its sin and cos (8 values).
-        # The proprioceptive part of the observation is 48 values, the clock takes the rest.
-        self.clock_size = int(config.training_env["single_observation_space"]) - 48 if self.use_clock_signal else 0
+        # The proprioceptive part of the observation is 48 values (+3 with the base pose commands), the clock takes the rest.
+        self.clock_size = (
+            int(config.training_env["single_observation_space"]) - 48 - self.base_pose_commands_size
+            if self.use_clock_signal else 0
+        )
 
 
         # Step frequency ramps linearly with the commanded xy linear velocity norm, from
@@ -153,7 +174,8 @@ class LocomotionPolicyWrapper:
             imu_linear_acceleration=None,
             imu_angular_velocity=None,
             imu_orientation=None,
-            heightmap_data=None):
+            heightmap_data=None,
+            ref_base_pose=None):
 
         # Update Observation ----------------------        
         if(config.training_env["base_state_source"] != "ground_truth"):
@@ -189,6 +211,19 @@ class LocomotionPolicyWrapper:
         self.filtered_cmd += np.clip(target_cmd - self.filtered_cmd, -max_delta, max_delta)
         ref_base_lin_vel_h[0:2] = self.filtered_cmd[0:2]
         ref_base_ang_vel = np.array([ref_base_ang_vel[0], ref_base_ang_vel[1], self.filtered_cmd[2]])
+
+        # Base pose command (height offset, roll, pitch): clipped to the training range, active only while standing
+        # (as in training, standing means a zero velocity command), and rate limited
+        if(ref_base_pose is not None):
+            self.ref_base_pose = np.asarray(ref_base_pose, dtype=np.float64).copy()
+        target_base_pose = np.clip(self.ref_base_pose, -self.base_pose_range, self.base_pose_range)
+        if(np.linalg.norm(self.filtered_cmd) > 0.01):
+            # In training the pose command drops to zero as soon as the robot walks, never seen non-zero while walking
+            self.filtered_base_pose[:] = 0.0
+        else:
+            max_pose_delta = self.max_base_pose_rate / self.RL_FREQ
+            self.filtered_base_pose += np.clip(target_base_pose - self.filtered_base_pose, -max_pose_delta, max_pose_delta)
+        base_pose_cmd = self.filtered_base_pose.copy() if self.use_base_pose_commands else np.zeros(0)
         
             
         # Fill the observation vector
@@ -208,6 +243,7 @@ class LocomotionPolicyWrapper:
             base_projected_gravity,
             ref_base_lin_vel_h[0:2],
             [ref_base_ang_vel[2]],
+            base_pose_cmd,
             [joints_pos_delta_FL[0]], [joints_pos_delta_FR[0]], [joints_pos_delta_RL[0]], [joints_pos_delta_RR[0]],
             [joints_pos_delta_FL[1]], [joints_pos_delta_FR[1]], [joints_pos_delta_RL[1]], [joints_pos_delta_RR[1]],
             [joints_pos_delta_FL[2]], [joints_pos_delta_FR[2]], [joints_pos_delta_RL[2]], [joints_pos_delta_RR[2]],
@@ -279,6 +315,7 @@ class LocomotionPolicyWrapper:
                 base_projected_gravity,
                 ref_base_lin_vel_h[0:2],
                 [ref_base_ang_vel[2]],
+                base_pose_cmd,
                 [joints_pos_delta_FL[0]], [joints_pos_delta_FR[0]], [joints_pos_delta_RL[0]], [joints_pos_delta_RR[0]],
                 [joints_pos_delta_FL[1]], [joints_pos_delta_FR[1]], [joints_pos_delta_RL[1]], [joints_pos_delta_RR[1]],
                 [joints_pos_delta_FL[2]], [joints_pos_delta_FR[2]], [joints_pos_delta_RL[2]], [joints_pos_delta_RR[2]],
@@ -316,6 +353,7 @@ class LocomotionPolicyWrapper:
                 base_projected_gravity,
                 ref_base_lin_vel_h[0:2],
                 [ref_base_ang_vel[2]],
+                base_pose_cmd,
                 [joints_pos_delta_FL[0]], [joints_pos_delta_FR[0]], [joints_pos_delta_RL[0]], [joints_pos_delta_RR[0]],
                 [joints_pos_delta_FL[1]], [joints_pos_delta_FR[1]], [joints_pos_delta_RL[1]], [joints_pos_delta_RR[1]],
                 [joints_pos_delta_FL[2]], [joints_pos_delta_FR[2]], [joints_pos_delta_RL[2]], [joints_pos_delta_RR[2]],

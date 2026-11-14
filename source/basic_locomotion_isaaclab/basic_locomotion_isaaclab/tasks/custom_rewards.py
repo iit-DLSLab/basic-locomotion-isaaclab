@@ -10,39 +10,93 @@ def _has_edge_map(self) -> bool:
     return hasattr(self, "_edge_height_scanner")
 
 
+def _get_edge_grid_shape(self) -> tuple[float, int, int]:
+    """Return the resolution and the number of x and y points of the edge height grid."""
+    pattern_cfg = self._edge_height_scanner.cfg.pattern_cfg
+    height_map_resolution = pattern_cfg.resolution
+    height_map_x_points = int(round(pattern_cfg.size[0] / height_map_resolution)) + 1
+    height_map_y_points = int(round(pattern_cfg.size[1] / height_map_resolution)) + 1
+    return height_map_resolution, height_map_x_points, height_map_y_points
+
+
 def _get_edge_height_grid(self) -> tuple[torch.Tensor, float, int, int]:
     height_data_scanner = self._edge_height_scanner.data.ray_hits_w[..., 2]
     height_data_scanner = torch.nan_to_num(height_data_scanner, nan=0.0, posinf=1.0, neginf=-1.0)
     height_data_scanner = torch.clip(height_data_scanner, min=-5, max=5)
 
-    height_map_resolution = self._edge_height_scanner.cfg.pattern_cfg.resolution
-    height_map_x_points = int(round(self._edge_height_scanner.cfg.pattern_cfg.size[0] / height_map_resolution)) + 1
-    height_map_y_points = int(round(self._edge_height_scanner.cfg.pattern_cfg.size[1] / height_map_resolution)) + 1
+    height_map_resolution, height_map_x_points, height_map_y_points = _get_edge_grid_shape(self)
     height_grid = height_data_scanner.reshape(self.num_envs, height_map_y_points, height_map_x_points)
     return height_grid, height_map_resolution, height_map_x_points, height_map_y_points
 
 
-def _compute_edge_map(self) -> tuple[torch.Tensor, float, int, int]:
-    height_grid, height_map_resolution, height_map_x_points, height_map_y_points = _get_edge_height_grid(self)
+def _get_edge_grid_points_xy(self) -> torch.Tensor:
+    """Return the (x, y) of the edge height grid points in the yaw frame of the edge height scanner, relative to it,
+    with shape (y_points, x_points, 2)."""
+    _, height_map_x_points, height_map_y_points = _get_edge_grid_shape(self)
+    scanner_ray_starts = self._edge_height_scanner.ray_starts[0].to(device=self.device)
+    return scanner_ray_starts[:, :2].reshape(height_map_y_points, height_map_x_points, 2)
 
-    edge_map = torch.zeros_like(height_grid, dtype=torch.bool)
 
-    x_edges = torch.abs(height_grid[:, :, 1:] - height_grid[:, :, :-1]) > self.cfg.feet_edge_height_threshold
-    edge_map[:, :, :-1] |= x_edges
-    edge_map[:, :, 1:] |= x_edges
+def _get_feet_xy_edge_scanner(self) -> tuple[torch.Tensor, torch.Tensor]:
+    """Return the (x, y) of the feet in the yaw frame of the edge height scanner, relative to it, with shape
+    (num_envs, num_feet, 2), and whether each foot is inside the edge height grid."""
+    feet_pos_w = self._robot.data.body_pos_w[:, self._feet_ids_robot, :3]
+    feet_pos_scanner_w = feet_pos_w - self._edge_height_scanner.data.pos_w.unsqueeze(1)
 
-    y_edges = torch.abs(height_grid[:, 1:, :] - height_grid[:, :-1, :]) > self.cfg.feet_edge_height_threshold
-    edge_map[:, :-1, :] |= y_edges
-    edge_map[:, 1:, :] |= y_edges
+    scanner_yaw_w = math_utils.yaw_quat(self._edge_height_scanner.data.quat_w.torch).unsqueeze(1).expand(
+        -1, feet_pos_w.shape[1], -1
+    )
+    feet_xy = math_utils.quat_apply_inverse(scanner_yaw_w, feet_pos_scanner_w)[..., :2]
 
-    edge_map = F.max_pool2d(
-        edge_map.unsqueeze(1).float(),
-        kernel_size=2 * self.cfg.feet_edge_radius_px + 1,
-        stride=1,
-        padding=self.cfg.feet_edge_radius_px,
-    ).squeeze(1).bool()
+    grid_xy = _get_edge_grid_points_xy(self).to(dtype=feet_xy.dtype).reshape(-1, 2)
+    grid_xy_min = torch.min(grid_xy, dim=0).values
+    grid_xy_max = torch.max(grid_xy, dim=0).values
+    feet_inside_scan = torch.all((feet_xy >= grid_xy_min) & (feet_xy <= grid_xy_max), dim=-1)
+    return feet_xy, feet_inside_scan
 
-    return edge_map, height_map_resolution, height_map_x_points, height_map_y_points
+
+def _get_edge_distance(self, points_xy: torch.Tensor) -> torch.Tensor:
+    """Return the horizontal distance from each point to the closest terrain edge in the edge height grid (inf if there
+    is none).
+
+    An edge is a height jump larger than feet_edge_height_threshold between two neighboring grid points. It lies halfway
+    between them and spans one grid cell in the other direction, so it is a segment of length height_map_resolution
+    parallel to one of the grid axes. Measuring the distance to these segments instead of to the grid points keeps it
+    continuous as the feet and the grid move.
+
+    Args:
+        points_xy: (num_envs, num_points, 2) points in the yaw frame of the edge height scanner, relative to it.
+    """
+    height_grid, height_map_resolution, _, _ = _get_edge_height_grid(self)
+    grid_xy = _get_edge_grid_points_xy(self).to(dtype=points_xy.dtype)
+    threshold = self.cfg.feet_edge_height_threshold
+
+    # Jumps between neighbors along x are segments parallel to y, jumps between neighbors along y are parallel to x
+    x_jumps = torch.abs(height_grid[:, :, 1:] - height_grid[:, :, :-1]) > threshold
+    x_jumps_xy = 0.5 * (grid_xy[:, 1:] + grid_xy[:, :-1])
+    y_jumps = torch.abs(height_grid[:, 1:, :] - height_grid[:, :-1, :]) > threshold
+    y_jumps_xy = 0.5 * (grid_xy[1:, :] + grid_xy[:-1, :])
+
+    def _distance_to_segments(segments_xy: torch.Tensor, active: torch.Tensor, along_axis: int) -> torch.Tensor:
+        # (num_envs, num_points, num_segments) offsets from the segment centers, across and along the segments
+        segments_xy = segments_xy.reshape(1, 1, -1, 2)
+        across = points_xy[..., 1 - along_axis].unsqueeze(-1) - segments_xy[..., 1 - along_axis]
+        along = torch.abs(points_xy[..., along_axis].unsqueeze(-1) - segments_xy[..., along_axis])
+        along = torch.clamp(along - 0.5 * height_map_resolution, min=0.0)
+        distance = torch.hypot(across, along).masked_fill(~active.reshape(active.shape[0], 1, -1), torch.inf)
+        return torch.min(distance, dim=-1).values
+
+    return torch.minimum(
+        _distance_to_segments(x_jumps_xy, x_jumps, along_axis=1),
+        _distance_to_segments(y_jumps_xy, y_jumps, along_axis=0),
+    )
+
+
+def _get_edge_stance_penalty(self, edge_distance: torch.Tensor) -> torch.Tensor:
+    """Map the distance of a stance foot from the closest edge to the feet_edge_stance penalty: 1 when the foot
+    sphere overhangs the edge (distance <= foot_radius), 0 once feet_edge_stance_margin farther from it."""
+    margin = self.cfg.feet_edge_stance_margin
+    return torch.clamp((self.cfg.foot_radius + margin - edge_distance) / margin, 0.0, 1.0)
 
 
 def _get_riser_grid(self) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, float]:
@@ -134,7 +188,9 @@ def track_height_exp(self) -> torch.Tensor:
     height_data_scanner = torch.clip(height_data_scanner, min=-5, max=5)
     mean_height_ray = torch.mean(height_data_scanner, dim=1)
 
-    height_error = torch.square(self.cfg.desired_base_height + mean_height_ray - self._robot.data.root_state_w[:, 2])
+    # The base pose command adds a height offset (zero while walking or with cfg.use_base_pose_commands False)
+    desired_base_height = self.cfg.desired_base_height + self._base_pose_commands[:, 0]
+    height_error = torch.square(desired_base_height + mean_height_ray - self._robot.data.root_state_w[:, 2])
     height_error_mapped = torch.exp(-height_error / 0.01)
     return height_error_mapped
 
@@ -182,7 +238,10 @@ def track_orientation_l2(self) -> torch.Tensor:
     root_roll_w = torch.atan2(torch.sin(root_roll_w), torch.cos(root_roll_w))
     root_pitch_w = torch.atan2(torch.sin(root_pitch_w), torch.cos(root_pitch_w))
 
-    base_orientation = torch.square(terrain_pitch - root_pitch_w) + torch.square(terrain_roll - root_roll_w)
+    # The base pose command adds a roll and pitch offset (zero while walking or with cfg.use_base_pose_commands False)
+    desired_roll = terrain_roll + self._base_pose_commands[:, 1]
+    desired_pitch = terrain_pitch + self._base_pose_commands[:, 2]
+    base_orientation = torch.square(desired_pitch - root_pitch_w) + torch.square(desired_roll - root_roll_w)
     return base_orientation
 
 
@@ -581,6 +640,10 @@ def feet_to_hip_distance_l2(self) -> torch.Tensor:
 
 
 def feet_edge_stance(self) -> torch.Tensor:
+    """Penalize stance feet that are horizontally closer than foot_radius + feet_edge_stance_margin to a terrain edge
+    (the lip of a step or the base of a riser), so that they are placed on the treads away from the edges. Each foot
+    adds 1 when its sphere overhangs the edge (distance <= foot_radius), decreasing linearly to 0 once
+    feet_edge_stance_margin farther from it."""
     if not _has_edge_map(self):
         return torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
 
@@ -589,61 +652,10 @@ def feet_edge_stance(self) -> torch.Tensor:
         > 1.0
     )
 
-    edge_map, height_map_resolution, height_map_x_points, height_map_y_points = _compute_edge_map(self)
+    feet_xy, feet_inside_scan = _get_feet_xy_edge_scanner(self)
+    feet_edge_penalty = _get_edge_stance_penalty(self, _get_edge_distance(self, feet_xy))
 
-    feet_pos_w = self._robot.data.body_pos_w[:, self._feet_ids_robot, :3]
-    feet_pos_scanner_w = feet_pos_w - self._edge_height_scanner.data.pos_w.unsqueeze(1)
-
-    scanner_yaw_w = math_utils.yaw_quat(self._edge_height_scanner.data.quat_w.torch).unsqueeze(1).expand(
-        -1, feet_pos_w.shape[1], -1
-    )
-    feet_pos_scanner = math_utils.quat_apply_inverse(scanner_yaw_w, feet_pos_scanner_w)
-
-    feet_x = feet_pos_scanner[..., 0]
-    feet_y = feet_pos_scanner[..., 1]
-
-    scanner_ray_starts = self._edge_height_scanner.ray_starts[0].to(device=self.device, dtype=feet_x.dtype)
-    height_grid_x_min = torch.min(scanner_ray_starts[:, 0])
-    height_grid_x_max = torch.max(scanner_ray_starts[:, 0])
-    height_grid_y_min = torch.min(scanner_ray_starts[:, 1])
-    height_grid_y_max = torch.max(scanner_ray_starts[:, 1])
-
-    feet_inside_scan = (
-        (feet_x >= height_grid_x_min)
-        & (feet_x <= height_grid_x_max)
-        & (feet_y >= height_grid_y_min)
-        & (feet_y <= height_grid_y_max)
-    )
-
-    feet_ix = torch.round((feet_x - height_grid_x_min) / height_map_resolution).long()
-    feet_iy = torch.round((feet_y - height_grid_y_min) / height_map_resolution).long()
-    feet_ix = torch.clamp(feet_ix, 0, height_map_x_points - 1)
-    feet_iy = torch.clamp(feet_iy, 0, height_map_y_points - 1)
-
-    edge_map_flat = edge_map.reshape(self.num_envs, -1)
-
-    feet_grid_ids = feet_iy * height_map_x_points + feet_ix
-    feet_at_edge = torch.gather(edge_map_flat, 1, feet_grid_ids)
-
-    violating_feet = contacts_foot & feet_inside_scan & feet_at_edge
-
-    grid_xy = scanner_ray_starts[:, :2]
-    feet_xy = torch.stack((feet_x, feet_y), dim=-1)
-    distances_to_grid = torch.linalg.norm(feet_xy.unsqueeze(2) - grid_xy.unsqueeze(0).unsqueeze(0), dim=-1)
-    distances_to_grid = distances_to_grid.masked_fill(edge_map_flat.unsqueeze(1), torch.inf)
-    nearest_feasible_distance = torch.min(distances_to_grid, dim=-1).values
-
-    scan_diagonal = torch.sqrt(
-        torch.square(height_grid_x_max - height_grid_x_min) + torch.square(height_grid_y_max - height_grid_y_min)
-    )
-    nearest_feasible_distance = torch.where(
-        torch.isfinite(nearest_feasible_distance),
-        nearest_feasible_distance,
-        scan_diagonal,
-    )
-    feet_edge_stance = torch.sum(
-        torch.where(violating_feet, nearest_feasible_distance, torch.zeros_like(nearest_feasible_distance)), dim=1
-    )
+    feet_edge_stance = torch.sum(feet_edge_penalty * (contacts_foot & feet_inside_scan), dim=1)
     return feet_edge_stance
 
 

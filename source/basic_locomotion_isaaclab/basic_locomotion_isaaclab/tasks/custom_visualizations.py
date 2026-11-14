@@ -5,15 +5,25 @@ import torch
 import isaaclab.sim as sim_utils
 from isaaclab.markers import VisualizationMarkers, VisualizationMarkersCfg
 
-from .custom_rewards import _compute_edge_map, _get_riser_grid, _has_edge_map
+from .custom_rewards import (
+    _get_edge_distance,
+    _get_edge_grid_points_xy,
+    _get_edge_stance_penalty,
+    _get_riser_grid,
+    _has_edge_map,
+)
 
 
 def _set_debug_vis_impl(self, debug_vis: bool):
-    show_edge_map = debug_vis and getattr(self.cfg, "visualize_edge_map", False) and _has_edge_map(self)
-    if show_edge_map and self._edge_map_visualizer is None:
-        marker_radius = getattr(self.cfg, "edge_map_visualization_dot_radius", 0.015)
-        edge_map_marker_cfg = VisualizationMarkersCfg(
-            prim_path="/Visuals/EdgeMap",
+    show_stance_zone = (
+        debug_vis and getattr(self.cfg, "visualize_feet_edge_stance_zone", False) and _has_edge_map(self)
+    )
+    if show_stance_zone and self._feet_edge_stance_visualizer is None:
+        # One dot per point of the edge height grid: black where a stance foot is penalized by feet_edge_stance,
+        # white elsewhere
+        marker_radius = getattr(self.cfg, "feet_edge_stance_visualization_dot_radius", 0.015)
+        feet_edge_stance_marker_cfg = VisualizationMarkersCfg(
+            prim_path="/Visuals/FeetEdgeStanceZone",
             markers={
                 "feasible": sim_utils.SphereCfg(
                     radius=marker_radius,
@@ -25,9 +35,9 @@ def _set_debug_vis_impl(self, debug_vis: bool):
                 ),
             },
         )
-        self._edge_map_visualizer = VisualizationMarkers(edge_map_marker_cfg)
-    if self._edge_map_visualizer is not None:
-        self._edge_map_visualizer.set_visibility(show_edge_map)
+        self._feet_edge_stance_visualizer = VisualizationMarkers(feet_edge_stance_marker_cfg)
+    if self._feet_edge_stance_visualizer is not None:
+        self._feet_edge_stance_visualizer.set_visibility(show_stance_zone)
 
     show_swing_zone = debug_vis and getattr(self.cfg, "visualize_feet_edge_swing_zone", False) and _has_edge_map(self)
     if show_swing_zone and self._feet_edge_swing_visualizer is None:
@@ -86,8 +96,8 @@ def _debug_vis_callback(self, event):
         _visualize_height_map_with_noise(self)
     if not _has_edge_map(self):
         return
-    if self._edge_map_visualizer is not None and self._edge_map_visualizer.is_visible():
-        _visualize_edge_map(self)
+    if self._feet_edge_stance_visualizer is not None and self._feet_edge_stance_visualizer.is_visible():
+        _visualize_feet_edge_stance_zone(self)
     if self._feet_edge_swing_visualizer is not None and self._feet_edge_swing_visualizer.is_visible():
         _visualize_feet_edge_swing_zone(self)
 
@@ -149,17 +159,20 @@ def _visualize_feet_edge_swing_zone(self):
     self._feet_edge_swing_visualizer.visualize(translations=translations, scales=scales)
 
 
-def _visualize_edge_map(self):
-    edge_map, _, _, _ = _compute_edge_map(self)
+def _visualize_feet_edge_stance_zone(self):
+    # Black where a stance foot would be penalized by feet_edge_stance, white elsewhere. This measures the distance of
+    # every grid point from every edge, so it is meant for play with a few envs.
+    grid_xy = _get_edge_grid_points_xy(self).reshape(1, -1, 2).expand(self.num_envs, -1, -1)
+    edge_distance = _get_edge_distance(self, grid_xy)
     translations = self._edge_height_scanner.data.ray_hits_w.reshape(-1, 3).clone()
-    marker_indices = edge_map.reshape(-1).long()
+    marker_indices = (_get_edge_stance_penalty(self, edge_distance) > 0.0).reshape(-1).long()
 
     valid_hits = torch.isfinite(translations).all(dim=1)
     if not torch.any(valid_hits):
         return
 
     translations = translations[valid_hits]
-    translations[:, 2] += getattr(self.cfg, "edge_map_visualization_height_offset", 0.02)
+    translations[:, 2] += getattr(self.cfg, "feet_edge_stance_visualization_height_offset", 0.02)
     marker_indices = marker_indices[valid_hits]
 
-    self._edge_map_visualizer.visualize(translations=translations, marker_indices=marker_indices)
+    self._feet_edge_stance_visualizer.visualize(translations=translations, marker_indices=marker_indices)

@@ -137,6 +137,9 @@ class Console():
                     print("d: Move Right")
                     print("q: Rotate Left")
                     print("e: Rotate Right")
+                    print("r/f: Base height up/down (only while standing, if the policy has base pose commands)")
+                    print("i/k: Base pitch down/up (only while standing)")
+                    print("j/l: Base roll left/right (only while standing)")
                     print("0: Stop")
                     print("Press any other key to exit")
                     while True:
@@ -159,15 +162,26 @@ class Console():
                         elif(command == "e"):
                             self.controller_node.ref_base_ang_yaw_dot -= 0.1
                             print("e")
+                        elif(command in ("r", "f", "i", "k", "j", "l")):
+                            # ref_base_pose = [height offset, roll, pitch], clipped to the training range by the policy wrapper
+                            policy = self.controller_node.locomotion_policy
+                            delta = {"r": (0, 0.02), "f": (0, -0.02),
+                                     "j": (1, -0.05), "l": (1, 0.05),
+                                     "i": (2, 0.05), "k": (2, -0.05)}[command]
+                            policy.ref_base_pose[delta[0]] += delta[1]
+                            policy.ref_base_pose = np.clip(policy.ref_base_pose, -policy.base_pose_range, policy.base_pose_range)
+                            print(command, "base pose (height, roll, pitch):", policy.ref_base_pose)
                         elif(command == "0"):
                             self.controller_node.ref_base_lin_vel_H[0] = 0
                             self.controller_node.ref_base_lin_vel_H[1] = 0
                             self.controller_node.ref_base_ang_yaw_dot = 0
+                            self.controller_node.locomotion_policy.ref_base_pose[:] = 0.0
                             print("0")
                         else:
                             self.controller_node.ref_base_lin_vel_H[0] = 0
                             self.controller_node.ref_base_lin_vel_H[1] = 0
                             self.controller_node.ref_base_ang_yaw_dot = 0
+                            self.controller_node.locomotion_policy.ref_base_pose[:] = 0.0
                             break
             
             

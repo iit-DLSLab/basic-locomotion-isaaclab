@@ -189,6 +189,17 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
     if(use_clock_signal):
         observation_space += 8 # clock signal for periodic gait (sin and cos of the phase of each leg)
 
+    # Base pose commands: desired base height offset (from desired_base_height), roll and pitch.
+    # They are non-zero only while standing (zero velocity command), while walking they are always zero
+    use_base_pose_commands = False
+    if(use_base_pose_commands):
+        observation_space += 3 # base pose command (height offset, roll, pitch)
+        base_pose_commands_height_range = 0.10 # +/- [m] around desired_base_height
+        base_pose_commands_roll_range = 0.349 # +/- [rad] (20 deg)
+        base_pose_commands_pitch_range = 0.349 # +/- [rad] (20 deg)
+        base_pose_commands_resample_time_s = 3.0 # a new pose is sampled every this many seconds
+        base_pose_commands_zero_prob = 0.2 # probability of sampling the nominal pose (all zeros)
+
     single_observation_space = observation_space # Usefull for concatenating history
 
     # observation history
@@ -218,6 +229,8 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
         single_concurrent_state_est_observation_space = 3 # base angular velocity  
         single_concurrent_state_est_observation_space += 3 # projected gravity in base frame
         single_concurrent_state_est_observation_space += 3 # command (desired linear vel in x and y, desired yaw rate)
+        if(use_base_pose_commands):
+            single_concurrent_state_est_observation_space += 3 # base pose command (height offset, roll, pitch)
         single_concurrent_state_est_observation_space += 12 # joint positions
         single_concurrent_state_est_observation_space += 12 # joint velocities
         single_concurrent_state_est_observation_space += 12 # last actions
@@ -252,6 +265,8 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
         single_rma_observation_space = 3 # base angular velocity  
         single_rma_observation_space += 3 # projected gravity in base frame
         single_rma_observation_space += 3 # command (desired linear vel in x and y, desired yaw rate)
+        if(use_base_pose_commands):
+            single_rma_observation_space += 3 # base pose command (height offset, roll, pitch)
         single_rma_observation_space += 12 # joint positions
         single_rma_observation_space += 12 # joint velocities
         single_rma_observation_space += 12 # last actions
@@ -314,10 +329,12 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
         render_interval=decimation,
         #disable_contact_processing=True,
         physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
+            # "max" (not "multiply"): Newton/MJWarp ignores "multiply" and always uses max (IsaacLab PR #8877).
+            # With max + low ground mu, effective mu = max(0.2, robot mu) -> spans the full randomized range on all backends.
+            friction_combine_mode="max",
             restitution_combine_mode="multiply",
-            static_friction=1.0,
-            dynamic_friction=1.0,
+            static_friction=0.2,
+            dynamic_friction=0.2,
             restitution=0.0,
         ),
         physics=PhysicsCfg(),
@@ -328,10 +345,12 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
         terrain_type="plane",
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
+            # "max" (not "multiply"): Newton/MJWarp ignores "multiply" and always uses max (IsaacLab PR #8877).
+            # With max + low ground mu, effective mu = max(0.2, robot mu) -> spans the full randomized range on all backends.
+            friction_combine_mode="max",
             restitution_combine_mode="multiply",
-            static_friction=1.0,
-            dynamic_friction=1.0,
+            static_friction=0.2,
+            dynamic_friction=0.2,
             restitution=0.0,
         ),
         debug_vis=False,
@@ -363,6 +382,7 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
         "base_ang_vel": (0.05, 0.01),
         "projected_gravity": (0.05, 0.01),
         "commands": (0.01, 0.01),
+        "base_pose_commands": (0.01, 0.01),
         "joint_pos": (0.01, 0.01),
         "joint_vel": (0.1, 0.01),
         "actions": (0.01, 0.01),
@@ -442,10 +462,9 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
     feet_edge_swing_reward_scale = -1.0
     feet_edge_swing_margin = 0.04 # desired horizontal distance of the swing foot from a riser face [m]
     feet_edge_swing_height_margin = 0.01 # the foot bottom has to be this much below the riser top to be penalized, and this much above its base to count as touching it [m]
-    feet_edge_height_threshold = 0.05
-    feet_edge_horizontal_radius = 0.10
-    feet_edge_radius_px = 0
-    visualize_edge_map = False
+    feet_edge_height_threshold = 0.05 # height jump between two neighboring points of the edge height grid that counts as an edge, shared by feet_edge_stance, feet_edge_swing and feet_vertical_surface_contacts [m]
+    feet_edge_stance_margin = 0.04 # desired horizontal distance of the stance foot sphere from an edge (step lip or riser base) [m]
+    visualize_feet_edge_stance_zone = False # black dots on the edge height grid where a stance foot is penalized by feet_edge_stance, white elsewhere (for play with a few envs)
     visualize_feet_edge_swing_zone = False # transparent red cylinders where a swing foot is penalized by feet_edge_swing
 
     feet_vertical_surface_contacts_reward_scale = -1.5
@@ -520,10 +539,12 @@ class HyQRealRoughBlindEnvCfg(HyQRealFlatEnvCfg):
         max_init_terrain_level=10,
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
+            # "max" (not "multiply"): Newton/MJWarp ignores "multiply" and always uses max (IsaacLab PR #8877).
+            # With max + low ground mu, effective mu = max(0.2, robot mu) -> spans the full randomized range on all backends.
+            friction_combine_mode="max",
             restitution_combine_mode="multiply",
-            static_friction=1.0,
-            dynamic_friction=1.0,
+            static_friction=0.2,
+            dynamic_friction=0.2,
         ),
         visual_material=sim_utils.MdlFileCfg(
             mdl_path="{NVIDIA_NUCLEUS_DIR}/Materials/Base/Architecture/Shingles_01.mdl",

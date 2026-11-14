@@ -104,6 +104,9 @@ morphologycal_symmetries_cfg:
   - gravity
   - des_base_lin_vel_xy
   - des_base_ang_vel_yaw
+  - invariant_scalar
+  - reflection_sign_flipping_scalar
+  - invariant_scalar
   - joints_pos
   - joints_vel
   - joints_pos
@@ -114,6 +117,9 @@ morphologycal_symmetries_cfg:
   - gravity
   - des_base_lin_vel_xy
   - des_base_ang_vel_yaw
+  - invariant_scalar
+  - reflection_sign_flipping_scalar
+  - invariant_scalar
   - joints_pos
   - joints_vel
   - joints_pos
@@ -124,6 +130,9 @@ morphologycal_symmetries_cfg:
   - gravity
   - des_base_lin_vel_xy
   - des_base_ang_vel_yaw
+  - invariant_scalar
+  - reflection_sign_flipping_scalar
+  - invariant_scalar
   - joints_pos
   - joints_vel
   - joints_pos
@@ -134,6 +143,9 @@ morphologycal_symmetries_cfg:
   - gravity
   - des_base_lin_vel_xy
   - des_base_ang_vel_yaw
+  - invariant_scalar
+  - reflection_sign_flipping_scalar
+  - invariant_scalar
   - joints_pos
   - joints_vel
   - joints_pos
@@ -144,6 +156,9 @@ morphologycal_symmetries_cfg:
   - gravity
   - des_base_lin_vel_xy
   - des_base_ang_vel_yaw
+  - invariant_scalar
+  - reflection_sign_flipping_scalar
+  - invariant_scalar
   - joints_pos
   - joints_vel
   - joints_pos
@@ -155,6 +170,9 @@ morphologycal_symmetries_cfg:
   - gravity
   - des_base_lin_vel_xy
   - des_base_ang_vel_yaw
+  - invariant_scalar
+  - reflection_sign_flipping_scalar
+  - invariant_scalar
   - joints_pos
   - joints_vel
   - joints_pos
@@ -165,6 +183,9 @@ morphologycal_symmetries_cfg:
   - gravity
   - des_base_lin_vel_xy
   - des_base_ang_vel_yaw
+  - invariant_scalar
+  - reflection_sign_flipping_scalar
+  - invariant_scalar
   - joints_pos
   - joints_vel
   - joints_pos
@@ -175,6 +196,9 @@ morphologycal_symmetries_cfg:
   - gravity
   - des_base_lin_vel_xy
   - des_base_ang_vel_yaw
+  - invariant_scalar
+  - reflection_sign_flipping_scalar
+  - invariant_scalar
   - joints_pos
   - joints_vel
   - joints_pos
@@ -185,6 +209,9 @@ morphologycal_symmetries_cfg:
   - gravity
   - des_base_lin_vel_xy
   - des_base_ang_vel_yaw
+  - invariant_scalar
+  - reflection_sign_flipping_scalar
+  - invariant_scalar
   - joints_pos
   - joints_vel
   - joints_pos
@@ -195,6 +222,9 @@ morphologycal_symmetries_cfg:
   - gravity
   - des_base_lin_vel_xy
   - des_base_ang_vel_yaw
+  - invariant_scalar
+  - reflection_sign_flipping_scalar
+  - invariant_scalar
   - joints_pos
   - joints_vel
   - joints_pos

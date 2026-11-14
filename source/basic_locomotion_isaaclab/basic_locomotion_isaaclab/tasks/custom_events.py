@@ -325,3 +325,40 @@ def _get_new_random_commands(self, env_ids: torch.Tensor | None = None):
     if self.num_envs > num_fixed_envs:
         fixed_env_ids = torch.arange(num_fixed_envs, device=self.device)
         self._commands[fixed_env_ids, :3] *= 0.0
+
+    # Base pose commands depend on the velocity commands (active only while standing), so they are updated after them
+    _get_new_random_base_pose_commands(self, env_ids)
+
+
+def _sample_random_base_pose_commands(self, num_commands: int) -> torch.Tensor:
+    # [height offset from cfg.desired_base_height, roll, pitch], uniform in +/- the cfg ranges
+    ranges = torch.tensor(
+        [
+            self.cfg.base_pose_commands_height_range,
+            self.cfg.base_pose_commands_roll_range,
+            self.cfg.base_pose_commands_pitch_range,
+        ],
+        device=self.device,
+    )
+    commands = torch.empty(num_commands, 3, device=self.device).uniform_(-1.0, 1.0) * ranges
+    # Some envs get the nominal pose, so standing still at the nominal pose is still learned
+    is_nominal = torch.rand(num_commands, 1, device=self.device) < self.cfg.base_pose_commands_zero_prob
+    return commands * ~is_nominal
+
+
+def _get_new_random_base_pose_commands(self, env_ids: torch.Tensor | None = None):
+    if not self._use_base_pose_commands:
+        return
+
+    # Resample at reset and periodically during the episode
+    if env_ids is not None:
+        self._base_pose_commands_sampled[env_ids] = _sample_random_base_pose_commands(self, env_ids.shape[0])
+    resample_interval = max(int(round(self.cfg.base_pose_commands_resample_time_s / self.step_dt)), 1)
+    resample = (self.episode_length_buf % resample_interval == 0) & (self.episode_length_buf > 0)
+    resample_ids = resample.nonzero(as_tuple=False).squeeze(-1)
+    if resample_ids.numel() > 0:
+        self._base_pose_commands_sampled[resample_ids] = _sample_random_base_pose_commands(self, resample_ids.numel())
+
+    # The pose is commanded only while standing, while walking it is always zero
+    is_standing = torch.norm(self._commands[:, :3], dim=1) <= 0.01
+    self._base_pose_commands[:] = self._base_pose_commands_sampled * is_standing.unsqueeze(1)
