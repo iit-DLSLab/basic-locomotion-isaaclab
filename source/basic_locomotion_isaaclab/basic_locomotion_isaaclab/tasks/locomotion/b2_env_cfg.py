@@ -314,10 +314,12 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
         render_interval=decimation,
         #disable_contact_processing=True,
         physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
+            # "max" (not "multiply"): Newton/MJWarp ignores "multiply" and always uses max (IsaacLab PR #8877).
+            # With max + low ground mu, effective mu = max(0.2, robot mu) -> spans the full randomized range on all backends.
+            friction_combine_mode="max",
             restitution_combine_mode="multiply",
-            static_friction=1.0,
-            dynamic_friction=1.0,
+            static_friction=0.2,
+            dynamic_friction=0.2,
             restitution=0.0,
         ),
         physics=PhysicsCfg(),
@@ -328,10 +330,12 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
         terrain_type="plane",
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
+            # "max" (not "multiply"): Newton/MJWarp ignores "multiply" and always uses max (IsaacLab PR #8877).
+            # With max + low ground mu, effective mu = max(0.2, robot mu) -> spans the full randomized range on all backends.
+            friction_combine_mode="max",
             restitution_combine_mode="multiply",
-            static_friction=1.0,
-            dynamic_friction=1.0,
+            static_friction=0.2,
+            dynamic_friction=0.2,
             restitution=0.0,
         ),
         debug_vis=False,
@@ -518,10 +522,12 @@ class B2RoughBlindEnvCfg(B2FlatEnvCfg):
         max_init_terrain_level=10,
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
+            # "max" (not "multiply"): Newton/MJWarp ignores "multiply" and always uses max (IsaacLab PR #8877).
+            # With max + low ground mu, effective mu = max(0.2, robot mu) -> spans the full randomized range on all backends.
+            friction_combine_mode="max",
             restitution_combine_mode="multiply",
-            static_friction=1.0,
-            dynamic_friction=1.0,
+            static_friction=0.2,
+            dynamic_friction=0.2,
         ),
         visual_material=sim_utils.MdlFileCfg(
             mdl_path="{NVIDIA_NUCLEUS_DIR}/Materials/Base/Architecture/Shingles_01.mdl",

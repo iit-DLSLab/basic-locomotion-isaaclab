@@ -176,7 +176,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
 
     # Base pose commands: desired base height offset (from desired_base_height), roll and pitch.
     # They are non-zero only while standing (zero velocity command), while walking they are always zero
-    use_base_pose_commands = False
+    use_base_pose_commands = True
     if(use_base_pose_commands):
         observation_space += 3 # base pose command (height offset, roll, pitch)
         base_pose_commands_height_range = 0.10 # +/- [m] around desired_base_height
@@ -318,10 +318,12 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         render_interval=decimation,
         #disable_contact_processing=True,
         physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
+            # "max" (not "multiply"): Newton/MJWarp ignores "multiply" and always uses max (IsaacLab PR #8877).
+            # With max + low ground mu, effective mu = max(0.2, robot mu) -> spans the full randomized range on all backends.
+            friction_combine_mode="max",
             restitution_combine_mode="multiply",
-            static_friction=1.0,
-            dynamic_friction=1.0,
+            static_friction=0.2,
+            dynamic_friction=0.2,
             restitution=0.0,
         ),
         physics=PhysicsCfg(),
@@ -332,10 +334,12 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         terrain_type="plane",
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
+            # "max" (not "multiply"): Newton/MJWarp ignores "multiply" and always uses max (IsaacLab PR #8877).
+            # With max + low ground mu, effective mu = max(0.2, robot mu) -> spans the full randomized range on all backends.
+            friction_combine_mode="max",
             restitution_combine_mode="multiply",
-            static_friction=1.0,
-            dynamic_friction=1.0,
+            static_friction=0.2,
+            dynamic_friction=0.2,
             restitution=0.0,
         ),
         debug_vis=False,
@@ -524,10 +528,12 @@ class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
         max_init_terrain_level=10,
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
-            friction_combine_mode="multiply",
+            # "max" (not "multiply"): Newton/MJWarp ignores "multiply" and always uses max (IsaacLab PR #8877).
+            # With max + low ground mu, effective mu = max(0.2, robot mu) -> spans the full randomized range on all backends.
+            friction_combine_mode="max",
             restitution_combine_mode="multiply",
-            static_friction=1.0,
-            dynamic_friction=1.0,
+            static_friction=0.2,
+            dynamic_friction=0.2,
         ),
         visual_material=sim_utils.MdlFileCfg(
             mdl_path="{NVIDIA_NUCLEUS_DIR}/Materials/Base/Architecture/Shingles_01.mdl",

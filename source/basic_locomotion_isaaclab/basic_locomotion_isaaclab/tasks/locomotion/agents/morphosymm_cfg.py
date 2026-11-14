@@ -47,6 +47,12 @@ obs_space_names_actor = [
         "gravity",
         "des_base_lin_vel_xy",
         "des_base_ang_vel_yaw",
+        # Base pose commands (use_base_pose_commands = True): height offset, roll, pitch.
+        # Under the sagittal (left-right) reflection the height and the pitch are invariant while
+        # the roll flips sign. Valid for C2; with K4 the pitch would also need to flip.
+        "invariant_scalar",  # base height offset command
+        "reflection_sign_flipping_scalar",  # base roll command
+        "invariant_scalar",  # base pitch command
         "joints_pos",
         "joints_vel",
         "joints_pos",
@@ -63,6 +69,12 @@ obs_space_names_critic = [
         "gravity",
         "des_base_lin_vel_xy",
         "des_base_ang_vel_yaw",
+        # Base pose commands (use_base_pose_commands = True): height offset, roll, pitch.
+        # Under the sagittal (left-right) reflection the height and the pitch are invariant while
+        # the roll flips sign. Valid for C2; with K4 the pitch would also need to flip.
+        "invariant_scalar",  # base height offset command
+        "reflection_sign_flipping_scalar",  # base roll command
+        "invariant_scalar",  # base pitch command
         "joints_pos",
         "joints_vel",
         "joints_pos",

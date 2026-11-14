@@ -24,7 +24,7 @@ elif(robot == "go2"):
     Kp_stand_up_and_down = 50.
     Kd_stand_up_and_down = 5.
 
-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-11-12_11-37-31"
+    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/concurrent_se_vision"
 
 elif(robot == "b2"):
     Kp_walking = 120.
@@ -54,7 +54,7 @@ elif(robot == "pegasus"):
     Kp_stand_up_and_down = 600.
     Kd_stand_up_and_down = 10.
 
-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/blind_120"
+    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-11-14_08-28-20"
 
 else:
     raise ValueError(f"Robot {robot} not supported")
