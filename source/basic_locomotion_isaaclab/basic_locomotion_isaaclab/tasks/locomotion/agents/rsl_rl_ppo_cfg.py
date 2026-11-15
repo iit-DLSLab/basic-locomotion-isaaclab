@@ -10,6 +10,7 @@ from isaaclab_rl.rsl_rl import RslRlMLPModelCfg, RslRlOnPolicyRunnerCfg, RslRlPp
 from copy import deepcopy
 from . import amp_cfg
 from . import morphosymm_cfg
+from . import moe_cfg
 
 
 @configclass
@@ -52,6 +53,9 @@ class FlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     # Morphosymm-rl Related Stuff
     morphologycal_symmetries_cfg = morphosymm_cfg.morphologycal_symmetries_cfg
 
+    # Mixture of Expert Stuff (moe-rsl-rl)
+    moe_cfg = moe_cfg.moe_cfg
+
 
 @configclass
 class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
@@ -92,3 +96,6 @@ class RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
 
     # Morphosymm-rl Related Stuff
     morphologycal_symmetries_cfg = morphosymm_cfg.morphologycal_symmetries_cfg
+
+    # Mixture of Expert Stuff (moe-rsl-rl)
+    moe_cfg = moe_cfg.moe_cfg

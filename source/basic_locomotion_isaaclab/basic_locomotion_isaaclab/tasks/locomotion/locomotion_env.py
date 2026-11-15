@@ -604,11 +604,18 @@ class LocomotionEnv(DirectRLEnv):
         reward = torch.sum(torch.stack(list(rewards.values())), dim=0)
 
         # Check for NaNs and Infs
+        reward_terms = rewards
         if torch.isnan(reward).any() or torch.isinf(reward).any():
             print("NaN or Inf detected in reward computation. Setting reward to zero for affected environments.")
             breakpoint()  # For debugging purposes
-            reward = torch.where(torch.isnan(reward) | torch.isinf(reward), torch.zeros_like(reward), reward)
-        
+            invalid = torch.isnan(reward) | torch.isinf(reward)
+            reward = torch.where(invalid, torch.zeros_like(reward), reward)
+            reward_terms = {key: torch.where(invalid, torch.zeros_like(value), value) for key, value in rewards.items()}
+
+        # Reward terms, used by the reward decomposition of moe-rsl-rl (grouped into critics by
+        # `moe_cfg.reward_decomposition_cfg`)
+        self.extras["reward_terms"] = reward_terms
+
         # Logging
         for key, value in rewards.items():
             self._episode_sums[key] += value

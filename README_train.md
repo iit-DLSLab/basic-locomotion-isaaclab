@@ -38,6 +38,8 @@ python -m pip install -e source/basic_locomotion_isaaclab
 
 - If you want to play with [Adversarial Motion Priors](https://arxiv.org/pdf/2104.02180), install the repo [amp-rsl-rl](https://github.com/ami-iit/amp-rsl-rl) from the [AMI](https://github.com/ami-iit) research lab.
 
+- If you want to play with Mixture-of-Experts or multi-critic (one critic per reward group), install the repo [moe-rsl-rl](https://github.com/iit-DLSLab/moe-rsl-rl)
+
 ## Run a train/play in IsaacLab
 
 - To train:
@@ -55,7 +57,7 @@ python scripts/rsl_rl/play.py --task=Locomotion-Aliengo-Rough-Blind --num_envs=1
 
 
 
-## Use AMP, Morphological Symmetries, DAGGER
+## Use AMP, Morphological Symmetries, DAGGER, MoE/Multi-Critic
 Each module has its own README in its respective folder under [scripts](./scripts/).
 
 
