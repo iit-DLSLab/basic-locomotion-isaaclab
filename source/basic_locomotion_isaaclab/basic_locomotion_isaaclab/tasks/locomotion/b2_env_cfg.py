@@ -388,6 +388,10 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
                            'FL_thigh_joint', 'FR_thigh_joint', 'RL_thigh_joint', 'RR_thigh_joint',  
                            'FL_calf_joint', 'FR_calf_joint', 'RL_calf_joint', 'RR_calf_joint']
 
+    # Sign of each joint type after the left-right reflection (agents/rsl_rl_symmetry.py), from the MJCF kinematics:
+    # the hip axes are along +x on both sides, so the hips change sign
+    symmetry_joint_signs = {"hip": -1.0, "thigh": 1.0, "calf": 1.0}
+
 
     # Desired tracking variables
     desired_base_height = 0.485

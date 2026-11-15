@@ -194,7 +194,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
     # Base pose commands: desired base height offset (from desired_base_height), roll and pitch.
     # They are non-zero only while standing (zero velocity command), while walking they are always zero
-    use_base_pose_commands = True
+    use_base_pose_commands = False
     if(use_base_pose_commands):
         observation_space += 3 # base pose command (height offset, roll, pitch)
         base_pose_commands_height_range = 0.10 # +/- [m] around desired_base_height
@@ -407,6 +407,10 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
                            'FL_thigh_joint', 'FR_thigh_joint', 'RL_thigh_joint', 'RR_thigh_joint',  
                            'FL_calf_joint', 'FR_calf_joint', 'RL_calf_joint', 'RR_calf_joint']
 
+    # Sign of each joint type after the left-right reflection (agents/rsl_rl_symmetry.py), from the MJCF kinematics:
+    # the hip axes are along +x on both sides, so the hips change sign
+    symmetry_joint_signs = {"hip": -1.0, "thigh": 1.0, "calf": 1.0}
+
     
     # Desired tracking variables
     desired_base_height = 0.30
@@ -586,7 +590,7 @@ class Go2RoughVisionEnvCfg(Go2RoughBlindEnvCfg):
         self.observation_space = self.observation_space + height_map_x_points * height_map_y_points
 
         self.feet_edge_stance_reward_scale = -1.0
-        self.feet_edge_swing_reward_scale = -2.0
+        self.feet_edge_swing_reward_scale = -0.0
 
         # flat terrain with many small and deep holes of fixed size, only for perceptive locomotion: lots of
         # catastrophic edges to avoid, independent of the difficulty (proportions are normalized by the terrain generator)

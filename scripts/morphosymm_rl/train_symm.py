@@ -124,6 +124,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     agent_cfg.max_iterations = (
         args_cli.max_iterations if args_cli.max_iterations is not None else agent_cfg.max_iterations
     )
+    # The equivariant networks are symmetric by construction: no RSL-RL mirror augmentation on top of them
+    agent_cfg.algorithm.symmetry_cfg = None
 
     # set the environment seed
     # note: certain randomizations occur in the environment initialization so we set the seed here

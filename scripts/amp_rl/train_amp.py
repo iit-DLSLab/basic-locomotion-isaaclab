@@ -102,6 +102,9 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
     # AMP needs the "amp" observation group from the env and the AMP_PPO algorithm
     env_cfg.use_amp = True
     agent_cfg.algorithm.class_name = "AMP_PPO"
+    # AMP_PPO calls the symmetry function as fn(obs, actions, obs_type), without the env: not supported by
+    # agents/rsl_rl_symmetry.py
+    agent_cfg.algorithm.symmetry_cfg = None
 
     # set the environment seed
     # note: certain randomizations occur in the environment initialization so we set the seed here
