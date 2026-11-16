@@ -17,6 +17,7 @@ Features:
 - [Concurrent State Estimator](https://arxiv.org/pdf/2202.05481)
 - [Rapid Motor Adaptation](https://arxiv.org/pdf/2107.04034)
 - [Morphological Symmetries](https://arxiv.org/pdf/2403.17320) 
+- [Mixture-of-Experts/Multi-Critics](https://arxiv.org/pdf/2606.25965)
 - [Adversarial Motion Priors](https://arxiv.org/pdf/2104.02180) (big thanks to [Giuseppe L'erario](https://github.com/Giulero) and [Giulio Romualdi](https://github.com/giulioromualdi))
 - Identification of robot parameters for sim2real using [pace](https://github.com/leggedrobotics/pace-sim2real) via our repo [sim2real-robot-identification](https://github.com/iit-DLSLab/sim2real-robot-identification)
 - Depth/Lidat to Heightmap using [sensors2heightmap-isaaclab](https://github.com/iit-DLSLab/sensors2heightmap-isaaclab)
@@ -49,7 +50,23 @@ If you want only to deploy a trained policy on your robot, continue on [README_d
 
 ## Citing this work
 
-If you find the work useful and you adopt [Morphological Symmetries](https://arxiv.org/pdf/2403.17320), please consider citing one of our works:
+If you find the work useful and you adopt [Mixture-of-Experts/Multi-Critics](https://arxiv.org/pdf/2606.25965), please consider citing:
+
+
+#### [Mixture-of-Experts RL for Fault-Tolerant Legged Locomotion (ArXiv)](https://arxiv.org/abs/2606.25965)
+
+```
+@inproceedings{turrisi2026moefault,
+  author={Turrisi, Giulio and Pali, Ozan and Oneto, Luca and Semini, Claudio},
+  booktitle={arXiv}, 
+  title={Mixture-of-Experts RL for Fault-Tolerant Legged Locomotion}, 
+  year={2026},
+  doi={arXiv:2606.25965}
+}
+```
+
+
+If you instead adopt [Morphological Symmetries](https://arxiv.org/pdf/2403.17320):
 
 #### [Leveraging Symmetry in RL-based Legged Locomotion Control (IROS-2024)](https://arxiv.org/pdf/2403.17320)
 
