@@ -246,6 +246,9 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
         concurrent_state_est_lr = 1e-3
         concurrent_state_est_ep_saving_interval = 1000
         concurrent_state_est_ep_saving_start = 6000
+        # If True, between ep_saving_start and ep_saving_start + ep_saving_interval the velocity
+        # fed to the policy blends ground truth and SE prediction with a decreasing alpha on ground truth
+        concurrent_state_est_blend_transition = True
 
 
     use_rma = False
