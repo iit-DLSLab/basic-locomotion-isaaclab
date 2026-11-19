@@ -205,7 +205,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         debug_vis=False)
 
     
-    base_state_source = "ground_truth"  # "ground_truth" | "imu" | "concurrent_se"
+    base_state_source = "concurrent_se"  # "ground_truth" | "imu" | "concurrent_se"
     if(base_state_source == "concurrent_se"):
         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
         

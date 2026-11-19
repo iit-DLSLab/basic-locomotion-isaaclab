@@ -169,7 +169,7 @@ def _get_privileged_observation_asymmetric(self):
     height_data_scanner = self._pose_height_scanner.data.ray_hits_w[..., 2]
     height_data_scanner = torch.nan_to_num(height_data_scanner, nan=0.0, posinf=1.0, neginf=-1.0)
     height_data_scanner = torch.clip(height_data_scanner, min=-5, max=5) # Handle inf values
-    mean_height_ray = torch.mean(height_data_scanner, dim=1)
+    mean_height_ray = torch.mean(height_data_scanner, dim=1) + self._terrain_height_offset()
     desired_base_height = self.cfg.desired_base_height + self._base_pose_commands[:, 0]
     height_error = torch.abs(desired_base_height + mean_height_ray - self._robot.data.root_state_w[:, 2])
 
@@ -194,11 +194,11 @@ def _get_privileged_observation_asymmetric(self):
     terrain_pitch = -torch.atan2(delta_z, delta_s)
     
     # Foot contact data
-    contacts_foot = self._contact_sensor.data.net_forces_w_history[:, :, self._feet_contact_sensor_ids, :].norm(dim=-1).max(dim=1)[0] > 1.0
+    contacts_foot = self._feet_contacts.in_contact_history()
 
     # Feet air and contact time
-    current_air_time = torch.clip(self._contact_sensor.data.current_air_time[:, self._feet_contact_sensor_ids], max=1.0)
-    current_contact_time = torch.clip(self._contact_sensor.data.current_contact_time[:, self._feet_contact_sensor_ids], max=1.0)
+    current_air_time = torch.clip(self._feet_contacts.current_air_time(), max=1.0)
+    current_contact_time = torch.clip(self._feet_contacts.current_contact_time(), max=1.0)
 
     # Foot height tracking error (per foot, relative to local terrain height)
     feet_terrain_height = custom_rewards._get_feet_terrain_heights(self)
@@ -210,6 +210,7 @@ def _get_privileged_observation_asymmetric(self):
     height_data = (
         self._pose_height_scanner.data.pos_w[:, 2].unsqueeze(1)
         - self._pose_height_scanner.data.ray_hits_w[..., 2]
+        - self._terrain_height_offset().unsqueeze(1)
         - 0.5
     )
     height_data = torch.nan_to_num(height_data, nan=0.0, posinf=1.0, neginf=-1.0)

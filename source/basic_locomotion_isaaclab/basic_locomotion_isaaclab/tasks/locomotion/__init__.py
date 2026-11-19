@@ -217,3 +217,33 @@ gym.register(
         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:RoughPPORunnerCfg",
     },
 )
+
+# Granular terrain (sand) environments, with the 3D-RFT foot contact of isaaclab-rft (optional dependency:
+# pip install -e /path/to/isaaclab-rft). Registered only when isaaclab-rft is installed.
+try:
+    from .rft_env import LocomotionRFTEnv
+    from .rft_env_cfg import (
+        AliengoFlatRFTEnvCfg,
+        AliengoRoughBlindRFTEnvCfg,
+        PegasusFlatRFTEnvCfg,
+        PegasusRoughBlindRFTEnvCfg,
+    )
+except ModuleNotFoundError as e:
+    if not (e.name or "").startswith("isaaclab_rft"):
+        raise
+else:
+    for _task_id, _env_cfg, _runner_cfg in (
+        ("Locomotion-Aliengo-Flat-RFT", AliengoFlatRFTEnvCfg, "FlatPPORunnerCfg"),
+        ("Locomotion-Aliengo-Rough-Blind-RFT", AliengoRoughBlindRFTEnvCfg, "RoughPPORunnerCfg"),
+        ("Locomotion-Pegasus-Flat-RFT", PegasusFlatRFTEnvCfg, "FlatPPORunnerCfg"),
+        ("Locomotion-Pegasus-Rough-Blind-RFT", PegasusRoughBlindRFTEnvCfg, "RoughPPORunnerCfg"),
+    ):
+        gym.register(
+            id=_task_id,
+            entry_point=LocomotionRFTEnv,
+            disable_env_checker=True,
+            kwargs={
+                "env_cfg_entry_point": _env_cfg,
+                "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:{_runner_cfg}",
+            },
+        )

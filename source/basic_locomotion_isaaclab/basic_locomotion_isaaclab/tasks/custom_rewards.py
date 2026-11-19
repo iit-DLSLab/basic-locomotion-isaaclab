@@ -23,6 +23,8 @@ def _get_edge_height_grid(self) -> tuple[torch.Tensor, float, int, int]:
     height_data_scanner = self._edge_height_scanner.data.ray_hits_w[..., 2]
     height_data_scanner = torch.nan_to_num(height_data_scanner, nan=0.0, posinf=1.0, neginf=-1.0)
     height_data_scanner = torch.clip(height_data_scanner, min=-5, max=5)
+    # The walkable surface (e.g. sand) can lie above the rigid terrain hit by the rays
+    height_data_scanner = height_data_scanner + self._terrain_height_offset().unsqueeze(1)
 
     height_map_resolution, height_map_x_points, height_map_y_points = _get_edge_grid_shape(self)
     height_grid = height_data_scanner.reshape(self.num_envs, height_map_y_points, height_map_x_points)
@@ -162,9 +164,7 @@ def _get_feet_riser_proximity(self) -> tuple[torch.Tensor, torch.Tensor]:
     ).values
 
     # The riser face is only known within half a cell, so a foot in contact this close to it is touching it
-    contacts_foot = (
-        torch.linalg.norm(self._contact_sensor.data.net_forces_w[:, self._feet_contact_sensor_ids, :], dim=-1) > 1.0
-    )
+    contacts_foot = self._feet_contacts.in_contact()
     feet_riser_contacts = contacts_foot & (
         raised_feet_riser_distance <= self.cfg.foot_radius + 0.5 * height_map_resolution
     )
@@ -179,14 +179,15 @@ def _get_feet_terrain_heights(self) -> torch.Tensor:
     )
     foot_height_maps = torch.nan_to_num(foot_height_maps, nan=0.0, posinf=1.0, neginf=-1.0)
     foot_height_maps = torch.clip(foot_height_maps, min=-5, max=5)
-    return torch.mean(foot_height_maps, dim=-1)
+    # The walkable surface (e.g. sand) can lie above the rigid terrain hit by the rays
+    return torch.mean(foot_height_maps, dim=-1) + self._terrain_height_offset().unsqueeze(1)
 
 
 def track_height_exp(self) -> torch.Tensor:
     height_data_scanner = self._pose_height_scanner.data.ray_hits_w[..., 2]
     height_data_scanner = torch.nan_to_num(height_data_scanner, nan=0.0, posinf=1.0, neginf=-1.0)
     height_data_scanner = torch.clip(height_data_scanner, min=-5, max=5)
-    mean_height_ray = torch.mean(height_data_scanner, dim=1)
+    mean_height_ray = torch.mean(height_data_scanner, dim=1) + self._terrain_height_offset()
 
     # The base pose command adds a height offset (zero while walking or with cfg.use_base_pose_commands False)
     desired_base_height = self.cfg.desired_base_height + self._base_pose_commands[:, 0]
@@ -329,12 +330,8 @@ def feet_air_time(self) -> torch.Tensor:
     desired_contact_time = self._duty_factor * step_period
     desired_air_time = (1.0 - self._duty_factor) * step_period
 
-    current_air_time = self._contact_sensor.data.current_air_time[
-        :, self._feet_contact_sensor_ids
-    ]
-    current_contact_time = self._contact_sensor.data.current_contact_time[
-        :, self._feet_contact_sensor_ids
-    ]
+    current_air_time = self._feet_contacts.current_air_time()
+    current_contact_time = self._feet_contacts.current_contact_time()
 
     in_contact = current_contact_time > 0.0
 
@@ -393,8 +390,8 @@ def feet_air_time(self) -> torch.Tensor:
 
 def feet_air_time_variance(self):
 
-    last_air_time = torch.clip(self._contact_sensor.data.last_air_time[:, self._feet_contact_sensor_ids], max=0.5)
-    last_contact_time = torch.clip(self._contact_sensor.data.last_contact_time[:, self._feet_contact_sensor_ids], max=0.5)
+    last_air_time = torch.clip(self._feet_contacts.last_air_time(), max=0.5)
+    last_contact_time = torch.clip(self._feet_contacts.last_contact_time(), max=0.5)
     variance_denominator = (4.0 - 1.0)#.clamp(min=1.0)
 
     mean_air_time = torch.sum(last_air_time, dim=1) / 4.
@@ -463,8 +460,7 @@ def feet_height_clearance_mujoco_aperiodic(self) -> torch.Tensor:
     feet_terrain_height = _get_feet_terrain_heights(self)
     should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
 
-    net_contact_forces = self._contact_sensor.data.net_forces_w_history
-    is_contact = torch.max(torch.norm(net_contact_forces[:, :, self._feet_contact_sensor_ids], dim=-1), dim=1)[0] > 1.0
+    is_contact = self._feet_contacts.in_contact_history()
 
     self._swing_peak *= ~is_contact
     self._swing_peak = torch.max(self._swing_peak, self._robot.data.body_pos_w[:, self._feet_ids_robot, 2].clone())
@@ -558,7 +554,7 @@ def feet_swing_trajectory_aperiodic(self) -> torch.Tensor:
     feet_terrain_height = _get_feet_terrain_heights(self)
     should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
 
-    current_air_time = self._contact_sensor.data.current_air_time[:, self._feet_contact_sensor_ids]
+    current_air_time = self._feet_contacts.current_air_time()
 
     # Nominal swing duration, as in feet_air_time: (1 - duty_factor) / step_freq
     desired_air_time = (1.0 - self._duty_factor) / self._step_freq
@@ -587,10 +583,7 @@ def feet_swing_trajectory_aperiodic(self) -> torch.Tensor:
 
 
 def feet_slide(self) -> torch.Tensor:
-    contacts_foot = (
-        self._contact_sensor.data.net_forces_w_history[:, :, self._feet_contact_sensor_ids, :].norm(dim=-1).max(dim=1)[0]
-        > 1.0
-    )
+    contacts_foot = self._feet_contacts.in_contact_history()
     body_vel = self._robot.data.body_lin_vel_w[:, self._feet_ids_robot, :2]
     feet_slide = torch.sum(body_vel.norm(dim=-1) * contacts_foot, dim=1)
     return feet_slide
@@ -598,7 +591,7 @@ def feet_slide(self) -> torch.Tensor:
 
 def feet_landing_vel_l2(self) -> torch.Tensor:
     """Penalize the downward foot velocity at touchdown, to get softer (less noisy) impacts."""
-    first_contact = self._contact_sensor.compute_first_contact(self.step_dt)[:, self._feet_contact_sensor_ids]
+    first_contact = self._feet_contacts.first_contact(self.step_dt)
 
     # At touchdown the foot is already stopped, so the velocity stored at the previous step (still in the air) is used.
     # Only the downward velocity counts, liftoff is left free
@@ -647,10 +640,7 @@ def feet_edge_stance(self) -> torch.Tensor:
     if not _has_edge_map(self):
         return torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
 
-    contacts_foot = (
-        self._contact_sensor.data.net_forces_w_history[:, :, self._feet_contact_sensor_ids, :].norm(dim=-1).max(dim=1)[0]
-        > 1.0
-    )
+    contacts_foot = self._feet_contacts.in_contact_history()
 
     feet_xy, feet_inside_scan = _get_feet_xy_edge_scanner(self)
     feet_edge_penalty = _get_edge_stance_penalty(self, _get_edge_distance(self, feet_xy))
@@ -668,9 +658,7 @@ def feet_edge_swing(self) -> torch.Tensor:
     feet_riser_distance, feet_riser_contacts = _get_feet_riser_proximity(self)
 
     # Stance is a contact with the floor. A foot touching a riser face is still considered in swing.
-    contacts_foot = (
-        torch.linalg.norm(self._contact_sensor.data.net_forces_w[:, self._feet_contact_sensor_ids, :], dim=-1) > 1.0
-    )
+    contacts_foot = self._feet_contacts.in_contact()
     in_stance = contacts_foot & ~feet_riser_contacts
 
     # 1 when touching the riser face, 0 once feet_edge_swing_margin away from it
@@ -694,10 +682,7 @@ def feet_vertical_surface_contacts(self) -> torch.Tensor:
 
 
 def periodic_contact_suggestion(self) -> torch.Tensor:
-    contacts_foot = (
-        self._contact_sensor.data.net_forces_w_history[:, :, self._feet_contact_sensor_ids, :].norm(dim=-1).max(dim=1)[0]
-        > 1.0
-    )
+    contacts_foot = self._feet_contacts.in_contact_history()
     should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
     contact_periodic_on = self._phase_signal < self._duty_factor
     periodic_contact_suggestion = (
@@ -707,10 +692,7 @@ def periodic_contact_suggestion(self) -> torch.Tensor:
 
 
 def stance_contact_suggestion(self) -> torch.Tensor:
-    contacts_foot = (
-        self._contact_sensor.data.net_forces_w_history[:, :, self._feet_contact_sensor_ids, :].norm(dim=-1).max(dim=1)[0]
-        > 1.0
-    )
+    contacts_foot = self._feet_contacts.in_contact_history()
     should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
     stance_contact_suggestion = torch.sum(contacts_foot, dim=1) * ~should_move / 4.0
     return stance_contact_suggestion

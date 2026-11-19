@@ -51,6 +51,7 @@ from .pegasus_env_cfg import PegasusFlatEnvCfg, PegasusRoughVisionEnvCfg, Pegasu
 from basic_locomotion_isaaclab.tasks.locomotion.unitree_l2_lidar import UnitreeL2Lidar
 from basic_locomotion_isaaclab.tasks import custom_observations, custom_rewards, custom_events, custom_visualizations
 from basic_locomotion_isaaclab.tasks.supervised_learning_networks import FrozenRandomMlpEncoder, create_supervised_network
+from basic_locomotion_isaaclab.tasks.feet_contacts import FeetContacts
 
 class LocomotionEnv(DirectRLEnv):
 
@@ -237,6 +238,11 @@ class LocomotionEnv(DirectRLEnv):
         self._thigh_contact_sensor_ids, _ = self._contact_sensor.find_bodies(["FL_thigh", "FR_thigh", "RL_thigh", "RR_thigh"], preserve_order=True)
         self._undesired_contact_body_ids = self._base_contact_sensor_id + self._hip_contact_sensor_ids + self._thigh_contact_sensor_ids
 
+        # Foot contacts and air times read by the rewards and the observations (from the ContactSensor here,
+        # replaced by the granular terrain variants, see rft_env.py)
+        self._feet_contacts = FeetContacts(self)
+        # Height of the walkable surface above the rigid terrain hit by the height scanners (zero without sand)
+        self._zero_terrain_height_offset = torch.zeros(self.num_envs, device=self.device)
         
         self._feet_ids_robot, _ = self._robot.find_bodies(["FL_foot", "FR_foot", "RL_foot", "RR_foot"], preserve_order=True)
         self._hip_ids_robot, _ = self._robot.find_bodies(["FL_hip", "FR_hip", "RL_hip", "RR_hip"], preserve_order=True)
@@ -343,6 +349,11 @@ class LocomotionEnv(DirectRLEnv):
         self._imu = self.scene["imu"]
         self._pva = self.scene["pva"]
         self._terrain = self.scene.terrain
+
+
+    def _terrain_height_offset(self) -> torch.Tensor:
+        """(num_envs,) height [m] of the walkable surface above the rigid terrain hit by the height scanners."""
+        return self._zero_terrain_height_offset
 
 
     def _pre_physics_step(self, actions: torch.Tensor):
@@ -466,6 +477,7 @@ class LocomotionEnv(DirectRLEnv):
             height_data = (
                 self._perceptive_height_scanner.data.pos_w[:, 2].unsqueeze(1)
                 - self._perceptive_height_scanner.data.ray_hits_w[..., 2]
+                - self._terrain_height_offset().unsqueeze(1)
                 - 0.5
             )
             height_data = torch.nan_to_num(height_data, nan=0.0, posinf=1.0, neginf=-1.0)
@@ -688,7 +700,8 @@ class LocomotionEnv(DirectRLEnv):
         self._previous_previous_actions[env_ids] = 0.0
         self._filtered_actions[env_ids] = 0.0
         self._last_feet_vz[env_ids] = 0.0
-        
+        self._feet_contacts.reset(env_ids)
+
         # Reset commands
         custom_events._get_new_random_commands(self, env_ids)
 
