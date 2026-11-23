@@ -205,7 +205,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         debug_vis=False)
 
     
-    base_state_source = "ground_truth"  # "ground_truth" | "imu" | "concurrent_se"
+    base_state_source = "concurrent_se"  # "ground_truth" | "imu" | "concurrent_se"
     if(base_state_source == "concurrent_se"):
         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
         
@@ -288,11 +288,14 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         prim_path="/World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
         ray_alignment="yaw",
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.3, 0.3]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
         global_world_only=True,
     )
+    # The terrain height under each foot is the mean of the foot height scanner rays within this distance of the foot
+    # along both axes (the central 3 x 3 rays), the whole scanner is used to look for obstacles ahead of the foot
+    feet_terrain_height_half_size = 0.05
 
 
     # asymmetric ppo
@@ -444,6 +447,10 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     feet_height_clearance_periodic_reward_scale = 0.25*0.0
     feet_height_clearance_mujoco_periodic_reward_scale = 0.25*0.0
     feet_swing_trajectory_periodic_reward_scale = 0.5
+    # Swing reference raised by the obstacle ahead of each foot (highest point of the foot height scanner in front of
+    # the foot minus the terrain under it), so that the feet are lifted above boxes and steps before reaching them
+    feet_swing_obstacle_clearance = True
+    feet_swing_obstacle_max_height = 0.2 # [m], the highest obstacle of the rough terrains
     
     feet_slide_reward_scale = -0.25 * 0.0
 
@@ -580,9 +587,9 @@ class PegasusRoughVisionEnvCfg(PegasusRoughBlindEnvCfg):
     # we add a height scanner for perceptive locomotion
     perceptive_height_scanner = RayCasterCfg(
         prim_path="/World/envs/env_.*/Robot/Geometry/base",
-        offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 2.0)),
+        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
         ray_alignment='yaw',
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.5, 1.5]),
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
         global_world_only=True,

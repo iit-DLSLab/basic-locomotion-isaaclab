@@ -171,15 +171,98 @@ def _get_feet_riser_proximity(self) -> tuple[torch.Tensor, torch.Tensor]:
     return feet_riser_distance, feet_riser_contacts
 
 
+def _get_foot_scanner_hits(self) -> torch.Tensor:
+    """Return the ray hits of the foot height scanners, with shape (num_envs, num_feet, num_rays, 3)."""
+    hits = torch.stack([scanner.data.ray_hits_w[..., :3] for scanner in self._foot_height_scanners], dim=1)
+    hits = torch.nan_to_num(hits, nan=0.0, posinf=1.0, neginf=-1.0)
+    return torch.clip(hits, min=-5, max=5)
+
+
+def _get_foot_scanner_under_foot_mask(self) -> torch.Tensor:
+    """Return the rays of the foot height scanner that measure the terrain under the foot: the ones within
+    feet_terrain_height_half_size of the foot along both axes of the scanner (all of them for the default 0.1 x 0.1
+    scanner). The foot height scanner can then be larger, to look for obstacles around the foot, without changing the
+    terrain height under it."""
+    if not hasattr(self, "_foot_scanner_under_foot_mask"):
+        ray_starts = self._foot_height_scanners[0].ray_starts
+        ray_starts = ray_starts.torch if hasattr(ray_starts, "torch") else ray_starts
+        ray_starts_xy = ray_starts[0, :, :2].to(self.device)
+        ray_starts_xy = ray_starts_xy - ray_starts_xy.mean(dim=0)
+        half_size = getattr(self.cfg, "feet_terrain_height_half_size", 0.05)
+        self._foot_scanner_under_foot_mask = torch.all(torch.abs(ray_starts_xy) <= half_size + 1.0e-4, dim=-1)
+    return self._foot_scanner_under_foot_mask
+
+
 def _get_feet_terrain_heights(self) -> torch.Tensor:
     """Return the mean terrain height from the local height map around each foot."""
-    foot_height_maps = torch.stack(
-        [scanner.data.ray_hits_w[..., 2] for scanner in self._foot_height_scanners],
-        dim=1,
-    )
-    foot_height_maps = torch.nan_to_num(foot_height_maps, nan=0.0, posinf=1.0, neginf=-1.0)
-    foot_height_maps = torch.clip(foot_height_maps, min=-5, max=5)
-    return torch.mean(foot_height_maps, dim=-1)
+    foot_height_maps = _get_foot_scanner_hits(self)[..., 2]
+    return torch.mean(foot_height_maps[..., _get_foot_scanner_under_foot_mask(self)], dim=-1)
+
+
+def _get_feet_obstacle_scan(self, feet_terrain_height: torch.Tensor):
+    """Return the foot height scanner hits (num_envs, num_feet, num_rays, 3), the mask of the hits ahead of each foot
+    (num_envs, num_feet, num_rays) and the index of the highest of them (num_envs, num_feet), -1 when there is none.
+
+    Ahead means along the horizontal foot velocity, or the commanded base velocity when the foot is almost still, or
+    all around the foot when the robot should stand still."""
+    hits = _get_foot_scanner_hits(self)
+    feet_xy = self._robot.data.body_pos_w[:, self._feet_ids_robot, :2]
+    rel_xy = hits[..., :2] - feet_xy.unsqueeze(2)
+
+    # Direction of travel of each foot: its horizontal velocity, or the commanded velocity when it is slow
+    feet_vel_xy = self._robot.data.body_lin_vel_w[:, self._feet_ids_robot, :2]
+    cmd_vel_w = math_utils.quat_apply_yaw(
+        self._robot.data.root_quat_w.torch,
+        torch.cat((self._commands[:, :2], torch.zeros_like(self._commands[:, :1])), dim=1),
+    )[:, :2]
+    feet_fast = torch.norm(feet_vel_xy, dim=-1, keepdim=True) > 0.1
+    direction = torch.where(feet_fast, feet_vel_xy, cmd_vel_w.unsqueeze(1).expand_as(feet_vel_xy))
+    direction_norm = torch.norm(direction, dim=-1, keepdim=True)
+    has_direction = direction_norm > 0.05
+    direction = direction / direction_norm.clamp(min=1.0e-6)
+
+    # Points ahead of the foot (all of them without a direction of travel)
+    ahead = torch.sum(rel_xy * direction.unsqueeze(2), dim=-1) >= 0.0
+    ahead = ahead | ~has_direction
+    ahead_z = torch.where(ahead, hits[..., 2], torch.full_like(hits[..., 2], -torch.inf))
+    highest = torch.argmax(ahead_z, dim=-1)
+    highest = torch.where(torch.any(ahead, dim=-1), highest, torch.full_like(highest, -1))
+    return hits, ahead, highest
+
+
+def _get_feet_obstacle_heights(self, feet_terrain_height: torch.Tensor) -> torch.Tensor:
+    """Return how much the terrain ahead of each foot rises above the terrain under it, with shape
+    (num_envs, num_feet): the highest point of the foot height scanner ahead of the foot (see _get_feet_obstacle_scan)
+    minus the terrain height under the foot, clamped to [0, feet_swing_obstacle_max_height]."""
+    hits, _, highest = _get_feet_obstacle_scan(self, feet_terrain_height)
+    max_ahead = torch.gather(hits[..., 2], 2, highest.clamp(min=0).unsqueeze(-1)).squeeze(-1)
+    max_ahead = torch.where(highest >= 0, max_ahead, feet_terrain_height)
+
+    max_height = getattr(self.cfg, "feet_swing_obstacle_max_height", 0.2)
+    return torch.clamp(max_ahead - feet_terrain_height, 0.0, max_height)
+
+
+def _get_feet_clearance_obstacle(self, feet_terrain_height: torch.Tensor) -> torch.Tensor:
+    """Return the height of the obstacle ahead of each foot above the terrain under it with
+    feet_swing_obstacle_clearance, zero otherwise. Added to desired_feet_height by the feet height clearance rewards."""
+    if getattr(self.cfg, "feet_swing_obstacle_clearance", False):
+        return _get_feet_obstacle_heights(self, feet_terrain_height)
+    return torch.zeros_like(feet_terrain_height)
+
+
+def _get_feet_swing_reference(self, feet_terrain_height: torch.Tensor, swing_progress: torch.Tensor):
+    """Return the swing height reference of the foot bottom above the terrain under the foot and its tolerance.
+
+    Raised cosine of height desired_feet_height: zero height and zero vertical velocity at liftoff and touchdown, peak
+    at mid swing. With feet_swing_obstacle_clearance, the height of the obstacle ahead of the foot is added with a
+    half sine, so that the foot is lifted above it before reaching it and still lands on the terrain under it."""
+    feet_z_ref = 0.5 * self.cfg.desired_feet_height * (1.0 - torch.cos(2.0 * torch.pi * swing_progress))
+    if getattr(self.cfg, "feet_swing_obstacle_clearance", False):
+        obstacle = _get_feet_obstacle_heights(self, feet_terrain_height)
+        feet_z_ref = feet_z_ref + obstacle * torch.sin(torch.pi * swing_progress)
+    # Fixed tolerance (an error of half desired_feet_height gives exp(-1)). It does not grow with the obstacle, otherwise
+    # staying a few cm below the reference over an obstacle would cost almost nothing
+    return feet_z_ref, torch.full_like(feet_z_ref, 0.5 * self.cfg.desired_feet_height)
 
 
 def track_height_exp(self) -> torch.Tensor:
@@ -410,8 +493,10 @@ def feet_height_clearance_aperiodic(self) -> torch.Tensor:
     feet_terrain_height = _get_feet_terrain_heights(self)
     should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
 
+    # Desired swing height, raised by the obstacle ahead of the foot with feet_swing_obstacle_clearance
+    feet_z_desired = self.cfg.desired_feet_height + _get_feet_clearance_obstacle(self, feet_terrain_height)
     feet_z_target_error = (
-        self.cfg.desired_feet_height
+        feet_z_desired
         + feet_terrain_height
         # The foot body is the center of the foot sphere: the target is for the foot bottom, foot_radius below it
         + self.cfg.foot_radius
@@ -419,7 +504,7 @@ def feet_height_clearance_aperiodic(self) -> torch.Tensor:
     )
     feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
     feet_z_target_error = torch.abs(feet_z_target_error)
-    feet_z_target_error = torch.clamp(feet_z_target_error, min=0.0, max=self.cfg.desired_feet_height)
+    feet_z_target_error = torch.minimum(feet_z_target_error, feet_z_desired)
 
     foot_velocity_tanh = torch.tanh(2.0 * torch.norm(self._robot.data.body_lin_vel_w[:, self._feet_ids_robot, :2], dim=2))
     feet_height_clearance = torch.exp(-torch.sum(feet_z_target_error * foot_velocity_tanh, dim=1) / 0.01) * should_move
@@ -431,8 +516,10 @@ def feet_height_clearance_periodic(self) -> torch.Tensor:
     should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
     contact_periodic_on = self._phase_signal < self._duty_factor
 
+    # Desired swing height, raised by the obstacle ahead of the foot with feet_swing_obstacle_clearance
+    feet_z_desired = self.cfg.desired_feet_height + _get_feet_clearance_obstacle(self, feet_terrain_height)
     feet_z_target_error = (
-        self.cfg.desired_feet_height
+        feet_z_desired
         + feet_terrain_height
         # The foot body is the center of the foot sphere: the target is for the foot bottom, foot_radius below it
         + self.cfg.foot_radius
@@ -440,7 +527,7 @@ def feet_height_clearance_periodic(self) -> torch.Tensor:
     )
     feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
     feet_z_target_error = torch.abs(feet_z_target_error)
-    feet_z_target_error = torch.clamp(feet_z_target_error, min=0.0, max=self.cfg.desired_feet_height)
+    feet_z_target_error = torch.minimum(feet_z_target_error, feet_z_desired)
 
     feet_height_clearance_periodic_fl = torch.exp(-feet_z_target_error[:, 0] / 0.01) * should_move * ~contact_periodic_on[
         :, 0
@@ -468,12 +555,17 @@ def feet_height_clearance_mujoco_aperiodic(self) -> torch.Tensor:
 
     self._swing_peak *= ~is_contact
     self._swing_peak = torch.max(self._swing_peak, self._robot.data.body_pos_w[:, self._feet_ids_robot, 2].clone())
-    feet_z_target_error_mujoco = self.cfg.desired_feet_height + feet_terrain_height + self.cfg.foot_radius - self._swing_peak
+    # Highest obstacle top met ahead of the foot during the swing (terrain under the foot in stance), so that the swing
+    # peak is compared with the obstacle it had to clear and not only with the terrain where the foot is now
+    obstacle_top = feet_terrain_height + _get_feet_clearance_obstacle(self, feet_terrain_height)
+    self._swing_obstacle_top = torch.where(is_contact, obstacle_top, torch.max(self._swing_obstacle_top, obstacle_top))
+    feet_z_desired = self.cfg.desired_feet_height + torch.clamp(self._swing_obstacle_top - feet_terrain_height, min=0.0)
+    feet_z_target_error_mujoco = feet_z_desired + feet_terrain_height + self.cfg.foot_radius - self._swing_peak
     feet_z_target_error_mujoco = torch.where(
         feet_z_target_error_mujoco < 0.0, feet_z_target_error_mujoco * 0.2, feet_z_target_error_mujoco
     )
     feet_z_target_error_mujoco = torch.abs(feet_z_target_error_mujoco)
-    feet_z_target_error_mujoco = torch.clamp(feet_z_target_error_mujoco, min=0.0, max=self.cfg.desired_feet_height)
+    feet_z_target_error_mujoco = torch.minimum(feet_z_target_error_mujoco, feet_z_desired)
 
     feet_height_clearance_mujoco_fl = torch.exp(-feet_z_target_error_mujoco[:, 0] / 0.01) * should_move
     feet_height_clearance_mujoco_fr = torch.exp(-feet_z_target_error_mujoco[:, 1] / 0.01) * should_move
@@ -493,8 +585,16 @@ def feet_height_clearance_mujoco_periodic(self) -> torch.Tensor:
     self._swing_peak_periodic = torch.max(
         self._swing_peak_periodic, self._robot.data.body_pos_w[:, self._feet_ids_robot, 2].clone()
     )
+    # Highest obstacle top met ahead of the foot during the swing phase, as in feet_height_clearance_mujoco_aperiodic
+    obstacle_top = feet_terrain_height + _get_feet_clearance_obstacle(self, feet_terrain_height)
+    self._swing_obstacle_top_periodic = torch.where(
+        contact_periodic_on, obstacle_top, torch.max(self._swing_obstacle_top_periodic, obstacle_top)
+    )
+    feet_z_desired = self.cfg.desired_feet_height + torch.clamp(
+        self._swing_obstacle_top_periodic - feet_terrain_height, min=0.0
+    )
     feet_z_target_error_mujoco_periodic = (
-        self.cfg.desired_feet_height + feet_terrain_height + self.cfg.foot_radius - self._swing_peak_periodic
+        feet_z_desired + feet_terrain_height + self.cfg.foot_radius - self._swing_peak_periodic
     )
     feet_z_target_error_mujoco_periodic = torch.where(
         feet_z_target_error_mujoco_periodic < 0.0,
@@ -502,9 +602,7 @@ def feet_height_clearance_mujoco_periodic(self) -> torch.Tensor:
         feet_z_target_error_mujoco_periodic,
     )
     feet_z_target_error_mujoco_periodic = torch.abs(feet_z_target_error_mujoco_periodic)
-    feet_z_target_error_mujoco_periodic = torch.clamp(
-        feet_z_target_error_mujoco_periodic, min=0.0, max=self.cfg.desired_feet_height
-    )
+    feet_z_target_error_mujoco_periodic = torch.minimum(feet_z_target_error_mujoco_periodic, feet_z_desired)
 
     feet_height_clearance_mujoco_periodic_fl = (
         torch.exp(-feet_z_target_error_mujoco_periodic[:, 0] / 0.01) * should_move * ~contact_periodic_on[:, 0]
@@ -536,8 +634,7 @@ def feet_swing_trajectory_periodic(self) -> torch.Tensor:
     # Swing progress from 0 (liftoff) to 1 (touchdown)
     swing_progress = torch.clamp((self._phase_signal - self._duty_factor) / (1.0 - self._duty_factor), 0.0, 1.0)
 
-    # Raised cosine: zero height and zero vertical velocity at liftoff and touchdown, peak at mid swing
-    feet_z_ref = 0.5 * self.cfg.desired_feet_height * (1.0 - torch.cos(2.0 * torch.pi * swing_progress))
+    feet_z_ref, feet_z_std = _get_feet_swing_reference(self, feet_terrain_height, swing_progress)
 
     # The foot body is the center of the foot sphere, so it sits foot_radius above the terrain in stance
     feet_z = self._robot.data.body_pos_w[:, self._feet_ids_robot, 2] - feet_terrain_height - self.cfg.foot_radius
@@ -546,8 +643,6 @@ def feet_swing_trajectory_periodic(self) -> torch.Tensor:
     feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
     feet_z_error = torch.square(feet_z_target_error)
 
-    # Tolerance proportional to the desired swing height (half of it gives exp(-1))
-    feet_z_std = 0.5 * self.cfg.desired_feet_height
     feet_swing_trajectory = torch.exp(-feet_z_error / feet_z_std**2) * in_swing
     return torch.sum(feet_swing_trajectory, dim=1) * should_move
 
@@ -570,8 +665,7 @@ def feet_swing_trajectory_aperiodic(self) -> torch.Tensor:
     # Swing progress from 0 (liftoff) to 1 (nominal touchdown)
     swing_progress = torch.clamp(current_air_time / desired_air_time, 0.0, 1.0)
 
-    # Raised cosine: zero height and zero vertical velocity at liftoff and touchdown, peak at mid swing
-    feet_z_ref = 0.5 * self.cfg.desired_feet_height * (1.0 - torch.cos(2.0 * torch.pi * swing_progress))
+    feet_z_ref, feet_z_std = _get_feet_swing_reference(self, feet_terrain_height, swing_progress)
 
     # The foot body is the center of the foot sphere, so it sits foot_radius above the terrain in stance
     feet_z = self._robot.data.body_pos_w[:, self._feet_ids_robot, 2] - feet_terrain_height - self.cfg.foot_radius
@@ -580,8 +674,6 @@ def feet_swing_trajectory_aperiodic(self) -> torch.Tensor:
     feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
     feet_z_error = torch.square(feet_z_target_error)
 
-    # Tolerance proportional to the desired swing height (half of it gives exp(-1))
-    feet_z_std = 0.5 * self.cfg.desired_feet_height
     feet_swing_trajectory = torch.exp(-feet_z_error / feet_z_std**2) * in_swing
     return torch.sum(feet_swing_trajectory, dim=1) * should_move
 
