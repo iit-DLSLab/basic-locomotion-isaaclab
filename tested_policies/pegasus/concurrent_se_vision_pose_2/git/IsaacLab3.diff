@@ -1,0 +1,10 @@
+--- git commit ---
+e3f7d9ff1f5d7f8280de3ece9000b7117f66bcf4
+
+
+--- git status ---
+HEAD detached at v3.0.0
+nothing to commit, working tree clean 
+
+
+--- git diff ---

@@ -91,6 +91,10 @@ class LocomotionEnv(DirectRLEnv):
         # Swing peak
         self._swing_peak = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device).repeat(self.num_envs,1)
         self._swing_peak_periodic = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device).repeat(self.num_envs,1)
+        # Highest obstacle top met ahead of each foot during the swing, for the feet height clearance mujoco rewards
+        # (-inf until the first step, so that it never raises the target on terrains below zero)
+        self._swing_obstacle_top = torch.full((self.num_envs, 4), -torch.inf, device=self.device)
+        self._swing_obstacle_top_periodic = torch.full((self.num_envs, 4), -torch.inf, device=self.device)
         
         # Desired Hip Offset
         self._desired_hip_offset_y = torch.tensor([-self.cfg.desired_hip_offset_y, self.cfg.desired_hip_offset_y, -self.cfg.desired_hip_offset_y, self.cfg.desired_hip_offset_y], device=self.device)
@@ -235,7 +239,9 @@ class LocomotionEnv(DirectRLEnv):
         self._feet_contact_sensor_ids, _ = self._contact_sensor.find_bodies(["FL_foot", "FR_foot", "RL_foot", "RR_foot"], preserve_order=True)
         self._hip_contact_sensor_ids, _ = self._contact_sensor.find_bodies(["FL_hip", "FR_hip", "RL_hip", "RR_hip"], preserve_order=True)
         self._thigh_contact_sensor_ids, _ = self._contact_sensor.find_bodies(["FL_thigh", "FR_thigh", "RL_thigh", "RR_thigh"], preserve_order=True)
-        self._undesired_contact_body_ids = self._base_contact_sensor_id + self._hip_contact_sensor_ids + self._thigh_contact_sensor_ids
+        self._calf_contact_sensor_ids, _ = self._contact_sensor.find_bodies(["FL_calf", "FR_calf", "RL_calf", "RR_calf"], preserve_order=True)
+        # The calves are included so that shins hitting the side of steps and boxes are penalized as well
+        self._undesired_contact_body_ids = self._base_contact_sensor_id + self._hip_contact_sensor_ids + self._thigh_contact_sensor_ids + self._calf_contact_sensor_ids
 
         
         self._feet_ids_robot, _ = self._robot.find_bodies(["FL_foot", "FR_foot", "RL_foot", "RR_foot"], preserve_order=True)
@@ -695,6 +701,8 @@ class LocomotionEnv(DirectRLEnv):
         # Reset swing peak
         self._swing_peak[env_ids] = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device)
         self._swing_peak_periodic[env_ids] = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device)
+        self._swing_obstacle_top[env_ids] = -torch.inf
+        self._swing_obstacle_top_periodic[env_ids] = -torch.inf
         
         # Reset contact periodic
         self._phase_signal[env_ids] = self._phase_offset[env_ids].clone()# + self.step_dt * self._step_freq * torch.rand(env_ids.shape[0], 1, device=self.device)*10.

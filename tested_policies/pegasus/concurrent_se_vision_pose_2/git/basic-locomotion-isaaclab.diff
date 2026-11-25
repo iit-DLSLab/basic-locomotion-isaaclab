@@ -1,0 +1,603 @@
+--- git commit ---
+e7d6c7cb71d0324d75448553024f7a36aa87a37c
+
+
+--- git status ---
+HEAD detached at origin/main
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   deploy/config.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/custom_rewards.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/a2_env_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/aliengo_env_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/b2_env_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/hyqreal_env_cfg.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/locomotion_env.py
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	tested_policies/pegasus/2026-11-22_20-17-34/
+	tested_policies/pegasus/concurrent_se_blind_pose/
+	tested_policies/pegasus/concurrent_se_vision_pose/
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/deploy/config.py b/deploy/config.py
+index 94a2c6a..bdee3df 100644
+--- a/deploy/config.py
++++ b/deploy/config.py
+@@ -4,7 +4,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
+ sys.path.append(dir_path+"/../")
+ sys.path.append(dir_path+"/../scripts/rsl_rl")
+ 
+-robot = 'go2'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
++robot = 'pegasus'  # 'aliengo', 'go2', 'b2', 'hyqreal2' 
+ scene = 'scene_random_boxes'  # flat, random_boxes
+ 
+ # ----------------------------------------------------------------------------------------------------------------
+@@ -54,7 +54,7 @@ elif(robot == "pegasus"):
+     Kp_stand_up_and_down = 600.
+     Kd_stand_up_and_down = 10.
+ 
+-    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-11-14_08-28-20"
++    policy_folder_path = dir_path + "/../tested_policies/" + robot + "/2026-11-22_20-17-34"
+ 
+ else:
+     raise ValueError(f"Robot {robot} not supported")
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/custom_rewards.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/custom_rewards.py
+index f8aeb26..af5f718 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/custom_rewards.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/custom_rewards.py
+@@ -171,15 +171,98 @@ def _get_feet_riser_proximity(self) -> tuple[torch.Tensor, torch.Tensor]:
+     return feet_riser_distance, feet_riser_contacts
+ 
+ 
++def _get_foot_scanner_hits(self) -> torch.Tensor:
++    """Return the ray hits of the foot height scanners, with shape (num_envs, num_feet, num_rays, 3)."""
++    hits = torch.stack([scanner.data.ray_hits_w[..., :3] for scanner in self._foot_height_scanners], dim=1)
++    hits = torch.nan_to_num(hits, nan=0.0, posinf=1.0, neginf=-1.0)
++    return torch.clip(hits, min=-5, max=5)
++
++
++def _get_foot_scanner_under_foot_mask(self) -> torch.Tensor:
++    """Return the rays of the foot height scanner that measure the terrain under the foot: the ones within
++    feet_terrain_height_half_size of the foot along both axes of the scanner (all of them for the default 0.1 x 0.1
++    scanner). The foot height scanner can then be larger, to look for obstacles around the foot, without changing the
++    terrain height under it."""
++    if not hasattr(self, "_foot_scanner_under_foot_mask"):
++        ray_starts = self._foot_height_scanners[0].ray_starts
++        ray_starts = ray_starts.torch if hasattr(ray_starts, "torch") else ray_starts
++        ray_starts_xy = ray_starts[0, :, :2].to(self.device)
++        ray_starts_xy = ray_starts_xy - ray_starts_xy.mean(dim=0)
++        half_size = getattr(self.cfg, "feet_terrain_height_half_size", 0.05)
++        self._foot_scanner_under_foot_mask = torch.all(torch.abs(ray_starts_xy) <= half_size + 1.0e-4, dim=-1)
++    return self._foot_scanner_under_foot_mask
++
++
+ def _get_feet_terrain_heights(self) -> torch.Tensor:
+     """Return the mean terrain height from the local height map around each foot."""
+-    foot_height_maps = torch.stack(
+-        [scanner.data.ray_hits_w[..., 2] for scanner in self._foot_height_scanners],
+-        dim=1,
+-    )
+-    foot_height_maps = torch.nan_to_num(foot_height_maps, nan=0.0, posinf=1.0, neginf=-1.0)
+-    foot_height_maps = torch.clip(foot_height_maps, min=-5, max=5)
+-    return torch.mean(foot_height_maps, dim=-1)
++    foot_height_maps = _get_foot_scanner_hits(self)[..., 2]
++    return torch.mean(foot_height_maps[..., _get_foot_scanner_under_foot_mask(self)], dim=-1)
++
++
++def _get_feet_obstacle_scan(self, feet_terrain_height: torch.Tensor):
++    """Return the foot height scanner hits (num_envs, num_feet, num_rays, 3), the mask of the hits ahead of each foot
++    (num_envs, num_feet, num_rays) and the index of the highest of them (num_envs, num_feet), -1 when there is none.
++
++    Ahead means along the horizontal foot velocity, or the commanded base velocity when the foot is almost still, or
++    all around the foot when the robot should stand still."""
++    hits = _get_foot_scanner_hits(self)
++    feet_xy = self._robot.data.body_pos_w[:, self._feet_ids_robot, :2]
++    rel_xy = hits[..., :2] - feet_xy.unsqueeze(2)
++
++    # Direction of travel of each foot: its horizontal velocity, or the commanded velocity when it is slow
++    feet_vel_xy = self._robot.data.body_lin_vel_w[:, self._feet_ids_robot, :2]
++    cmd_vel_w = math_utils.quat_apply_yaw(
++        self._robot.data.root_quat_w.torch,
++        torch.cat((self._commands[:, :2], torch.zeros_like(self._commands[:, :1])), dim=1),
++    )[:, :2]
++    feet_fast = torch.norm(feet_vel_xy, dim=-1, keepdim=True) > 0.1
++    direction = torch.where(feet_fast, feet_vel_xy, cmd_vel_w.unsqueeze(1).expand_as(feet_vel_xy))
++    direction_norm = torch.norm(direction, dim=-1, keepdim=True)
++    has_direction = direction_norm > 0.05
++    direction = direction / direction_norm.clamp(min=1.0e-6)
++
++    # Points ahead of the foot (all of them without a direction of travel)
++    ahead = torch.sum(rel_xy * direction.unsqueeze(2), dim=-1) >= 0.0
++    ahead = ahead | ~has_direction
++    ahead_z = torch.where(ahead, hits[..., 2], torch.full_like(hits[..., 2], -torch.inf))
++    highest = torch.argmax(ahead_z, dim=-1)
++    highest = torch.where(torch.any(ahead, dim=-1), highest, torch.full_like(highest, -1))
++    return hits, ahead, highest
++
++
++def _get_feet_obstacle_heights(self, feet_terrain_height: torch.Tensor) -> torch.Tensor:
++    """Return how much the terrain ahead of each foot rises above the terrain under it, with shape
++    (num_envs, num_feet): the highest point of the foot height scanner ahead of the foot (see _get_feet_obstacle_scan)
++    minus the terrain height under the foot, clamped to [0, feet_swing_obstacle_max_height]."""
++    hits, _, highest = _get_feet_obstacle_scan(self, feet_terrain_height)
++    max_ahead = torch.gather(hits[..., 2], 2, highest.clamp(min=0).unsqueeze(-1)).squeeze(-1)
++    max_ahead = torch.where(highest >= 0, max_ahead, feet_terrain_height)
++
++    max_height = getattr(self.cfg, "feet_swing_obstacle_max_height", 0.2)
++    return torch.clamp(max_ahead - feet_terrain_height, 0.0, max_height)
++
++
++def _get_feet_clearance_obstacle(self, feet_terrain_height: torch.Tensor) -> torch.Tensor:
++    """Return the height of the obstacle ahead of each foot above the terrain under it with
++    feet_swing_obstacle_clearance, zero otherwise. Added to desired_feet_height by the feet height clearance rewards."""
++    if getattr(self.cfg, "feet_swing_obstacle_clearance", False):
++        return _get_feet_obstacle_heights(self, feet_terrain_height)
++    return torch.zeros_like(feet_terrain_height)
++
++
++def _get_feet_swing_reference(self, feet_terrain_height: torch.Tensor, swing_progress: torch.Tensor):
++    """Return the swing height reference of the foot bottom above the terrain under the foot and its tolerance.
++
++    Raised cosine of height desired_feet_height: zero height and zero vertical velocity at liftoff and touchdown, peak
++    at mid swing. With feet_swing_obstacle_clearance, the height of the obstacle ahead of the foot is added with a
++    half sine, so that the foot is lifted above it before reaching it and still lands on the terrain under it."""
++    feet_z_ref = 0.5 * self.cfg.desired_feet_height * (1.0 - torch.cos(2.0 * torch.pi * swing_progress))
++    if getattr(self.cfg, "feet_swing_obstacle_clearance", False):
++        obstacle = _get_feet_obstacle_heights(self, feet_terrain_height)
++        feet_z_ref = feet_z_ref + obstacle * torch.sin(torch.pi * swing_progress)
++    # Fixed tolerance (an error of half desired_feet_height gives exp(-1)). It does not grow with the obstacle, otherwise
++    # staying a few cm below the reference over an obstacle would cost almost nothing
++    return feet_z_ref, torch.full_like(feet_z_ref, 0.5 * self.cfg.desired_feet_height)
+ 
+ 
+ def track_height_exp(self) -> torch.Tensor:
+@@ -410,8 +493,10 @@ def feet_height_clearance_aperiodic(self) -> torch.Tensor:
+     feet_terrain_height = _get_feet_terrain_heights(self)
+     should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
+ 
++    # Desired swing height, raised by the obstacle ahead of the foot with feet_swing_obstacle_clearance
++    feet_z_desired = self.cfg.desired_feet_height + _get_feet_clearance_obstacle(self, feet_terrain_height)
+     feet_z_target_error = (
+-        self.cfg.desired_feet_height
++        feet_z_desired
+         + feet_terrain_height
+         # The foot body is the center of the foot sphere: the target is for the foot bottom, foot_radius below it
+         + self.cfg.foot_radius
+@@ -419,7 +504,7 @@ def feet_height_clearance_aperiodic(self) -> torch.Tensor:
+     )
+     feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
+     feet_z_target_error = torch.abs(feet_z_target_error)
+-    feet_z_target_error = torch.clamp(feet_z_target_error, min=0.0, max=self.cfg.desired_feet_height)
++    feet_z_target_error = torch.minimum(feet_z_target_error, feet_z_desired)
+ 
+     foot_velocity_tanh = torch.tanh(2.0 * torch.norm(self._robot.data.body_lin_vel_w[:, self._feet_ids_robot, :2], dim=2))
+     feet_height_clearance = torch.exp(-torch.sum(feet_z_target_error * foot_velocity_tanh, dim=1) / 0.01) * should_move
+@@ -431,8 +516,10 @@ def feet_height_clearance_periodic(self) -> torch.Tensor:
+     should_move = torch.norm(self._commands[:, :3], dim=1) > 0.01
+     contact_periodic_on = self._phase_signal < self._duty_factor
+ 
++    # Desired swing height, raised by the obstacle ahead of the foot with feet_swing_obstacle_clearance
++    feet_z_desired = self.cfg.desired_feet_height + _get_feet_clearance_obstacle(self, feet_terrain_height)
+     feet_z_target_error = (
+-        self.cfg.desired_feet_height
++        feet_z_desired
+         + feet_terrain_height
+         # The foot body is the center of the foot sphere: the target is for the foot bottom, foot_radius below it
+         + self.cfg.foot_radius
+@@ -440,7 +527,7 @@ def feet_height_clearance_periodic(self) -> torch.Tensor:
+     )
+     feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
+     feet_z_target_error = torch.abs(feet_z_target_error)
+-    feet_z_target_error = torch.clamp(feet_z_target_error, min=0.0, max=self.cfg.desired_feet_height)
++    feet_z_target_error = torch.minimum(feet_z_target_error, feet_z_desired)
+ 
+     feet_height_clearance_periodic_fl = torch.exp(-feet_z_target_error[:, 0] / 0.01) * should_move * ~contact_periodic_on[
+         :, 0
+@@ -468,12 +555,17 @@ def feet_height_clearance_mujoco_aperiodic(self) -> torch.Tensor:
+ 
+     self._swing_peak *= ~is_contact
+     self._swing_peak = torch.max(self._swing_peak, self._robot.data.body_pos_w[:, self._feet_ids_robot, 2].clone())
+-    feet_z_target_error_mujoco = self.cfg.desired_feet_height + feet_terrain_height + self.cfg.foot_radius - self._swing_peak
++    # Highest obstacle top met ahead of the foot during the swing (terrain under the foot in stance), so that the swing
++    # peak is compared with the obstacle it had to clear and not only with the terrain where the foot is now
++    obstacle_top = feet_terrain_height + _get_feet_clearance_obstacle(self, feet_terrain_height)
++    self._swing_obstacle_top = torch.where(is_contact, obstacle_top, torch.max(self._swing_obstacle_top, obstacle_top))
++    feet_z_desired = self.cfg.desired_feet_height + torch.clamp(self._swing_obstacle_top - feet_terrain_height, min=0.0)
++    feet_z_target_error_mujoco = feet_z_desired + feet_terrain_height + self.cfg.foot_radius - self._swing_peak
+     feet_z_target_error_mujoco = torch.where(
+         feet_z_target_error_mujoco < 0.0, feet_z_target_error_mujoco * 0.2, feet_z_target_error_mujoco
+     )
+     feet_z_target_error_mujoco = torch.abs(feet_z_target_error_mujoco)
+-    feet_z_target_error_mujoco = torch.clamp(feet_z_target_error_mujoco, min=0.0, max=self.cfg.desired_feet_height)
++    feet_z_target_error_mujoco = torch.minimum(feet_z_target_error_mujoco, feet_z_desired)
+ 
+     feet_height_clearance_mujoco_fl = torch.exp(-feet_z_target_error_mujoco[:, 0] / 0.01) * should_move
+     feet_height_clearance_mujoco_fr = torch.exp(-feet_z_target_error_mujoco[:, 1] / 0.01) * should_move
+@@ -493,8 +585,16 @@ def feet_height_clearance_mujoco_periodic(self) -> torch.Tensor:
+     self._swing_peak_periodic = torch.max(
+         self._swing_peak_periodic, self._robot.data.body_pos_w[:, self._feet_ids_robot, 2].clone()
+     )
++    # Highest obstacle top met ahead of the foot during the swing phase, as in feet_height_clearance_mujoco_aperiodic
++    obstacle_top = feet_terrain_height + _get_feet_clearance_obstacle(self, feet_terrain_height)
++    self._swing_obstacle_top_periodic = torch.where(
++        contact_periodic_on, obstacle_top, torch.max(self._swing_obstacle_top_periodic, obstacle_top)
++    )
++    feet_z_desired = self.cfg.desired_feet_height + torch.clamp(
++        self._swing_obstacle_top_periodic - feet_terrain_height, min=0.0
++    )
+     feet_z_target_error_mujoco_periodic = (
+-        self.cfg.desired_feet_height + feet_terrain_height + self.cfg.foot_radius - self._swing_peak_periodic
++        feet_z_desired + feet_terrain_height + self.cfg.foot_radius - self._swing_peak_periodic
+     )
+     feet_z_target_error_mujoco_periodic = torch.where(
+         feet_z_target_error_mujoco_periodic < 0.0,
+@@ -502,9 +602,7 @@ def feet_height_clearance_mujoco_periodic(self) -> torch.Tensor:
+         feet_z_target_error_mujoco_periodic,
+     )
+     feet_z_target_error_mujoco_periodic = torch.abs(feet_z_target_error_mujoco_periodic)
+-    feet_z_target_error_mujoco_periodic = torch.clamp(
+-        feet_z_target_error_mujoco_periodic, min=0.0, max=self.cfg.desired_feet_height
+-    )
++    feet_z_target_error_mujoco_periodic = torch.minimum(feet_z_target_error_mujoco_periodic, feet_z_desired)
+ 
+     feet_height_clearance_mujoco_periodic_fl = (
+         torch.exp(-feet_z_target_error_mujoco_periodic[:, 0] / 0.01) * should_move * ~contact_periodic_on[:, 0]
+@@ -536,8 +634,7 @@ def feet_swing_trajectory_periodic(self) -> torch.Tensor:
+     # Swing progress from 0 (liftoff) to 1 (touchdown)
+     swing_progress = torch.clamp((self._phase_signal - self._duty_factor) / (1.0 - self._duty_factor), 0.0, 1.0)
+ 
+-    # Raised cosine: zero height and zero vertical velocity at liftoff and touchdown, peak at mid swing
+-    feet_z_ref = 0.5 * self.cfg.desired_feet_height * (1.0 - torch.cos(2.0 * torch.pi * swing_progress))
++    feet_z_ref, feet_z_std = _get_feet_swing_reference(self, feet_terrain_height, swing_progress)
+ 
+     # The foot body is the center of the foot sphere, so it sits foot_radius above the terrain in stance
+     feet_z = self._robot.data.body_pos_w[:, self._feet_ids_robot, 2] - feet_terrain_height - self.cfg.foot_radius
+@@ -546,8 +643,6 @@ def feet_swing_trajectory_periodic(self) -> torch.Tensor:
+     feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
+     feet_z_error = torch.square(feet_z_target_error)
+ 
+-    # Tolerance proportional to the desired swing height (half of it gives exp(-1))
+-    feet_z_std = 0.5 * self.cfg.desired_feet_height
+     feet_swing_trajectory = torch.exp(-feet_z_error / feet_z_std**2) * in_swing
+     return torch.sum(feet_swing_trajectory, dim=1) * should_move
+ 
+@@ -570,8 +665,7 @@ def feet_swing_trajectory_aperiodic(self) -> torch.Tensor:
+     # Swing progress from 0 (liftoff) to 1 (nominal touchdown)
+     swing_progress = torch.clamp(current_air_time / desired_air_time, 0.0, 1.0)
+ 
+-    # Raised cosine: zero height and zero vertical velocity at liftoff and touchdown, peak at mid swing
+-    feet_z_ref = 0.5 * self.cfg.desired_feet_height * (1.0 - torch.cos(2.0 * torch.pi * swing_progress))
++    feet_z_ref, feet_z_std = _get_feet_swing_reference(self, feet_terrain_height, swing_progress)
+ 
+     # The foot body is the center of the foot sphere, so it sits foot_radius above the terrain in stance
+     feet_z = self._robot.data.body_pos_w[:, self._feet_ids_robot, 2] - feet_terrain_height - self.cfg.foot_radius
+@@ -580,8 +674,6 @@ def feet_swing_trajectory_aperiodic(self) -> torch.Tensor:
+     feet_z_target_error = torch.where(feet_z_target_error < 0.0, feet_z_target_error * 0.2, feet_z_target_error)
+     feet_z_error = torch.square(feet_z_target_error)
+ 
+-    # Tolerance proportional to the desired swing height (half of it gives exp(-1))
+-    feet_z_std = 0.5 * self.cfg.desired_feet_height
+     feet_swing_trajectory = torch.exp(-feet_z_error / feet_z_std**2) * in_swing
+     return torch.sum(feet_swing_trajectory, dim=1) * should_move
+ 
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/a2_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/a2_env_cfg.py
+index 2c6b88b..849754b 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/a2_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/a2_env_cfg.py
+@@ -293,11 +293,14 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
+         prim_path="/World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot",
+         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+         ray_alignment="yaw",
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.3, 0.3]),
+         debug_vis=False,
+         mesh_prim_paths=["/World/ground"],
+         global_world_only=True,
+     )
++    # The terrain height under each foot is the mean of the foot height scanner rays within this distance of the foot
++    # along both axes (the central 3 x 3 rays), the whole scanner is used to look for obstacles ahead of the foot
++    feet_terrain_height_half_size = 0.05
+ 
+ 
+     # asymmetric ppo
+@@ -408,6 +411,10 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
+     # Desired tracking variables
+     desired_base_height = 0.30
+     desired_feet_height = 0.05
++    # Swing reference raised by the obstacle ahead of each foot (highest point of the foot height scanner in front of
++    # the foot minus the terrain under it), so that the feet are lifted above boxes and steps before reaching them
++    feet_swing_obstacle_clearance = True
++    feet_swing_obstacle_max_height = 0.15 # [m], the highest obstacle of the rough terrains
+     foot_radius = 0.032 # radius of the foot collision sphere
+ 
+ 
+@@ -437,6 +444,7 @@ class A2FlatEnvCfg(DirectRLEnvCfg):
+     
+     # Undesired contacts reward scale
+     undersired_contact_reward_scale = -1.0
++    undesired_contacts_include_calf = True  # also penalize shin contacts (e.g. against the side of steps)
+     action_rate_reward_scale = -0.01
+     action_smoothness_reward_scale = -0.001
+ 
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+index 73e7f24..4deb20c 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/agents/morphosymm_cfg.py
+@@ -59,7 +59,7 @@ obs_space_names_actor = [
+         "clock_data", # periodic clock data
+         "clock_data", # periodic clock data
+     ]*int(history_length)
+-#obs_space_names_actor += ["heightmap:11x11"]
++obs_space_names_actor += ["heightmap:16x16"]
+ 
+ 
+ # Critic OBS
+@@ -81,7 +81,7 @@ obs_space_names_critic = [
+         "clock_data", # periodic clock data
+         "clock_data", # periodic clock data
+     ]*int(history_length)
+-#obs_space_names_critic += ["heightmap:11x11"]
++obs_space_names_critic += ["heightmap:16x16"]
+ obs_space_names_critic += [    
+         "clock_data", "clock_data", "clock_data",  # P gains
+         "clock_data", "clock_data", "clock_data",  # D gains
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/aliengo_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/aliengo_env_cfg.py
+index 5f597e0..0753779 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/aliengo_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/aliengo_env_cfg.py
+@@ -285,11 +285,14 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
+         prim_path="/World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot",
+         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+         ray_alignment="yaw",
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.3, 0.3]),
+         debug_vis=False,
+         mesh_prim_paths=["/World/ground"],
+         global_world_only=True,
+     )
++    # The terrain height under each foot is the mean of the foot height scanner rays within this distance of the foot
++    # along both axes (the central 3 x 3 rays), the whole scanner is used to look for obstacles ahead of the foot
++    feet_terrain_height_half_size = 0.05
+ 
+ 
+     # asymmetric ppo
+@@ -399,6 +402,10 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
+     # Desired tracking variables
+     desired_base_height = 0.35
+     desired_feet_height = 0.05
++    # Swing reference raised by the obstacle ahead of each foot (highest point of the foot height scanner in front of
++    # the foot minus the terrain under it), so that the feet are lifted above boxes and steps before reaching them
++    feet_swing_obstacle_clearance = True
++    feet_swing_obstacle_max_height = 0.18 # [m], the highest obstacle of the rough terrains
+     foot_radius = 0.0265 # radius of the foot collision sphere
+ 
+     # Desired clip actions
+@@ -427,6 +434,7 @@ class AliengoFlatEnvCfg(DirectRLEnvCfg):
+ 
+     # Undesired contacts reward scale
+     undersired_contact_reward_scale = -1.0
++    undesired_contacts_include_calf = True  # also penalize shin contacts (e.g. against the side of steps)
+     action_rate_reward_scale = -0.01
+     action_smoothness_reward_scale = -0.001
+ 
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/b2_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/b2_env_cfg.py
+index e3d5fc5..70659c9 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/b2_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/b2_env_cfg.py
+@@ -284,11 +284,14 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
+         prim_path="/World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot",
+         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+         ray_alignment="yaw",
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.3, 0.3]),
+         debug_vis=False,
+         mesh_prim_paths=["/World/ground"],
+         global_world_only=True,
+     )
++    # The terrain height under each foot is the mean of the foot height scanner rays within this distance of the foot
++    # along both axes (the central 3 x 3 rays), the whole scanner is used to look for obstacles ahead of the foot
++    feet_terrain_height_half_size = 0.05
+ 
+ 
+     # asymmetric ppo
+@@ -399,6 +402,10 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
+     # Desired tracking variables
+     desired_base_height = 0.485
+     desired_feet_height = 0.05
++    # Swing reference raised by the obstacle ahead of each foot (highest point of the foot height scanner in front of
++    # the foot minus the terrain under it), so that the feet are lifted above boxes and steps before reaching them
++    feet_swing_obstacle_clearance = True
++    feet_swing_obstacle_max_height = 0.18 # [m], the highest obstacle of the rough terrains
+     foot_radius = 0.032 # radius of the foot collision sphere
+ 
+     # Desired clip actions
+@@ -427,6 +434,7 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
+     
+     # Undesired contacts reward scale
+     undersired_contact_reward_scale = -1.0
++    undesired_contacts_include_calf = True  # also penalize shin contacts (e.g. against the side of steps)
+     action_rate_reward_scale = -0.01
+     action_smoothness_reward_scale = -0.001
+ 
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
+index b67b94d..b2ed5ad 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/go2_env_cfg.py
+@@ -303,11 +303,14 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
+         prim_path="/World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot",
+         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+         ray_alignment="yaw",
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.2, 0.2]),  # +/- 10 cm, Go2 takes short steps
+         debug_vis=False,
+         mesh_prim_paths=["/World/ground"],
+         global_world_only=True,
+     )
++    # The terrain height under each foot is the mean of the foot height scanner rays within this distance of the foot
++    # along both axes (the central 3 x 3 rays), the whole scanner is used to look for obstacles ahead of the foot
++    feet_terrain_height_half_size = 0.05
+ 
+ 
+     # asymmetric ppo
+@@ -418,6 +421,10 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
+     # Desired tracking variables
+     desired_base_height = 0.30
+     desired_feet_height = 0.05
++    # Swing reference raised by the obstacle ahead of each foot (highest point of the foot height scanner in front of
++    # the foot minus the terrain under it), so that the feet are lifted above boxes and steps before reaching them
++    feet_swing_obstacle_clearance = True
++    feet_swing_obstacle_max_height = 0.18 # [m], the highest obstacle of the rough terrains
+     foot_radius = 0.022 # radius of the foot collision sphere
+ 
+ 
+@@ -447,6 +454,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
+     
+     # Undesired contacts reward scale
+     undersired_contact_reward_scale = -1.0
++    undesired_contacts_include_calf = True  # also penalize shin contacts (e.g. against the side of steps)
+     action_rate_reward_scale = -0.01
+     action_smoothness_reward_scale = -0.001
+ 
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/hyqreal_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/hyqreal_env_cfg.py
+index 778ddca..6380736 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/hyqreal_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/hyqreal_env_cfg.py
+@@ -299,11 +299,14 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
+         prim_path="/World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot",
+         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+         ray_alignment="yaw",
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.3, 0.3]),
+         debug_vis=False,
+         mesh_prim_paths=["/World/ground"],
+         global_world_only=True,
+     )
++    # The terrain height under each foot is the mean of the foot height scanner rays within this distance of the foot
++    # along both axes (the central 3 x 3 rays), the whole scanner is used to look for obstacles ahead of the foot
++    feet_terrain_height_half_size = 0.05
+ 
+ 
+     # asymmetric ppo
+@@ -414,6 +417,10 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
+     # Desired tracking variables
+     desired_base_height = 0.5
+     desired_feet_height = 0.05
++    # Swing reference raised by the obstacle ahead of each foot (highest point of the foot height scanner in front of
++    # the foot minus the terrain under it), so that the feet are lifted above boxes and steps before reaching them
++    feet_swing_obstacle_clearance = True
++    feet_swing_obstacle_max_height = 0.18 # [m], the highest obstacle of the rough terrains
+     foot_radius = 0.032 # radius of the foot collision sphere
+ 
+ 
+@@ -443,6 +450,7 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
+     
+     # Undesired contacts reward scale
+     undersired_contact_reward_scale = -1.0
++    undesired_contacts_include_calf = True  # also penalize shin contacts (e.g. against the side of steps)
+     action_rate_reward_scale = -0.01
+     action_smoothness_reward_scale = -0.001
+ 
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/locomotion_env.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/locomotion_env.py
+index 4ffd18f..52edbb2 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/locomotion_env.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/locomotion_env.py
+@@ -91,6 +91,10 @@ class LocomotionEnv(DirectRLEnv):
+         # Swing peak
+         self._swing_peak = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device).repeat(self.num_envs,1)
+         self._swing_peak_periodic = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device).repeat(self.num_envs,1)
++        # Highest obstacle top met ahead of each foot during the swing, for the feet height clearance mujoco rewards
++        # (-inf until the first step, so that it never raises the target on terrains below zero)
++        self._swing_obstacle_top = torch.full((self.num_envs, 4), -torch.inf, device=self.device)
++        self._swing_obstacle_top_periodic = torch.full((self.num_envs, 4), -torch.inf, device=self.device)
+         
+         # Desired Hip Offset
+         self._desired_hip_offset_y = torch.tensor([-self.cfg.desired_hip_offset_y, self.cfg.desired_hip_offset_y, -self.cfg.desired_hip_offset_y, self.cfg.desired_hip_offset_y], device=self.device)
+@@ -236,6 +240,10 @@ class LocomotionEnv(DirectRLEnv):
+         self._hip_contact_sensor_ids, _ = self._contact_sensor.find_bodies(["FL_hip", "FR_hip", "RL_hip", "RR_hip"], preserve_order=True)
+         self._thigh_contact_sensor_ids, _ = self._contact_sensor.find_bodies(["FL_thigh", "FR_thigh", "RL_thigh", "RR_thigh"], preserve_order=True)
+         self._undesired_contact_body_ids = self._base_contact_sensor_id + self._hip_contact_sensor_ids + self._thigh_contact_sensor_ids
++        if getattr(self.cfg, "undesired_contacts_include_calf", False):
++            # Shins hitting the side of steps and boxes, otherwise free
++            self._calf_contact_sensor_ids, _ = self._contact_sensor.find_bodies(["FL_calf", "FR_calf", "RL_calf", "RR_calf"], preserve_order=True)
++            self._undesired_contact_body_ids = self._undesired_contact_body_ids + self._calf_contact_sensor_ids
+ 
+         
+         self._feet_ids_robot, _ = self._robot.find_bodies(["FL_foot", "FR_foot", "RL_foot", "RR_foot"], preserve_order=True)
+@@ -695,6 +703,8 @@ class LocomotionEnv(DirectRLEnv):
+         # Reset swing peak
+         self._swing_peak[env_ids] = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device)
+         self._swing_peak_periodic[env_ids] = torch.tensor([0.0, 0.0, 0.0, 0.0], device=self.device)
++        self._swing_obstacle_top[env_ids] = -torch.inf
++        self._swing_obstacle_top_periodic[env_ids] = -torch.inf
+         
+         # Reset contact periodic
+         self._phase_signal[env_ids] = self._phase_offset[env_ids].clone()# + self.step_dt * self._step_freq * torch.rand(env_ids.shape[0], 1, device=self.device)*10.
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+index 303b300..f0fe24b 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+@@ -205,7 +205,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
+         debug_vis=False)
+ 
+     
+-    base_state_source = "ground_truth"  # "ground_truth" | "imu" | "concurrent_se"
++    base_state_source = "concurrent_se"  # "ground_truth" | "imu" | "concurrent_se"
+     if(base_state_source == "concurrent_se"):
+         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
+         
+@@ -288,11 +288,14 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
+         prim_path="/World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot",
+         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+         ray_alignment="yaw",
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.3, 0.3]),
+         debug_vis=False,
+         mesh_prim_paths=["/World/ground"],
+         global_world_only=True,
+     )
++    # The terrain height under each foot is the mean of the foot height scanner rays within this distance of the foot
++    # along both axes (the central 3 x 3 rays), the whole scanner is used to look for obstacles ahead of the foot
++    feet_terrain_height_half_size = 0.05
+ 
+ 
+     # asymmetric ppo
+@@ -403,6 +406,10 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
+     # Desired tracking variables
+     desired_base_height = 0.60
+     desired_feet_height = 0.05
++    # Swing reference raised by the obstacle ahead of each foot (highest point of the foot height scanner in front of
++    # the foot minus the terrain under it), so that the feet are lifted above boxes and steps before reaching them
++    feet_swing_obstacle_clearance = True
++    feet_swing_obstacle_max_height = 0.2 # [m], the highest obstacle of the rough terrains
+     foot_radius = 0.041 # radius of the foot collision sphere
+ 
+ 
+@@ -432,6 +439,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
+     
+     # Undesired contacts reward scale
+     undersired_contact_reward_scale = -1.0
++    undesired_contacts_include_calf = True  # also penalize shin contacts (e.g. against the side of steps)
+     action_rate_reward_scale = -0.01
+     action_smoothness_reward_scale = -0.001
+ 
+@@ -580,9 +588,9 @@ class PegasusRoughVisionEnvCfg(PegasusRoughBlindEnvCfg):
+     # we add a height scanner for perceptive locomotion
+     perceptive_height_scanner = RayCasterCfg(
+         prim_path="/World/envs/env_.*/Robot/Geometry/base",
+-        offset=RayCasterCfg.OffsetCfg(pos=(0.4, 0.0, 2.0)),
++        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
+         ray_alignment='yaw',
+-        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[0.6, 0.8]),
++        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.5, 1.5]),
+         debug_vis=False,
+         mesh_prim_paths=["/World/ground"],
+         global_world_only=True,

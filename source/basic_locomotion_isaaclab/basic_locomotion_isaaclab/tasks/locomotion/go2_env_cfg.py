@@ -192,6 +192,11 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     if(use_clock_signal):
         observation_space += 8 # clock signal for periodic gait (sin and cos of the phase of each leg)
 
+    # Velocity command bounds: each command is sampled uniformly in [-max, max]
+    commands_lin_vel_x_max = 0.6 # [m/s]
+    commands_lin_vel_y_max = 0.3 # [m/s]
+    commands_ang_vel_z_max = 0.5 # [rad/s]
+
     # Base pose commands: desired base height offset (from desired_base_height), roll and pitch.
     # They are non-zero only while standing (zero velocity command), while walking they are always zero
     use_base_pose_commands = False
@@ -303,11 +308,14 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
         prim_path="/World/envs/env_.*/Robot/Geometry/base/FL_hip/FL_thigh/FL_calf/FL_foot",
         offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 2.0)),
         ray_alignment="yaw",
-        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.1, 0.1]),
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.05, size=[0.2, 0.2]),  # +/- 10 cm, Go2 takes short steps
         debug_vis=False,
         mesh_prim_paths=["/World/ground"],
         global_world_only=True,
     )
+    # The terrain height under each foot is the mean of the foot height scanner rays within this distance of the foot
+    # along both axes (the central 3 x 3 rays), the whole scanner is used to look for obstacles ahead of the foot
+    feet_terrain_height_half_size = 0.05
 
 
     # asymmetric ppo
@@ -459,6 +467,10 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     feet_height_clearance_periodic_reward_scale = 0.25*0.0
     feet_height_clearance_mujoco_periodic_reward_scale = 0.25*0.0
     feet_swing_trajectory_periodic_reward_scale = 0.5
+    # Swing reference raised by the obstacle ahead of each foot (highest point of the foot height scanner in front of
+    # the foot minus the terrain under it), so that the feet are lifted above boxes and steps before reaching them
+    feet_swing_obstacle_clearance = True
+    feet_swing_obstacle_max_height = 0.18 # [m], the highest obstacle of the rough terrains
     
     feet_slide_reward_scale = -0.25*0.0
 
@@ -488,9 +500,9 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     feet_air_time_variance_reward_scale = -1.0*0.0
 
     periodic_contact_suggestion_reward_scale = 0.5
-    desired_step_freq_max = 1.8
-    step_freq_vel_norm_low = 0.4
-    step_freq_vel_norm_high = 0.8
+    desired_step_freq_max = 2.0
+    step_freq_vel_norm_low = 0.2
+    step_freq_vel_norm_high = commands_lin_vel_x_max
     desired_phase_offset = [0.0, 0.5, 0.5, 0.0] #FL, FR, RL, RR
 
     stance_contact_suggestion_reward_scale = 1.0

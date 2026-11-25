@@ -1,0 +1,28 @@
+--- git commit ---
+e7d6c7cb71d0324d75448553024f7a36aa87a37c
+
+
+--- git status ---
+HEAD detached from bccfe1a
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+
+no changes added to commit (use "git add" and/or "git commit -a") 
+
+
+--- git diff ---
+diff --git a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+index 303b300..3304a5f 100644
+--- a/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
++++ b/source/basic_locomotion_isaaclab/basic_locomotion_isaaclab/tasks/locomotion/pegasus_env_cfg.py
+@@ -205,7 +205,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
+         debug_vis=False)
+ 
+     
+-    base_state_source = "ground_truth"  # "ground_truth" | "imu" | "concurrent_se"
++    base_state_source = "concurrent_se"  # "ground_truth" | "imu" | "concurrent_se"
+     if(base_state_source == "concurrent_se"):
+         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
+         
