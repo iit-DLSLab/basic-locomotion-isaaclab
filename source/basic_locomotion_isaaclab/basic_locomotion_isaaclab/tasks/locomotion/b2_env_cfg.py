@@ -175,8 +175,8 @@ class B2FlatEnvCfg(DirectRLEnvCfg):
         observation_space += 8 # clock signal for periodic gait (sin and cos of the phase of each leg)
 
     # Velocity command bounds: each command is sampled uniformly in [-max, max]
-    commands_lin_vel_x_max = 0.8 # [m/s]
-    commands_lin_vel_y_max = 0.25 # [m/s]
+    commands_lin_vel_x_max = 0.6 # [m/s]
+    commands_lin_vel_y_max = 0.3 # [m/s]
     commands_ang_vel_z_max = 0.5 # [rad/s]
 
     # Base pose commands: desired base height offset (from desired_base_height), roll and pitch.

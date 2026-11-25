@@ -50,16 +50,16 @@ obs_space_names_actor = [
         # Base pose commands (use_base_pose_commands = True): height offset, roll, pitch.
         # Under the sagittal (left-right) reflection the height and the pitch are invariant while
         # the roll flips sign. Valid for C2; with K4 the pitch would also need to flip.
-        "invariant_scalar",  # base height offset command
-        "reflection_sign_flipping_scalar",  # base roll command
-        "invariant_scalar",  # base pitch command
+        #"invariant_scalar",  # base height offset command
+        #"reflection_sign_flipping_scalar",  # base roll command
+        #"invariant_scalar",  # base pitch command
         "joints_pos",
         "joints_vel",
         "joints_pos",
         "clock_data", # periodic clock data
         "clock_data", # periodic clock data
     ]*int(history_length)
-obs_space_names_actor += ["heightmap:16x16"]
+#obs_space_names_actor += ["heightmap:16x16"]
 
 
 # Critic OBS
@@ -72,16 +72,16 @@ obs_space_names_critic = [
         # Base pose commands (use_base_pose_commands = True): height offset, roll, pitch.
         # Under the sagittal (left-right) reflection the height and the pitch are invariant while
         # the roll flips sign. Valid for C2; with K4 the pitch would also need to flip.
-        "invariant_scalar",  # base height offset command
-        "reflection_sign_flipping_scalar",  # base roll command
-        "invariant_scalar",  # base pitch command
+        #"invariant_scalar",  # base height offset command
+        #"reflection_sign_flipping_scalar",  # base roll command
+        #"invariant_scalar",  # base pitch command
         "joints_pos",
         "joints_vel",
         "joints_pos",
         "clock_data", # periodic clock data
         "clock_data", # periodic clock data
     ]*int(history_length)
-obs_space_names_critic += ["heightmap:16x16"]
+#obs_space_names_critic += ["heightmap:16x16"]
 obs_space_names_critic += [    
         "clock_data", "clock_data", "clock_data",  # P gains
         "clock_data", "clock_data", "clock_data",  # D gains

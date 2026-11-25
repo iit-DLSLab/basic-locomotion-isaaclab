@@ -287,9 +287,9 @@ def _sample_random_commands(self, env_ids: torch.Tensor | None = None) -> torch.
     num_commands = self.num_envs if env_ids is None else env_ids.shape[0]
     commands = torch.empty(num_commands, self._commands.shape[1], device=self.device, dtype=self._commands.dtype)
     commands.uniform_(-1.0, 1.0)
-    commands[:, 0] *= 0.8
-    commands[:, 1] *= 0.25
-    commands[:, 2] *= 0.5
+    commands[:, 0] *= self.cfg.commands_lin_vel_x_max
+    commands[:, 1] *= self.cfg.commands_lin_vel_y_max
+    commands[:, 2] *= self.cfg.commands_ang_vel_z_max
     return commands
 
 
@@ -299,10 +299,8 @@ def _get_new_random_commands(self, env_ids: torch.Tensor | None = None):
 
     # Change direction while moving
     resample_time = self.episode_length_buf == self.max_episode_length - 400
-    commands_resample = torch.zeros_like(self._commands).uniform_(-1.0, 1.0)
-    commands_resample[:, 0] *= 0.8
-    commands_resample[:, 1] *= 0.25 
-    commands_resample[:, 2] *= 0.5 
+    commands_resample = torch.zeros_like(self._commands)
+    commands_resample[:, :3] = _sample_random_commands(self)[:, :3]
     self._commands[:, :3] = self._commands[:, :3] * ~resample_time.unsqueeze(1).expand(-1, 3) + commands_resample * resample_time.unsqueeze(1).expand(-1, 3)
 
     # Stop
@@ -314,10 +312,8 @@ def _get_new_random_commands(self, env_ids: torch.Tensor | None = None):
 
     # Move again
     resample_time_2 = self.episode_length_buf == self.max_episode_length - 150
-    commands_resample_2 = torch.zeros_like(self._commands).uniform_(-1.0, 1.0)
-    commands_resample_2[:, 0] *= 0.5
-    commands_resample_2[:, 1] *= 0.25 
-    commands_resample_2[:, 2] *= 0.5 
+    commands_resample_2 = torch.zeros_like(self._commands)
+    commands_resample_2[:, :3] = _sample_random_commands(self)[:, :3]
     self._commands[:, :3] = self._commands[:, :3] * ~resample_time_2.unsqueeze(1).expand(-1, 3) + commands_resample_2 * resample_time_2.unsqueeze(1).expand(-1, 3)        
 
     # Took some envs, and put to zero the vel
