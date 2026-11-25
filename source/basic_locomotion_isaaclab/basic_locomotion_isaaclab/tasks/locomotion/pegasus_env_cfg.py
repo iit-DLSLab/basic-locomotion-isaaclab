@@ -174,9 +174,14 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     if(use_clock_signal):
         observation_space += 8 # clock signal for periodic gait (sin and cos of the phase of each leg)
 
+    # Velocity command bounds: each command is sampled uniformly in [-max, max]
+    commands_lin_vel_x_max = 0.8 # [m/s]
+    commands_lin_vel_y_max = 0.25 # [m/s]
+    commands_ang_vel_z_max = 0.5 # [rad/s]
+
     # Base pose commands: desired base height offset (from desired_base_height), roll and pitch.
     # They are non-zero only while standing (zero velocity command), while walking they are always zero
-    use_base_pose_commands = True
+    use_base_pose_commands = False
     if(use_base_pose_commands):
         observation_space += 3 # base pose command (height offset, roll, pitch)
         base_pose_commands_height_range = 0.10 # +/- [m] around desired_base_height
@@ -205,7 +210,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         debug_vis=False)
 
     
-    base_state_source = "concurrent_se"  # "ground_truth" | "imu" | "concurrent_se"
+    base_state_source = "ground_truth"  # "ground_truth" | "imu" | "concurrent_se"
     if(base_state_source == "concurrent_se"):
         concurrent_state_est_network_type = "tcn" # "mlp" or "tcn"
         
@@ -295,7 +300,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     )
     # The terrain height under each foot is the mean of the foot height scanner rays within this distance of the foot
     # along both axes (the central 3 x 3 rays), the whole scanner is used to look for obstacles ahead of the foot
-    feet_terrain_height_half_size = 0.05
+    feet_terrain_height_half_size = 0.08
 
 
     # asymmetric ppo
@@ -470,7 +475,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     visualize_feet_edge_stance_zone = False # black dots on the edge height grid where a stance foot is penalized by feet_edge_stance, white elsewhere (for play with a few envs)
     visualize_feet_edge_swing_zone = False # transparent red cylinders where a swing foot is penalized by feet_edge_swing
 
-    feet_vertical_surface_contacts_reward_scale = -2.5
+    feet_vertical_surface_contacts_reward_scale = -1.5
 
     # variables used in feet air time and periodic contact suggestion reward
     desired_step_freq = 1.4 
@@ -480,9 +485,9 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
     feet_air_time_variance_reward_scale = -1.0*0.0
 
     periodic_contact_suggestion_reward_scale = 0.5
-    desired_step_freq_max = 1.8
-    step_freq_vel_norm_low = 0.4
-    step_freq_vel_norm_high = 0.8
+    desired_step_freq_max = 2.0
+    step_freq_vel_norm_low = 0.2
+    step_freq_vel_norm_high = commands_lin_vel_x_max
     desired_phase_offset = [0.0, 0.5, 0.5, 0.0] #FL, FR, RL, RR
 
     stance_contact_suggestion_reward_scale = 1.0
@@ -511,7 +516,7 @@ class PegasusRoughBlindEnvCfg(PegasusFlatEnvCfg):
             ),
             # scattered boxes with an overhanging top plate, to trip the swing feet
             "overhang_boxes": MeshOverhangBoxesTerrainCfg(
-                proportion=0.2, num_boxes=50, box_width_range=(0.3, 0.6), box_height_range=(0.08, 0.20),
+                proportion=0.2, num_boxes=100, box_width_range=(0.3, 0.6), box_height_range=(0.08, 0.25),
                 overhang_range=(0.02, 0.04), top_thickness=0.03, platform_width=1.0,
             ),
             "random_rough": terrain_gen.HfRandomUniformTerrainCfg(

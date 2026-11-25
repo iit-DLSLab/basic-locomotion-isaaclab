@@ -189,6 +189,11 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
     if(use_clock_signal):
         observation_space += 8 # clock signal for periodic gait (sin and cos of the phase of each leg)
 
+    # Velocity command bounds: each command is sampled uniformly in [-max, max]
+    commands_lin_vel_x_max = 0.8 # [m/s]
+    commands_lin_vel_y_max = 0.25 # [m/s]
+    commands_ang_vel_z_max = 0.5 # [rad/s]
+
     # Base pose commands: desired base height offset (from desired_base_height), roll and pitch.
     # They are non-zero only while standing (zero velocity command), while walking they are always zero
     use_base_pose_commands = False
@@ -491,9 +496,9 @@ class HyQRealFlatEnvCfg(DirectRLEnvCfg):
     feet_air_time_variance_reward_scale = -1.0*0.0
 
     periodic_contact_suggestion_reward_scale = 0.5
-    desired_step_freq_max = 1.8
-    step_freq_vel_norm_low = 0.4
-    step_freq_vel_norm_high = 0.8
+    desired_step_freq_max = 2.0
+    step_freq_vel_norm_low = 0.2
+    step_freq_vel_norm_high = commands_lin_vel_x_max
     desired_phase_offset = [0.0, 0.5, 0.5, 0.0] #FL, FR, RL, RR
 
     stance_contact_suggestion_reward_scale = 1.0
