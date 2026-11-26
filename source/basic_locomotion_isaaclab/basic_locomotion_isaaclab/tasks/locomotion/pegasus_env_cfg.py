@@ -389,7 +389,7 @@ class PegasusFlatEnvCfg(DirectRLEnvCfg):
         "clock": (0.01, 0.01),
         "height_map": (0.02, 0.01),
         # offset shared by all the height map cells
-        "height_map_global": (0.01, 0.02),
+        "height_map_global": (0.02, 0.02),
         "rma": (0.02, 0.01),
     }
 
